@@ -1,7 +1,32 @@
+"use client";
+
 import Image from "next/image";
 import styles from "./page.module.css";
+import React, { useState, useEffect } from "react";
 
 export default function Home() {
+
+  const [data, setData] = useState({
+    name: "",
+    age: 0,
+    date: "",
+    programming:"",
+  });
+
+  useEffect(() => {
+    fetch("http://127.0.0.1:8080/data").then((response) =>{
+      console.log(response);
+      response.json().then((data) => {
+        console.log(data);
+        setData({
+          name: data.Name,
+          age: data.Age,
+          date: data.Date,
+          programming: data.programming,
+        });
+      })});
+  }, []);
+
   return (
     <div className={styles.page}>
       <main className={styles.main}>
@@ -44,6 +69,16 @@ export default function Home() {
           >
             Read our docs
           </a>
+        </div>
+        <div className="App">
+            <header className="App-header">
+                <h1>React and flask data</h1>
+                <p>{data.name}</p>
+                <p>{data.age}</p>
+                <p>{data.date}</p>
+                <p>{data.programming}</p>
+
+            </header>
         </div>
       </main>
       <footer className={styles.footer}>
