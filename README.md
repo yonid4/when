@@ -1,4 +1,4 @@
-### WHEN ###
+# WHEN
 
 ## Frontend:
 ```bash
@@ -12,13 +12,13 @@ bun dev
 ```
 
 ## Backend:
-# Activate Virtual Environment
+### Activate Virtual Environment
 ```bash
 .venv/Scripts/activate
 # or
  . .venv/bin/activate
 ```
-# Run Server
+### Run Server
 ```bash
 python server.py
 ```
