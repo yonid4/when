@@ -1,27 +1,25 @@
-# Import flask and datetime module for showing date and time
-from flask import Flask
-from flask_cors import CORS
-import datetime
+import os
+from flask import Flask, render_template, request, url_for, redirect
+from flask_sqlalchemy import SQLAlchemy
 
-x = datetime.datetime.now()
+from sqlalchemy.sql import func
 
-# Initializing flask app
+basedir = os.path.abspath(os.path.dirname(__file__))
+
 app = Flask(__name__)
-CORS(app)
+app.config['SQLALCHEMY_DATABASE_URI'] =\
+        'sqlite:///' + os.path.join(basedir, 'when.db')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Route for seeing a data
-@app.route('/data')
-def get_time():
-
-    # Returning an api for showing in  reactjs
-    return {
-        'Name':"Merilyn", 
-        "Age":"22",
-        "Date":x, 
-        "programming":"python"
-    }
+db = SQLAlchemy(app)
 
 
-# Running app
-if __name__ == '__main__':
-    app.run(debug=True, port=8080)
+class Calendar(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    calendarId = db.Colunm(db.String(1024), nullable=False)
+    
+    def __repr__(self):
+        return f'<Calendar {self.calendarId}>'
+    
+class Events(db.Model):
+    pass

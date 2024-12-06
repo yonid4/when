@@ -16,7 +16,7 @@ bun dev
 ```bash
 .venv/Scripts/activate
 # or
- . .venv/bin/activate
+. .venv/bin/activate
 ```
 ### Run Server
 ```bash
