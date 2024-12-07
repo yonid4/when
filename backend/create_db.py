@@ -11,9 +11,7 @@ mydb = mysql.connector.connect(
 
 cursor = mydb.cursor()  # like a robot that does the commands for you
 
-# When you run this script for the first time, uncomment it
-# If you need to run it again, make it a comment
-# cursor.execute("CREATE DATABASE `when`")
+cursor.execute("CREATE DATABASE IF NOT EXISTS `when`")
 
 cursor.execute("SHOW DATABASES")
 for db in cursor:
