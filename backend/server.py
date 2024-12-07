@@ -1,13 +1,16 @@
 import os
 from flask import Flask, render_template, request, url_for, redirect
 from flask_sqlalchemy import SQLAlchemy
+from tools import generate_uri_from_file
 
 from sqlalchemy.sql import func
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://username:password@localhost/when.db'
+database_URI = generate_uri_from_file('db_config.yml')
+app.config['SQLALCHEMY_DATABASE_URI'] = database_URI
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:password@localhost/when'
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'when.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -23,10 +26,10 @@ class Event(db.Model):
     latestTime = db.Column(db.Time)
     length = db.Column(db.Float)
     numParticipants = db.Column(db.Integer, nullable=True)
-    autocreate = db.Column(db.Boolean, server_default=False)
-    finalized = db.Column(db.Boolean, server_default=False)
+    autocreate = db.Column(db.Boolean, default=False)
+    finalized = db.Column(db.Boolean, default=False)
     users = db.relationship('User', backref='eventParticipating', lazy=True)
-    freeTimes = db.Columns('FreeBlock', backref='event', lazy=True)
+    freeTimes = db.relationship('FreeBlock', backref='event', lazy=True)
     
     def __init__(self, name, coordinator, start, end, earliest, latest, length, numParticipants=None):
         self.name = name
@@ -43,13 +46,18 @@ class Event(db.Model):
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    email = db.Columnn(db.String(320), nullable=False)
+    email = db.Column(db.String(320), nullable=False)
     name = db.Column(db.String(128), nullable=False)
     eventId = db.Column(db.Integer, db.ForeignKey('event.id'))
-    coordinator = db.Column(db.Boolean, server_default=False)
-    # preferences: Many to Many Relationship???
-    # calendars: 
-    busyTimes = db.Coulmns('UserUnavailability', backref='busyUser', lazy=True)
+    coordinator = db.Column(db.Boolean, default=False)
+    # preferences = Many to Many Relationship???
+    calendars = db.relationship('Calendar', backref='owner', lazy=True)
+    busyTimes = db.relationship('UserUnavailability', backref='busyUser', lazy=True)
+
+    def __init__(self, email, name, coordinator=False):
+        self.email = email
+        self.name = name
+        self.coordinator = coordinator
 
     def __repr__(self):
         return f'<USER {self.name}\n{self.email}>'
@@ -67,4 +75,10 @@ class FreeBlock(db.Model):
     eventId = db.Column(db.Integer, db.ForeignKey('event.id'))
 
 class Calendar(db.Model):
-    pass
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(128), nullable=False)
+    userId = db.Column(db.Integer, db.ForeignKey('user.id'))
+
+if __name__ == '__main__':
+    print("Done")
+    app.run(debug=True, port=8080)
