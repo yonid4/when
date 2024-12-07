@@ -8,118 +8,229 @@ import { Calendar } from '@fullcalendar/core'
 import multiMonthPlugin from '@fullcalendar/multimonth'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import timeGridPlugin from '@fullcalendar/timegrid'
-
-
+import { throwIfDisallowedDynamic } from "next/dist/server/app-render/dynamic-rendering";
+import { DaySeriesModel } from "@fullcalendar/core/internal";
 
 export default function Home() {
 
-  const [data, setData] = useState({
+  const [event, setEvent] = useState({
+    id: "",
     name: "",
-    age: 0,
-    date: "",
-    programming:"",
+    startDate: Date,
+    endDate: Date,
+    earliestTime: "",
+    latestTime: "",
+    length: 0,
+    numOfParticipants: -1,
+    autoCreate: false,
+    finilized: false,
+    user: [],
+    busyTimes: [("","")]
   });
+
+  const [viewType, setViewType] = useState("week");
 
   useEffect(() => {
     console.log("Backend URL:", process.env.NEXT_PUBLIC_BACKEND_URL);
-    fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/data`).then((response) => {
+    fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/events`).then((response) => {
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
       console.log(response);
-      response.json().then((data) => {
+      response.json().then((event) => {
         
-        console.log(data);
-        setData({
-          name: data.Name,
-          age: data.Age,
-          date: data.Date,
-          programming: data.programming,
-        });  
+        console.log(event);
+        setEvent ({
+          startDate: event.startDate,
+          endDate: event.endDate
+          // startDate: "2024-12-01T00:00:00",
+          // endDate: "2024-12-09T00:00:00"
+        })
       })
       .catch((error) => console.error("Error fetching data:", error));});
   }, []);
 
   useEffect(() => {
-    // Initialize Multi-Month Calendar
-    const multiMonthEl = document.getElementById("multiMonthCalendar");
-    if (multiMonthEl) {
-      const calendarMultiMonth = new Calendar(multiMonthEl, {
-        plugins: [multiMonthPlugin],
-        initialView: "multiMonthYear",
-        multiMonthMaxColumns: 1,
-        events: [
-          { title: "Project Deadline", start: "2024-12-05" },
-          { title: "Team Meeting", start: "2024-12-10" },
-        ],
-      });
-      calendarMultiMonth.render();
-    }
+    if (event.startDate && event.endDate) {
+      const start = new Date(event.startDate).getTime();
+      const end = new Date(event.endDate).getTime();
+  
+      const differenceInMilliseconds = end - start;
+      const differenceInDays = differenceInMilliseconds / 1000 / 60 /60 / 24
 
-    // Initialize Month Calendar
-    const monthEl = document.getElementById("monthCalendar");
-    if (monthEl) {
-      const calendarMonth = new Calendar(monthEl, {
-        plugins: [dayGridPlugin],
-        initialView: "dayGridMonth",
-        events: [
-          { title: "Holiday", start: "2024-12-20", end: "2024-12-25" },
-          { title: "Workshop", start: "2024-12-15" },
-        ],
-      });
-      calendarMonth.render();
-    }
+      if (differenceInDays < 7) {
+        setViewType("week");
+      } else if (differenceInDays < 31) {
+        setViewType("month");
+      } else {
+        setViewType("multiMonth");
+      }
 
-    // Initialize Week/Day Calendar
-    const weekEl = document.getElementById("weekCalendar");
-    if (weekEl) {
-      const calendarWeek = new Calendar(weekEl, {
-        plugins: [timeGridPlugin],
-        initialView: "timeGridWeek",
-        headerToolbar: {
-          left: "prev,next",
-          center: "title",
-          right: "timeGridWeek,timeGridDay",
-        },
-        events: [
-          { title: "Client Meeting", start: "2024-12-08T10:00:00", end: "2024-12-08T12:00:00" },
-          { title: "Code Review", start: "2024-12-09T14:00:00", end: "2024-12-09T15:00:00" },
-        ],
-      });
-      calendarWeek.render();
+      console.log(`Start Date: ${event.startDate}, End Date: ${event.endDate}`);
+      console.log(`Difference in Days: ${differenceInDays}`);
     }
-  }, []);
+  }, [event.startDate, event.endDate]);
+
+  useEffect(() => {
+    const calendarEl = document.getElementById("calendar");
+    if (calendarEl) {
+      let calendar;
+      if (viewType === "week") {
+        // Initialize Week/Day Calendar
+        calendar = new Calendar(calendarEl, {
+          plugins: [timeGridPlugin],
+          initialView: "timeGridWeek",
+          headerToolbar: {
+            left: "prev,next",
+            center: "title",
+            right: "timeGridWeek,timeGridDay",
+          },
+          events: [
+            { title: "Client Meeting", start: "2024-12-02T10:00:00", end: "2024-12-02T12:00:00" },
+            { title: "Code Review", start: "2024-12-03T14:00:00", end: "2024-12-03T15:00:00" },
+          ],
+        });
+      } else if (viewType === "month") {
+        // Initialize Month Calendar
+        calendar = new Calendar(calendarEl, {
+          plugins: [dayGridPlugin],
+          initialView: "dayGridMonth",
+          events: [
+            { title: "Holiday", start: "2024-12-20", end: "2024-12-25" },
+            { title: "Workshop", start: "2024-12-15" },
+          ],
+        });
+      } else if (viewType === "multiMonth") {
+        // Initialize Multi-Month Calendar
+        calendar = new Calendar(calendarEl, {
+          plugins: [multiMonthPlugin],
+          initialView: "multiMonthYear",
+          multiMonthMaxColumns: 1,
+          events: [
+            { title: "Project Deadline", start: "2024-12-05" },
+            { title: "Team Meeting", start: "2024-12-10" },
+          ],
+        });
+      }
+      calendar.render();
+    }
+  }, [viewType]);
 
   return (
     <div className={styles.page}>
       <main className={styles.main}>
-
-        <div>
-          <h2>Multi-Month View</h2>
-          <div id="multiMonthCalendar" style={{ maxWidth: "900px", marginBottom: "20px" }}></div>
-        </div>
-
-        <div>
-          <h2>Month View</h2>
-          <div id="monthCalendar" style={{ maxWidth: "900px", marginBottom: "20px" }}></div>
-        </div>
-
-        <div>
-          <h2>Week/Day View</h2>
-          <div id="weekCalendar" style={{ maxWidth: "900px" }}></div>
-        </div>
-
-        <div className="App">
-            <header className="App-header">
-                <h1>React and flask data</h1>
-                <p>{data.name}</p>
-                <p>{data.age}</p>
-                <p>{data.date}</p>
-                <p>{data.programming}</p>
-
-            </header>
-        </div>
+        <h2>
+          {viewType === "week"
+            ? "Week/Day View"
+            : viewType === "month"
+            ? "Month View"
+            : "Multi-Month View"}
+        </h2>
+        <div id="calendar" style={{ maxWidth: "1300px" }}></div>
       </main>
     </div>
   );
 }
+
+
+  // useEffect(() => {
+  //   console.log("Backend URL:", process.env.NEXT_PUBLIC_BACKEND_URL);
+  //   fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/events`).then((response) => {
+  //     if (!response.ok) {
+  //       throw new Error(`HTTP error! Status: ${response.status}`);
+  //     }
+  //     console.log(response);
+  //     response.json().then((event) => {
+        
+  //       console.log(event);
+  //       setEvent ({
+  //         startDate: "2024-12-01T00:00:00",
+  //         endDate: "2024-12-07T23:59:59"
+  //       })
+        
+  //       // setEvent({
+  //       //   name: event.Name,
+  //       //   age: event.Age,
+  //       //   date: event.Date,
+  //       //   programming: event.programming,
+  //       // });  
+  //     })
+  //     .catch((error) => console.error("Error fetching data:", error));});
+  // }, []);
+
+  // useEffect(() => {
+  //   // Initialize Multi-Month Calendar
+  //   const multiMonthEl = document.getElementById("multiMonthCalendar");
+  //   if (multiMonthEl) {
+  //     const calendarMultiMonth = new Calendar(multiMonthEl, {
+  //       plugins: [multiMonthPlugin],
+  //       initialView: "multiMonthYear",
+  //       multiMonthMaxColumns: 1,
+  //       events: [
+  //         { title: "Project Deadline", start: "2024-12-05" },
+  //         { title: "Team Meeting", start: "2024-12-10" },
+  //       ],
+  //     });
+  //     calendarMultiMonth.render();
+  //   }
+
+  //   // Initialize Month Calendar
+  //   const monthEl = document.getElementById("monthCalendar");
+  //   if (monthEl) {
+  //     const calendarMonth = new Calendar(monthEl, {
+  //       plugins: [dayGridPlugin],
+  //       initialView: "dayGridMonth",
+  //       events: [
+  //         { title: "Holiday", start: "2024-12-20", end: "2024-12-25" },
+  //         { title: "Workshop", start: "2024-12-15" },
+  //       ],
+  //     });
+  //     calendarMonth.render();
+  //   }
+
+  //   // Initialize Week/Day Calendar
+  //   const weekEl = document.getElementById("weekCalendar");
+  //   if (weekEl) {
+  //     const calendarWeek = new Calendar(weekEl, {
+  //       plugins: [timeGridPlugin],
+  //       initialView: "timeGridWeek",
+  //       headerToolbar: {
+  //         left: "prev,next",
+  //         center: "title",
+  //         right: "timeGridWeek,timeGridDay",
+  //       },
+  //       events: [
+  //         { title: "Client Meeting", start: "2024-12-08T10:00:00", end: "2024-12-08T12:00:00" },
+  //         { title: "Code Review", start: "2024-12-09T14:00:00", end: "2024-12-09T15:00:00" },
+  //       ],
+  //     });
+  //     calendarWeek.render();
+  //   }
+  // }, []);
+
+
+/* <div>
+  <h2>Multi-Month View</h2>
+  <div id="multiMonthCalendar" style={{ maxWidth: "900px", marginBottom: "20px" }}></div>
+</div>
+
+<div>
+  <h2>Month View</h2>
+  <div id="monthCalendar" style={{ maxWidth: "900px", marginBottom: "20px" }}></div>
+</div>
+
+<div>
+  <h2>Week/Day View</h2>
+  <div id="weekCalendar" style={{ maxWidth: "900px" }}></div>
+</div>
+
+<div className="App">
+    <header className="App-header">
+        <h1>React and flask data</h1>
+        <p>{event.name}</p>
+        <p>{event.age}</p>
+        <p>{event.date}</p>
+        <p>{event.programming}</p>
+
+    </header>
+</div> */
