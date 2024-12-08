@@ -12,15 +12,20 @@ bun dev
 ```
 
 ## Backend:
+### Initialze Database
+```bash
+python create_db.py
+```
+### Run Server
+```bash
+python server.py
+```
+
 ### Activate Virtual Environment
 ```bash
 .venv/Scripts/activate
 # or
 . .venv/bin/activate
-```
-### Run Server
-```bash
-python server.py
 ```
 
 ## Libraries Installation

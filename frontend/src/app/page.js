@@ -30,103 +30,137 @@ export default function Home() {
 
   const [viewType, setViewType] = useState("week");
 
+  const [data, setData] = useState({
+    name: "",
+    age: 0,
+    date: "",
+    programming:"",
+  });
+
   useEffect(() => {
     console.log("Backend URL:", process.env.NEXT_PUBLIC_BACKEND_URL);
-    fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/events`).then((response) => {
+    fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/data`).then((response) => {
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
       console.log(response);
-      response.json().then((event) => {
+      response.json().then((data) => {
         
-        console.log(event);
-        setEvent ({
-          startDate: event.startDate,
-          endDate: event.endDate
-          // startDate: "2024-12-01T00:00:00",
-          // endDate: "2024-12-09T00:00:00"
-        })
+        console.log(data);
+        setData({
+          name: data.Name,
+          age: data.Age,
+          date: data.Date,
+          programming: data.programming,
+        });  
       })
       .catch((error) => console.error("Error fetching data:", error));});
   }, []);
 
-  useEffect(() => {
-    if (event.startDate && event.endDate) {
-      const start = new Date(event.startDate).getTime();
-      const end = new Date(event.endDate).getTime();
+  // useEffect(() => {
+  //   console.log("Backend URL:", process.env.NEXT_PUBLIC_BACKEND_URL);
+  //   fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/events`).then((response) => {
+  //     if (!response.ok) {
+  //       throw new Error(`HTTP error! Status: ${response.status}`);
+  //     }
+  //     console.log(response);
+  //     response.json().then((event) => {
+        
+  //       console.log(event);
+  //       setEvent ({
+  //         startDate: event.startDate,
+  //         endDate: event.endDate
+  //         // startDate: "2024-12-01T00:00:00",
+  //         // endDate: "2024-12-09T00:00:00"
+  //       })
+  //     })
+  //     .catch((error) => console.error("Error fetching data:", error));});
+  // }, []);
+
+  // useEffect(() => {
+  //   if (event.startDate && event.endDate) {
+  //     const start = new Date(event.startDate).getTime();
+  //     const end = new Date(event.endDate).getTime();
   
-      const differenceInMilliseconds = end - start;
-      const differenceInDays = differenceInMilliseconds / 1000 / 60 /60 / 24
+  //     const differenceInMilliseconds = end - start;
+  //     const differenceInDays = differenceInMilliseconds / 1000 / 60 /60 / 24
 
-      if (differenceInDays < 7) {
-        setViewType("week");
-      } else if (differenceInDays < 31) {
-        setViewType("month");
-      } else {
-        setViewType("multiMonth");
-      }
+  //     if (differenceInDays < 7) {
+  //       setViewType("week");
+  //     } else if (differenceInDays < 31) {
+  //       setViewType("month");
+  //     } else {
+  //       setViewType("multiMonth");
+  //     }
 
-      console.log(`Start Date: ${event.startDate}, End Date: ${event.endDate}`);
-      console.log(`Difference in Days: ${differenceInDays}`);
-    }
-  }, [event.startDate, event.endDate]);
+  //     console.log(`Start Date: ${event.startDate}, End Date: ${event.endDate}`);
+  //     console.log(`Difference in Days: ${differenceInDays}`);
+  //   }
+  // }, [event.startDate, event.endDate]);
 
-  useEffect(() => {
-    const calendarEl = document.getElementById("calendar");
-    if (calendarEl) {
-      let calendar;
-      if (viewType === "week") {
-        // Initialize Week/Day Calendar
-        calendar = new Calendar(calendarEl, {
-          plugins: [timeGridPlugin],
-          initialView: "timeGridWeek",
-          headerToolbar: {
-            left: "prev,next",
-            center: "title",
-            right: "timeGridWeek,timeGridDay",
-          },
-          events: [
-            { title: "Client Meeting", start: "2024-12-02T10:00:00", end: "2024-12-02T12:00:00" },
-            { title: "Code Review", start: "2024-12-03T14:00:00", end: "2024-12-03T15:00:00" },
-          ],
-        });
-      } else if (viewType === "month") {
-        // Initialize Month Calendar
-        calendar = new Calendar(calendarEl, {
-          plugins: [dayGridPlugin],
-          initialView: "dayGridMonth",
-          events: [
-            { title: "Holiday", start: "2024-12-20", end: "2024-12-25" },
-            { title: "Workshop", start: "2024-12-15" },
-          ],
-        });
-      } else if (viewType === "multiMonth") {
-        // Initialize Multi-Month Calendar
-        calendar = new Calendar(calendarEl, {
-          plugins: [multiMonthPlugin],
-          initialView: "multiMonthYear",
-          multiMonthMaxColumns: 1,
-          events: [
-            { title: "Project Deadline", start: "2024-12-05" },
-            { title: "Team Meeting", start: "2024-12-10" },
-          ],
-        });
-      }
-      calendar.render();
-    }
-  }, [viewType]);
+  // useEffect(() => {
+  //   const calendarEl = document.getElementById("calendar");
+  //   if (calendarEl) {
+  //     let calendar;
+  //     if (viewType === "week") {
+  //       // Initialize Week/Day Calendar
+  //       calendar = new Calendar(calendarEl, {
+  //         plugins: [timeGridPlugin],
+  //         initialView: "timeGridWeek",
+  //         headerToolbar: {
+  //           left: "prev,next",
+  //           center: "title",
+  //           right: "timeGridWeek,timeGridDay",
+  //         },
+  //         events: [
+  //           { title: "Client Meeting", start: "2024-12-02T10:00:00", end: "2024-12-02T12:00:00" },
+  //           { title: "Code Review", start: "2024-12-03T14:00:00", end: "2024-12-03T15:00:00" },
+  //         ],
+  //       });
+  //     } else if (viewType === "month") {
+  //       // Initialize Month Calendar
+  //       calendar = new Calendar(calendarEl, {
+  //         plugins: [dayGridPlugin],
+  //         initialView: "dayGridMonth",
+  //         events: [
+  //           { title: "Holiday", start: "2024-12-20", end: "2024-12-25" },
+  //           { title: "Workshop", start: "2024-12-15" },
+  //         ],
+  //       });
+  //     } else if (viewType === "multiMonth") {
+  //       // Initialize Multi-Month Calendar
+  //       calendar = new Calendar(calendarEl, {
+  //         plugins: [multiMonthPlugin],
+  //         initialView: "multiMonthYear",
+  //         multiMonthMaxColumns: 1,
+  //         events: [
+  //           { title: "Project Deadline", start: "2024-12-05" },
+  //           { title: "Team Meeting", start: "2024-12-10" },
+  //         ],
+  //       });
+  //     }
+  //     calendar.render();
+  //   }
+  // }, [viewType]);
 
   return (
     <div className={styles.page}>
       <main className={styles.main}>
-        <h2>
+          <div className="test">
+          <h1>React and flask data</h1>
+          <p>{data.name}</p>
+          <p>{data.age}</p>
+          <p>{data.date}</p>
+          <p>{data.programming}</p>
+        </div>
+        {/* <h2>
           {viewType === "week"
             ? "Week/Day View"
             : viewType === "month"
             ? "Month View"
             : "Multi-Month View"}
         </h2>
-        <div id="calendar" style={{ maxWidth: "1300px" }}></div>
+        <div id="calendar" style={{ maxWidth: "1300px" }}></div> */}
       </main>
     </div>
   );

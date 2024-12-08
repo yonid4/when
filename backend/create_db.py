@@ -17,5 +17,4 @@ cursor.execute("SHOW DATABASES")
 for db in cursor:
     print(db)
 
-with app.app_context():
-    whendb.create_all()
+

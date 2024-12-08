@@ -1,13 +1,16 @@
+import datetime
 import os
 from flask import Flask, render_template, request, url_for, redirect
+from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from tools import generate_uri_from_file
-
 from sqlalchemy.sql import func
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 app = Flask(__name__)
+CORS(app) 
+
 database_URI = generate_uri_from_file('db_config.yml')
 app.config['SQLALCHEMY_DATABASE_URI'] = database_URI
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:password@localhost/when'
@@ -79,6 +82,19 @@ class Calendar(db.Model):
     name = db.Column(db.String(128), nullable=False)
     userId = db.Column(db.Integer, db.ForeignKey('user.id'))
 
+# Test route for seeing a data
+@app.route('/data')
+def get_time():
+    x = datetime.datetime.now()
+
+    # Returning an api for showing in  reactjs
+    return {
+        'Name':"Merilyn", 
+        "Age":"22",
+        "Date":x, 
+        "programming":"python"
+    }
+
 if __name__ == '__main__':
     print("Done")
-    app.run(debug=True, port=8080)
+    app.run(debug=True, port=5000)
