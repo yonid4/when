@@ -30,6 +30,5 @@ python server.py
 
 ## Libraries Installation
 ```bash
-cd .\.venv\
 pip install -r requirements.txt
 ```
