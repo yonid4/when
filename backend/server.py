@@ -69,6 +69,7 @@ class User(db.Model):
     eventId = db.Column(db.Integer, db.ForeignKey('event.id'))
     coordinator = db.Column(db.Boolean, default=False)
 
+    # it doesnt work if I don't have the relationship in here too instaed of only in Event
     event = db.relationship(
         'Event',
         backref='participants',
@@ -146,13 +147,15 @@ def test_db():
     db.create_all()
 
     try:
-        if (user_exists("random@gmail.com")):
+        #checks if user exists in databse
+        if (user_exists("random@gmail.com")): #if exists, get information from databse and put it in user
             user = get_user_by_email("random@gmail.com")
-        else:
+        else: # if it doesnt exist, add it to database
             user = User("random@gmail.com", "Yoni", False)
             db.session.add(user)
             db.session.commit()
-    
+
+        #creating a new_event (need to add a check if this event just got created by the same user)
         new_event = Event(name="trial",
                       coordinator=user.id,
                       start=datetime.date(2024, 12, 10),
@@ -165,8 +168,10 @@ def test_db():
         db.session.add(new_event)
         db.session.commit()
         
+        # adding eventId to user
         user.eventId=new_event.id
         db.session.commit()
+
 
         startDate = datetime.date(2024, 12, 11)
         endDate = datetime.date(2024, 12, 11)
@@ -176,11 +181,14 @@ def test_db():
         start = datetime.datetime.combine(startDate, startTime)
         end = datetime.datetime.combine(endDate, endTime)
         
+        #creating a new user_unavailability
         user_unavailability = UserUnavailability(
                 start=start,
                 end=end,
                 userId=user.id
             )
+        
+        #if user_unavailability isn't in the database then commit
         if (not user_unavailability_exists(start, end, user.id)):
             db.session.add(user_unavailability)
             db.session.commit()
