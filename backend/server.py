@@ -7,6 +7,7 @@ from tools import generate_uri_from_file
 from sqlalchemy.sql import func
 
 
+import select
 import json
 import traceback
 from sqlalchemy import inspect
@@ -26,6 +27,11 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
+event_user=db.Table('event_user',
+                    db.Column('event_id', db.Integer, db.ForeignKey('event.id'), nullable=False),
+                    db.Column('user_id', db.Integer, db.ForeignKey('user.id'), nullable=False),
+                    )
+
 class Event(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(128), nullable=False)  
@@ -38,18 +44,12 @@ class Event(db.Model):
     numParticipants = db.Column(db.Integer, nullable=True)
     autocreate = db.Column(db.Boolean, default=False)
     finalized = db.Column(db.Boolean, default=False)
-    
-    # users = db.relationship('User', backref='eventParticipating', lazy=True)
-    users = db.relationship(
-        'User', 
-        backref='eventParticipating', 
-        lazy=True, 
-        primaryjoin="Event.id == User.eventId" #Specifieng primaryjoin
-    )
+
+    users = db.relationship('User', secondary=event_user, back_populates='events') #using back_populates instead of backref
     
     freeTimes = db.relationship('FreeBlock', backref='event', lazy=True)
     
-    def __init__(self, name, coordinator, start, end, earliest, latest, length, numParticipants=None):
+    def __init__(self, name, coordinator, start, end, earliest, latest, length, users=None, numParticipants=None):
         self.name = name
         self.coordinator = coordinator
         self.startDate = start
@@ -58,6 +58,8 @@ class Event(db.Model):
         self.latestTime = latest
         self.length = length
         self.numParticipants = numParticipants
+        if users:
+            self.users.extend(users)
     
     def __repr__(self):
         return f'<EVENT {self.name}\n{self.coordinator}>'
@@ -66,16 +68,9 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(320), nullable=False, unique=True)
     name = db.Column(db.String(128), nullable=False)
-    eventId = db.Column(db.Integer, db.ForeignKey('event.id'))
     coordinator = db.Column(db.Boolean, default=False)
-
-    # it doesnt work if I don't have the relationship in here too instaed of only in Event
-    event = db.relationship(
-        'Event',
-        backref='participants',
-        lazy=True,
-        primaryjoin="User.eventId == Event.id"
-    )
+    
+    events = db.relationship('Event', secondary=event_user, back_populates='users') #using back_populates instead of backref
 
     # preferences = Many to Many Relationship???
     calendars = db.relationship('Calendar', backref='owner', lazy=True)
@@ -140,6 +135,15 @@ def user_unavailability_exists(start, end, user_id):
     ).first()
     return existing_entry is not None
     
+def create_user(email, name, coordinator):
+    # Checks if user exists in databse
+    if (user_exists(email)): # If exists, get information from databse and put it in user
+        user = get_user_by_email(email)
+    else: # If it doesnt exist, add it to database
+        user = User(email=email, name=name, coordinator=coordinator)
+        db.session.add(user)
+        db.session.commit()
+    return user
 
 @app.route('/')
 def test_db():
@@ -147,31 +151,29 @@ def test_db():
     db.create_all()
 
     try:
-        #checks if user exists in databse
-        if (user_exists("random@gmail.com")): #if exists, get information from databse and put it in user
-            user = get_user_by_email("random@gmail.com")
-        else: # if it doesnt exist, add it to database
-            user = User("random@gmail.com", "Yoni", False)
-            db.session.add(user)
-            db.session.commit()
+        user1 = create_user("user1@gmail.com", "user1", True)
+        user2 = create_user("user2@gmail.com", "user2", False)
+        user3 = create_user("user3@gmail.com", "user3", False)
+        user4 = create_user("user4@gmail.com", "user4", False)
+        
 
-        #creating a new_event (need to add a check if this event just got created by the same user)
-        new_event = Event(name="trial",
-                      coordinator=user.id,
+        # Creating an event (need to add a check if this event just got created by the same user)
+        event = Event(name="trial",
+                      coordinator=user1.id,
                       start=datetime.date(2024, 12, 10),
                       end=datetime.date(2024, 12, 15),
                       earliest=datetime.time(9, 0),
                       latest=datetime.time(17, 0),
                       length=1.5,
-                      numParticipants=None
+                      numParticipants=None,
+                      users=[user1, user2, user4] # Add user to users during event creation. Or we can do it manualy later
                       )
-        db.session.add(new_event)
-        db.session.commit()
-        
-        # adding eventId to user
-        user.eventId=new_event.id
+        db.session.add(event)
         db.session.commit()
 
+        # Add user to event manualy (automatically updates user.events as well)
+        event.users.append(user3)
+        db.session.commit()
 
         startDate = datetime.date(2024, 12, 11)
         endDate = datetime.date(2024, 12, 11)
@@ -181,35 +183,66 @@ def test_db():
         start = datetime.datetime.combine(startDate, startTime)
         end = datetime.datetime.combine(endDate, endTime)
         
-        #creating a new user_unavailability
-        user_unavailability = UserUnavailability(
+        # Creating a new user_unavailability
+        user_unavailability1 = UserUnavailability(
                 start=start,
                 end=end,
-                userId=user.id
+                userId=user1.id
             )
         
-        #if user_unavailability isn't in the database then commit
-        if (not user_unavailability_exists(start, end, user.id)):
-            db.session.add(user_unavailability)
+        # If user_unavailability1 isn't in the database then commit
+        if (not user_unavailability_exists(start, end, user1.id)):
+            db.session.add(user_unavailability1)
             db.session.commit()
+        
+        startDate = datetime.date(2024, 12, 13)
+        endDate = datetime.date(2024, 12, 13)
+        startTime = datetime.time(16, 0)
+        endTime = datetime.time(18, 0)
+
+        start = datetime.datetime.combine(startDate, startTime)
+        end = datetime.datetime.combine(endDate, endTime)
+        
+        # Creating a new user_unavailability
+        user_unavailability2 = UserUnavailability(
+                start=start,
+                end=end,
+                userId=user2.id
+            )
+
+        # If user_unavailability2 isn't in the database then commit
+        if (not user_unavailability_exists(start, end, user2.id)):
+            db.session.add(user_unavailability2)
+            db.session.commit()
+
+
+        users_in_event = event.users
+        for user in users_in_event:
+            print(user.id)
+            print(user.name)
+            print(user.email)
+            print(user.coordinator)
     
         return {
-            "User id": user.id,
-            "User name":user.name,
-            "User email": user.email,
-            "Coordinator":user.coordinator,
-            "Event id":new_event.id,
-            "Event name":new_event.name,
-            "Event coordinator id": new_event.coordinator,
-            "Event start date": json.dumps(new_event.startDate.strftime("%Y-%m-%d %H:%M:%S")),
-            "Event end date": json.dumps(new_event.endDate.strftime("%Y-%m-%d %H:%M:%S")),
-            "Event start time": json.dumps(new_event.earliestTime.strftime("%Y-%m-%d %H:%M:%S")),
-            "Event end time": json.dumps(new_event.latestTime.strftime("%Y-%m-%d %H:%M:%S")),
-            "Event length": new_event.length,
-            "Event number of participants": new_event.numParticipants,
-            "User unavailability start": json.dumps(user_unavailability.start.strftime("%Y-%m-%d %H:%M:%S")),
-            "User unavailability end": json.dumps(user_unavailability.end.strftime("%Y-%m-%d %H:%M:%S")),
-            "User unavailability userId": user_unavailability.userId   
+            "User id": user1.id,
+            "User name":user1.name,
+            "User email": user1.email,
+            "Coordinator":user1.coordinator,
+            "Event id":event.id,
+            "Event name":event.name,
+            "Event coordinator id": event.coordinator,
+            "Event start date": json.dumps(event.startDate.strftime("%Y-%m-%d %H:%M:%S")),
+            "Event end date": json.dumps(event.endDate.strftime("%Y-%m-%d %H:%M:%S")),
+            "Event start time": json.dumps(event.earliestTime.strftime("%Y-%m-%d %H:%M:%S")),
+            "Event end time": json.dumps(event.latestTime.strftime("%Y-%m-%d %H:%M:%S")),
+            "Event length": event.length,
+            "Event number of participants": event.numParticipants,
+            "User unavailability1 start": json.dumps(user_unavailability1.start.strftime("%Y-%m-%d %H:%M:%S")),
+            "User unavailability1 end": json.dumps(user_unavailability1.end.strftime("%Y-%m-%d %H:%M:%S")),
+            "User unavailability1 userId": user_unavailability1.userId,
+            "User unavailability2 start": json.dumps(user_unavailability2.start.strftime("%Y-%m-%d %H:%M:%S")),
+            "User unavailability2 end": json.dumps(user_unavailability2.end.strftime("%Y-%m-%d %H:%M:%S")),
+            "User unavailability2 userId": user_unavailability2.userId  
         }
     except Exception as e:
             db.session.rollback()
