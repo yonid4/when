@@ -7,7 +7,6 @@ from tools import generate_uri_from_file
 from sqlalchemy.sql import func
 
 
-import select
 import json
 import traceback
 from sqlalchemy import inspect
@@ -145,9 +144,9 @@ def create_user(email, name, coordinator):
         db.session.commit()
     return user
 
-@app.route('/')
+@app.route('/test')
 def test_db():
-    # db.drop_all()
+    db.drop_all()
     db.create_all()
 
     try:
@@ -155,7 +154,12 @@ def test_db():
         user2 = create_user("user2@gmail.com", "user2", False)
         user3 = create_user("user3@gmail.com", "user3", False)
         user4 = create_user("user4@gmail.com", "user4", False)
-        
+
+        db.session.add(user1)
+        db.session.add(user2)
+        db.session.add(user3)
+        db.session.add(user4)
+        db.session.commit()
 
         # Creating an event (need to add a check if this event just got created by the same user)
         event = Event(name="trial",
@@ -233,8 +237,8 @@ def test_db():
             "Event coordinator id": event.coordinator,
             "Event start date": json.dumps(event.startDate.strftime("%Y-%m-%d %H:%M:%S")),
             "Event end date": json.dumps(event.endDate.strftime("%Y-%m-%d %H:%M:%S")),
-            "Event start time": json.dumps(event.earliestTime.strftime("%Y-%m-%d %H:%M:%S")),
-            "Event end time": json.dumps(event.latestTime.strftime("%Y-%m-%d %H:%M:%S")),
+            "Event start time": json.dumps(event.earliestTime.strftime("%H:%M:%S")),
+            "Event end time": json.dumps(event.latestTime.strftime("%H:%M:%S")),
             "Event length": event.length,
             "Event number of participants": event.numParticipants,
             "User unavailability1 start": json.dumps(user_unavailability1.start.strftime("%Y-%m-%d %H:%M:%S")),
