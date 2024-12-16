@@ -67,7 +67,6 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(320), nullable=False, unique=True)
     name = db.Column(db.String(128), nullable=False)
-    coordinator = db.Column(db.Boolean, default=False)
     
     events = db.relationship('Event', secondary=event_user, back_populates='users') #using back_populates instead of backref
 
@@ -75,10 +74,9 @@ class User(db.Model):
     calendars = db.relationship('Calendar', backref='owner', lazy=True)
     busyTimes = db.relationship('UserUnavailability', backref='busyUser', lazy=True)
 
-    def __init__(self, email, name, coordinator=False):
+    def __init__(self, email, name):
         self.email = email
         self.name = name
-        self.coordinator = coordinator
 
     def __repr__(self):
         return f'<USER {self.name}\n{self.email}\n{self.eventId}\n{self.coordinator}>'
@@ -134,12 +132,12 @@ def user_unavailability_exists(start, end, user_id):
     ).first()
     return existing_entry is not None
     
-def create_user(email, name, coordinator):
+def create_user(email, name):
     # Checks if user exists in databse
     if (user_exists(email)): # If exists, get information from databse and put it in user
         user = get_user_by_email(email)
     else: # If it doesnt exist, add it to database
-        user = User(email=email, name=name, coordinator=coordinator)
+        user = User(email=email, name=name)
         db.session.add(user)
         db.session.commit()
     return user
@@ -150,10 +148,10 @@ def test_db():
     db.create_all()
 
     try:
-        user1 = create_user("user1@gmail.com", "user1", True)
-        user2 = create_user("user2@gmail.com", "user2", False)
-        user3 = create_user("user3@gmail.com", "user3", False)
-        user4 = create_user("user4@gmail.com", "user4", False)
+        user1 = create_user("user1@gmail.com", "user1")
+        user2 = create_user("user2@gmail.com", "user2")
+        user3 = create_user("user3@gmail.com", "user3")
+        user4 = create_user("user4@gmail.com", "user4")
 
         db.session.add(user1)
         db.session.add(user2)
@@ -164,8 +162,8 @@ def test_db():
         # Creating an event (need to add a check if this event just got created by the same user)
         event = Event(name="trial",
                       coordinator=user1.id,
-                      start=datetime.date(2024, 12, 10),
-                      end=datetime.date(2024, 12, 15),
+                      start=datetime.date(2024, 12, 1),
+                      end=datetime.date(2024, 12, 6),
                       earliest=datetime.time(9, 0),
                       latest=datetime.time(17, 0),
                       length=1.5,
@@ -225,13 +223,11 @@ def test_db():
             print(user.id)
             print(user.name)
             print(user.email)
-            print(user.coordinator)
     
         return {
             "User id": user1.id,
             "User name":user1.name,
             "User email": user1.email,
-            "Coordinator":user1.coordinator,
             "Event id":event.id,
             "Event name":event.name,
             "Event coordinator id": event.coordinator,

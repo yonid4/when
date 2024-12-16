@@ -110,7 +110,7 @@ export default function Grid() {
   }, [viewType]);
 
   return (
-    <div className="container">
+    <div className="gridContainer">
       <div className="auto_create">auto create</div>
       <div className="i1">
         <div className="calendar">

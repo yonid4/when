@@ -7,7 +7,8 @@ html, body {
     margin: 0;
 }
 
-.container {
+/* grid container for Event Page */
+.gridContainer {
     color: black;
     height: 100vh;
     border: 2px solid red;
@@ -15,14 +16,14 @@ html, body {
     background-color: white; 
     grid-auto-rows: 1fr; 
     grid-template-columns: 1fr; 
-    grid-template-rows: 0.3fr 2.49fr 0.31fr; 
+    grid-template-rows: 0.3fr 2.49fr 0.31fr; /* size of rows in grid (we have 3 rows right now) */
     gap: 0px 0px; 
     grid-template-areas: 
-      "auto_create"
-      "i1"
-      "copy_link"; 
-  }
-  .i1 {
+        "auto_create"
+        "i1"
+        "copy_link"; 
+}
+.i1 {
     grid-area: i1; /* Assign grid area */
     border: 2px solid blue;
     display: grid; 
@@ -30,11 +31,25 @@ html, body {
     grid-template-rows: 1fr 1fr; 
     gap: 2px 2px; 
     grid-template-areas: 
-      "calendar user_list"
-      "calendar preferences"; 
-  }
-  .calendar { grid-area: calendar; }
-  .user_list { grid-area: user_list; }
-  .preferences { grid-area: preferences; }
-  .copy_link { grid-area: copy_link; }
-  .auto_create { grid-area: auto_create; }
+    "calendar user_list"
+    "calendar preferences"; 
+    }
+    .calendar { grid-area: calendar; }
+    .user_list { grid-area: user_list; }
+    .preferences { grid-area: preferences; }
+    .copy_link { grid-area: copy_link; }
+    .auto_create { grid-area: auto_create; }
+
+input[type=text], select {
+    width: 100%;
+    padding: 12px 20px;
+    margin: 8px 0;
+    display: inline-block;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+input[type=submit]:hover {
+    background-color: #45a049;
+}
