@@ -153,12 +153,6 @@ def test_db():
         user3 = create_user("user3@gmail.com", "user3")
         user4 = create_user("user4@gmail.com", "user4")
 
-        db.session.add(user1)
-        db.session.add(user2)
-        db.session.add(user3)
-        db.session.add(user4)
-        db.session.commit()
-
         # Creating an event (need to add a check if this event just got created by the same user)
         event = Event(name="trial",
                       coordinator=user1.id,
@@ -178,8 +172,8 @@ def test_db():
         db.session.commit()
 
         startDate = datetime.date(2024, 12, 11)
-        endDate = datetime.date(2024, 12, 11)
         startTime = datetime.time(12, 0)
+        endDate = datetime.date(2024, 12, 11)
         endTime = datetime.time(14, 0)
 
         start = datetime.datetime.combine(startDate, startTime)
