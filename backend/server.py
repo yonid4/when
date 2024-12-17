@@ -257,27 +257,6 @@ def get_time():
         "programming":"python"
     }
 
-@app.route('/describe_user_unavailability')
-def describe_user_unavailability():
-    try:
-        # Get the table structure using SQLAlchemy's inspector
-        inspector = inspect(db.engine)
-        columns = inspector.get_columns('user_unavailability')
-
-        # Format and return column details
-        column_details = []
-        for column in columns:
-            column_details.append({
-                "name": column['name'],
-                "type": str(column['type']),
-                "nullable": column['nullable'],
-                "default": column.get('default'),
-                "primary_key": column.get('primary_key', False)
-            })
-        return {"columns": column_details}
-    except Exception as e:
-        return {"error": str(e)}, 500
-
 if __name__ == '__main__':
     print("Done")
     app.run(debug=True, port=5000)
