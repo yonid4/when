@@ -211,7 +211,6 @@ def test_db():
             db.session.add(user_unavailability2)
             db.session.commit()
 
-
         users_in_event = event.users
         for user in users_in_event:
             print(user.id)
