@@ -9,6 +9,8 @@ export default function landing() {
     const [startMinute, setStartMinute] = useState(""); // State for start minute
     const [endHour, setEndHour] = useState(""); // State for end hour
     const [endMinute, setEndMinute] = useState(""); // State for end minute
+    const [lengthHours, setLengthHours] = useState("");
+    const [lengthMinutes, setLengthMinutes] = useState("");
 
     const hourOptions = Array.from({ length: 24 }, (_, i) => ({
         value: i,
@@ -20,12 +22,51 @@ export default function landing() {
         display: `${(i * 10).toString().padStart(2, '0')}`,
     }));
 
+    const hoursCount = Array.from({ length: 30 }, (_, i) => i + 1);
+
+    const handleSubmit = (event) => {
+        event.preventDefault(); // Prevents default form submission behavior
+
+        // Get form values
+        const formData = {
+            eventName: event.target.eventName.value,
+            eventStartDate: event.target.eventStartDate.value,
+            eventEndDate: event.target.eventEndDate.value,
+            startTime: `${startHour}:${startMinute}`,
+            endTime: `${endHour}:${endMinute}`,
+            eventLength: `${lengthHours}:${lengthMinutes}`,
+            // eventLength: event.target.eventLength.value,
+            participantsCount: event.target.participantsCount.value,
+        };
+
+        // Validation: Ensure required fields are filled
+        if (
+            !formData.eventName ||
+            !formData.eventStartDate ||
+            !formData.eventEndDate ||
+            !startHour ||
+            !startMinute ||
+            !endHour ||
+            !endMinute ||
+            !formData.eventLength
+        ) {
+            alert("Please fill out all required fields!");
+            return;
+        }
+        
+        console.log("Form Data:");
+        Object.entries(formData).forEach(([key, value]) => {
+            console.log(`${key}:`, value);
+        });
+    }
+
     return (
         <>
-            {/* header showing in every page. Written in app/layout.js */}
+            {/* <a className="header" href="http://localhost:3000">When.</a> */}
+            <div className="header" style={{ color: "blue" }}>When.</div>
 
             <div className="center">
-                <form>
+                <form onSubmit={handleSubmit}>
                     {/* Event Name label & input */}
                     <label for="eventName">Event Name:</label>
                     <input type="text" id="eventName" name="eventname" placeholder="Event name.." style={{ color: "white" }}></input>
@@ -93,12 +134,38 @@ export default function landing() {
                     </div>
 
                     {/* Event Length label & input */}
-                    <label for="eventLength">Estimated  Event Length</label>
-                    <input type="time" id="eventLength" name="eventlength" defaultValue="00:00" style={{ fontSize: "15px", color: "white" }}></input>
+                    <label for="eventLength">Estimated  Event Length</label>   
+                    <div id="eventLength" style={{ display: "flex", width: "300px", gap: "5px", alignItems: "center"}}>
+                        {/* Hour Dropdown for Event Length */}
+                        <select id="lengthHours" name="lengthHours" value={lengthHours} onChange={(e) => setLengthHours(e.target.value)} style={{ fontSize: "12px" }}>
+                            <option value="" disabled>
+                                Select Hours
+                            </option>
+                            {hoursCount.map(hour => (
+                                <option key={hour} value={hour}>
+                                    {hour}
+                                </option>
+                            ))}
+                        </select>
+
+                        {/* Minute Dropdown for Event Length */}
+                        <select id="lengthMinutes" name="lengthMinutes" value={lengthMinutes} onChange={(e) => setLengthMinutes(e.target.value)} style={{ fontSize: "12px" }}>
+                            <option value="" disabled>
+                                Select Minutes
+                            </option>
+                            {minuteOptions.map(option => (
+                                <option key={option.value} value={option.value}>
+                                    {option.display}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
 
                     {/* Number of Participants label & input */}
                     <label for="participantsCount">No. of participants:</label>
                     <input type="number" id="participantsCount" name="participantscount" placeholder="Number of Participants.." style={{ height: "30px" , width: "180px" ,fontSize: "15px", color: "white" }}></input>
+                            
+                    <button type="submit" style={{ fontSize: "30px", display: "flex", position: "absolute", right: "47.5%" }}>Create Event</button>
                 </form>
             </div>
         </>

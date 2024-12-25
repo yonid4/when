@@ -110,24 +110,27 @@ export default function Grid() {
   }, [viewType]);
 
   return (
-    <div className="eventGrid">
-      <div className="auto_create">auto create</div>
-      <div className="i1">
-        <div className="calendar">
-          <h2>
-            {viewType === "week"
-              ? "Week/Day View"
-              : viewType === "month"
-              ? "Month View"
-              : "Multi-Month View"}
-          </h2>
-          <div id="calendar"></div>
+    <>
+      <a className="header" href="http://localhost:3000">When.</a>
+      <div className="eventGrid">
+        <div className="auto_create">auto create</div>
+        <div className="i1">
+          <div className="calendar">
+            <h2>
+              {viewType === "week"
+                ? "Week/Day View"
+                : viewType === "month"
+                ? "Month View"
+                : "Multi-Month View"}
+            </h2>
+            <div id="calendar"></div>
+          </div>
+          <div className="user_list">user list</div>
+          <div className="preferences">preferences</div>
         </div>
-        <div className="user_list">user list</div>
-        <div className="preferences">preferences</div>
+        <div className="copy_link">copy link</div>
       </div>
-      <div className="copy_link">copy link</div>
-    </div>
+    </>
   );
 }
 
