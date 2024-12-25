@@ -1,401 +1,106 @@
 "use client";
 
-import Image from "next/image";
 import styles from "./page.module.css";
 import React, { useState, useEffect } from "react";
-
-import { Calendar } from '@fullcalendar/core'
-import multiMonthPlugin from '@fullcalendar/multimonth'
-import dayGridPlugin from '@fullcalendar/daygrid'
-import timeGridPlugin from '@fullcalendar/timegrid'
-import { throwIfDisallowedDynamic } from "next/dist/server/app-render/dynamic-rendering";
-import { DaySeriesModel } from "@fullcalendar/core/internal";
-
-
 import './App.css';
 
-// Helper function to clean the escaped dates
-function cleanDate(dateString) {
-  return dateString.replace(/^\\*"/, "").replace(/\\*"$/, "");
+export default function landing() {
+    const [startHour, setStartHour] = useState(""); // State for start hour
+    const [startMinute, setStartMinute] = useState(""); // State for start minute
+    const [endHour, setEndHour] = useState(""); // State for end hour
+    const [endMinute, setEndMinute] = useState(""); // State for end minute
+
+    const hourOptions = Array.from({ length: 24 }, (_, i) => ({
+        value: i,
+        display: `${i % 12 === 0 ? 12 : i % 12} ${i < 12 ? 'AM' : 'PM'}`,
+    }));
+
+    const minuteOptions = Array.from({ length: 6 }, (_, i) => ({
+        value: i * 10,
+        display: `${(i * 10).toString().padStart(2, '0')}`,
+    }));
+
+    return (
+        <>
+            {/* header showing in every page. Written in app/layout.js */}
+
+            <div className="center">
+                <form>
+                    {/* Event Name label & input */}
+                    <label for="eventName">Event Name:</label>
+                    <input type="text" id="eventName" name="eventname" placeholder="Event name.." style={{ color: "white" }}></input>
+
+                    {/* Event Start Date label & input */}
+                    <label for="eventStartDate">Event Start Date:</label>
+                    <input type="date" id="eventStartDate" name="eventstardate" style={{ fontSize: "15px", color: "white" }}></input>
+
+                    {/* Event End Date label & input */}
+                    <label for="eventEndDate">Event End Date:</label>
+                    <input type="date" id="eventEndDate" name="eventenddate" style={{ fontSize: "15px", color: "white" }}></input>
+
+                    <label for="eventStartTime">No Earlier Than:</label>
+                    <div id="eventStartTime" style={{ display: "flex", width: "300px", gap: "5px", alignItems: "center" }}>
+                        {/* Hour Dropdown for Event Start Time */}
+                        <select id="startHour" name="startHour" value={startHour} onChange={(e) => setStartHour(e.target.value)} style={{ fontSize: "12px" }}>
+                            <option value="" disabled>
+                                Select Hour
+                            </option>
+                            {hourOptions.map(option => (
+                                <option key={option.value} value={option.value}>
+                                    {option.display}
+                                </option>
+                            ))}
+                        </select>
+
+                        {/* Minute Dropdown for Event Start Time */}
+                        <select id="startMinute" name="startMinute" value={startMinute} onChange={(e) => setStartMinute(e.target.value)} style={{ fontSize: "12px" }}>
+                            <option value="" disabled>
+                                Select Minutes
+                            </option>
+                            {minuteOptions.map(option => (
+                                <option key={option.value} value={option.value}>
+                                    {option.display}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    
+                    <label for="eventEndTime">No Earlier Than:</label>
+                    <div id="eventEndTime" style={{ display: "flex", width: "300px", gap: "5px", alignItems: "center"}}>
+                        {/* Hour Dropdown for Event End Time */}
+                        <select id="endHour" name="endHour" value={endHour} onChange={(e) => setEndHour(e.target.value)} style={{ fontSize: "12px" }}> 
+                            <option value="" disabled>
+                                Select Hour
+                            </option>   
+                            {hourOptions.map(option => (
+                                <option key={option.value} value={option.value}>
+                                    {option.display}
+                                </option>
+                            ))}
+                        </select>
+
+                        {/* Minutes Dropdown for Evenet End Time */}
+                        <select id="endMinute" name="endMinute" value={endMinute} onChange={(e) => setEndMinute(e.target.value)} style={{ fontSize: "12px" }}>
+                            <option value="" disabled>
+                                Select Minutes
+                            </option>
+                            {minuteOptions.map(option => (
+                                <option key={option.value} value={option.value}>
+                                    {option.display}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* Event Length label & input */}
+                    <label for="eventLength">Estimated  Event Length</label>
+                    <input type="time" id="eventLength" name="eventlength" defaultValue="00:00" style={{ fontSize: "15px", color: "white" }}></input>
+
+                    {/* Number of Participants label & input */}
+                    <label for="participantsCount">No. of participants:</label>
+                    <input type="number" id="participantsCount" name="participantscount" placeholder="Number of Participants.." style={{ height: "30px" , width: "180px" ,fontSize: "15px", color: "white" }}></input>
+                </form>
+            </div>
+        </>
+    )
 }
-
-export default function Grid() {
-  const [event, setEvent] = useState({
-    id: "",
-    name: "",
-    startDate: null,
-    endDate: null,
-    earliestTime: "",
-    latestTime: "",
-  });
-  const [viewType, setViewType] = useState("week");
-
-  // Fetch event data
-  useEffect(() => {
-    // console.log("Backend URL:", process.env.NEXT_PUBLIC_BACKEND_URL);
-    fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/test`)
-      .then((response) => {
-        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-        return response.json();
-      })
-      .then((data) => {
-        setEvent({
-          id: data["Event id"],
-          name: data["Event name"],
-          startDate: cleanDate(data["Event start date"]),
-          endDate: cleanDate(data["Event end date"]),
-          earliestTime: cleanDate(data["Event start time"]),
-          latestTime: cleanDate(data["Event end time"]),
-        });
-      })
-      .catch((error) => console.error("Error fetching data:", error));
-  }, []);
-
-  // Determine view type based on event start and end dates
-  useEffect(() => {
-    if (event.startDate && event.endDate) {
-      const start = new Date(event.startDate).getTime();
-      const end = new Date(event.endDate).getTime();
-
-      console.log("Start Date:", event.startDate, "End Date:", event.endDate);
-
-      const differenceInDays = (end - start) / (1000 * 60 * 60 * 24);
-
-      if (differenceInDays < 7) setViewType("week");
-      else if (differenceInDays < 31) setViewType("month");
-      else setViewType("multiMonth");
-    }
-  }, [event.startDate, event.endDate]);
-
-  // Initialize FullCalendar
-  useEffect(() => {
-    const calendarEl = document.getElementById("calendar");
-    if (calendarEl) {
-      let calendar;
-
-      if (viewType === "week") {
-        calendar = new Calendar(calendarEl, {
-          plugins: [timeGridPlugin],
-          initialView: "timeGridWeek",
-          headerToolbar: { left: "prev,next", center: "title", right: "timeGridWeek,timeGridDay" },
-          
-          // need to replace this with busy/free times (depends if we 
-          // want to show the users the free times or busy times)
-          events: [ 
-            { title: "Meeting", start: "2024-12-02T10:00:00", end: "2024-12-02T12:00:00" },
-          ],
-        });
-      } else if (viewType === "month") {
-        calendar = new Calendar(calendarEl, {
-          plugins: [dayGridPlugin],
-          initialView: "dayGridMonth",
-
-          // need to replace this with busy/free times (depends if we 
-          // want to show the users the free times or busy times)
-          events: [{ title: "Holiday", start: "2024-12-20", end: "2024-12-25" }],
-        });
-      } else if (viewType === "multiMonth") {
-        calendar = new Calendar(calendarEl, {
-          plugins: [multiMonthPlugin],
-          initialView: "multiMonthYear",
-          multiMonthMaxColumns: 1,
-
-          // need to replace this with busy/free times (depends if we 
-          // want to show the users the free times or busy times)
-          events: [{ title: "Project Deadline", start: "2024-12-05" }],
-        });
-      }
-      calendar.render();
-    }
-  }, [viewType]);
-
-  return (
-    <div className="gridContainer">
-      <div className="auto_create">auto create</div>
-      <div className="i1">
-        <div className="calendar">
-          <h2>
-            {viewType === "week"
-              ? "Week/Day View"
-              : viewType === "month"
-              ? "Month View"
-              : "Multi-Month View"}
-          </h2>
-          <div id="calendar"></div>
-        </div>
-        <div className="user_list">user list</div>
-        <div className="preferences">preferences</div>
-      </div>
-      <div className="copy_link">copy link</div>
-    </div>
-  );
-}
-
-// export default function Home() {
-function Home() {
-  const [event, setEvent] = useState({
-    id: "",
-    name: "",
-    startDate: Date,
-    endDate: Date,
-    earliestTime: "",
-    latestTime: "",
-    length: 0,
-    numOfParticipants: -1,
-    autoCreate: false,
-    finilized: false,
-    user: [],
-    busyTimes: [("","")]
-  });
-
-  const [viewType, setViewType] = useState("week");
-
-  const [data, setData] = useState({
-    name: "",
-    age: 0,
-    date: "",
-    programming:"",
-  });
-
-  useEffect(() => {
-    console.log("Backend URL:", process.env.NEXT_PUBLIC_BACKEND_URL);
-    fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/data`).then((response) => {
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-      console.log(response);
-      response.json().then((data) => {
-        
-        console.log(data);
-        setData({
-          name: data.Name,
-          age: data.Age,
-          date: data.Date,
-          programming: data.programming,
-        });  
-      })
-      .catch((error) => console.error("Error fetching data:", error));});
-  }, []);
-
-  // useEffect(() => {
-  //   console.log("Backend URL:", process.env.NEXT_PUBLIC_BACKEND_URL);
-  //   fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/events`).then((response) => {
-  //     if (!response.ok) {
-  //       throw new Error(`HTTP error! Status: ${response.status}`);
-  //     }
-  //     console.log(response);
-  //     response.json().then((event) => {
-        
-  //       console.log(event);
-  //       setEvent ({
-  //         // startDate: event.startDate,
-  //         // endDate: event.endDate
-  //         startDate: "2024-12-01T00:00:00",
-  //         endDate: "2024-12-07T00:00:00"
-  //       })
-  //     })
-  //     .catch((error) => console.error("Error fetching data:", error));});
-  // }, []);
-
-  useEffect(() => {
-      console.log(event);
-      setEvent ({
-        // startDate: event.startDate,
-        // endDate: event.endDate
-        startDate: "2024-12-01T00:00:00",
-        endDate: "2024-12-09T00:00:00"
-      })
-    }
-, []);
-
-  useEffect(() => {
-    if (event.startDate && event.endDate) {
-      const start = new Date(event.startDate).getTime();
-      const end = new Date(event.endDate).getTime();
-  
-      const differenceInMilliseconds = end - start;
-      const differenceInDays = differenceInMilliseconds / 1000 / 60 /60 / 24
-
-      if (differenceInDays < 7) {
-        setViewType("week");
-      } else if (differenceInDays < 31) {
-        setViewType("month");
-      } else {
-        setViewType("multiMonth");
-      }
-
-      console.log(`Start Date: ${event.startDate}, End Date: ${event.endDate}`);
-      console.log(`Difference in Days: ${differenceInDays}`);
-    }
-  }, [event.startDate, event.endDate]);
-
-  useEffect(() => {
-    const calendarEl = document.getElementById("calendar");
-    if (calendarEl) {
-      let calendar;
-      if (viewType === "week") {
-        // Initialize Week/Day Calendar
-        calendar = new Calendar(calendarEl, {
-          plugins: [timeGridPlugin],
-          initialView: "timeGridWeek",
-          headerToolbar: {
-            left: "prev,next",
-            center: "title",
-            right: "timeGridWeek,timeGridDay",
-          },
-          events: [
-            { title: "Client Meeting", start: "2024-12-02T10:00:00", end: "2024-12-02T12:00:00" },
-            { title: "Code Review", start: "2024-12-03T14:00:00", end: "2024-12-03T15:00:00" },
-          ],
-        });
-      } else if (viewType === "month") {
-        // Initialize Month Calendar
-        calendar = new Calendar(calendarEl, {
-          plugins: [dayGridPlugin],
-          initialView: "dayGridMonth",
-          events: [
-            { title: "Holiday", start: "2024-12-20", end: "2024-12-25" },
-            { title: "Workshop", start: "2024-12-15" },
-          ],
-        });
-      } else if (viewType === "multiMonth") {
-        // Initialize Multi-Month Calendar
-        calendar = new Calendar(calendarEl, {
-          plugins: [multiMonthPlugin],
-          initialView: "multiMonthYear",
-          multiMonthMaxColumns: 1,
-          events: [
-            { title: "Project Deadline", start: "2024-12-05" },
-            { title: "Team Meeting", start: "2024-12-10" },
-          ],
-        });
-      }
-      calendar.render();
-    }
-  }, [viewType]);
-
-  return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-          <div className="test">
-          <h1>React and flask data</h1>
-          <p>{data.name}</p>
-          <p>{data.age}</p>
-          <p>{data.date}</p>
-          <p>{data.programming}</p>
-        </div>
-        <h2>
-          {viewType === "week"
-            ? "Week/Day View"
-            : viewType === "month"
-            ? "Month View"
-            : "Multi-Month View"}
-        </h2>
-        <div id="calendar" style={{ maxWidth: "1300px" }}></div>
-      </main>
-    </div>
-  );
-}
-
-
-  // useEffect(() => {
-  //   console.log("Backend URL:", process.env.NEXT_PUBLIC_BACKEND_URL);
-  //   fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/events`).then((response) => {
-  //     if (!response.ok) {
-  //       throw new Error(`HTTP error! Status: ${response.status}`);
-  //     }
-  //     console.log(response);
-  //     response.json().then((event) => {
-        
-  //       console.log(event);
-  //       setEvent ({
-  //         startDate: "2024-12-01T00:00:00",
-  //         endDate: "2024-12-07T23:59:59"
-  //       })
-        
-  //       // setEvent({
-  //       //   name: event.Name,
-  //       //   age: event.Age,
-  //       //   date: event.Date,
-  //       //   programming: event.programming,
-  //       // });  
-  //     })
-  //     .catch((error) => console.error("Error fetching data:", error));});
-  // }, []);
-
-  // useEffect(() => {
-  //   // Initialize Multi-Month Calendar
-  //   const multiMonthEl = document.getElementById("multiMonthCalendar");
-  //   if (multiMonthEl) {
-  //     const calendarMultiMonth = new Calendar(multiMonthEl, {
-  //       plugins: [multiMonthPlugin],
-  //       initialView: "multiMonthYear",
-  //       multiMonthMaxColumns: 1,
-  //       events: [
-  //         { title: "Project Deadline", start: "2024-12-05" },
-  //         { title: "Team Meeting", start: "2024-12-10" },
-  //       ],
-  //     });
-  //     calendarMultiMonth.render();
-  //   }
-
-  //   // Initialize Month Calendar
-  //   const monthEl = document.getElementById("monthCalendar");
-  //   if (monthEl) {
-  //     const calendarMonth = new Calendar(monthEl, {
-  //       plugins: [dayGridPlugin],
-  //       initialView: "dayGridMonth",
-  //       events: [
-  //         { title: "Holiday", start: "2024-12-20", end: "2024-12-25" },
-  //         { title: "Workshop", start: "2024-12-15" },
-  //       ],
-  //     });
-  //     calendarMonth.render();
-  //   }
-
-  //   // Initialize Week/Day Calendar
-  //   const weekEl = document.getElementById("weekCalendar");
-  //   if (weekEl) {
-  //     const calendarWeek = new Calendar(weekEl, {
-  //       plugins: [timeGridPlugin],
-  //       initialView: "timeGridWeek",
-  //       headerToolbar: {
-  //         left: "prev,next",
-  //         center: "title",
-  //         right: "timeGridWeek,timeGridDay",
-  //       },
-  //       events: [
-  //         { title: "Client Meeting", start: "2024-12-08T10:00:00", end: "2024-12-08T12:00:00" },
-  //         { title: "Code Review", start: "2024-12-09T14:00:00", end: "2024-12-09T15:00:00" },
-  //       ],
-  //     });
-  //     calendarWeek.render();
-  //   }
-  // }, []);
-
-
-/* <div>
-  <h2>Multi-Month View</h2>
-  <div id="multiMonthCalendar" style={{ maxWidth: "900px", marginBottom: "20px" }}></div>
-</div>
-
-<div>
-  <h2>Month View</h2>
-  <div id="monthCalendar" style={{ maxWidth: "900px", marginBottom: "20px" }}></div>
-</div>
-
-<div>
-  <h2>Week/Day View</h2>
-  <div id="weekCalendar" style={{ maxWidth: "900px" }}></div>
-</div>
-
-<div className="App">
-    <header className="App-header">
-        <h1>React and flask data</h1>
-        <p>{event.name}</p>
-        <p>{event.age}</p>
-        <p>{event.date}</p>
-        <p>{event.programming}</p>
-
-    </header>
-</div> */

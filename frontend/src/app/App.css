@@ -7,8 +7,55 @@ html, body {
     margin: 0;
 }
 
+.header {
+    color: blue;
+    font-weight: bold;
+    background-color: white;
+    height: 45px;
+    border: 1px solid #ccc;
+    font-size: 30px;
+
+    width: 100vw;
+    box-sizing: border-box;
+    display: block; 
+    margin: 0; 
+    /* padding: 0; */
+}
+
+.center {
+    background-color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin:0 auto;
+}
+
+form label {
+    color: black;
+}
+
+form input {
+    color: black;
+    display: block;
+    margin-bottom: 10px; /* Add space between fields */
+}
+
+#timePicker {
+    display: flex;
+    gap: 10px; /* Space between the dropdowns */
+    align-items: center; /* Aligns items vertically */
+}
+
+select {
+    padding: 8px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
 /* grid container for Event Page */
-.gridContainer {
+.eventGrid {
     color: black;
     height: 100vh;
     border: 2px solid red;
