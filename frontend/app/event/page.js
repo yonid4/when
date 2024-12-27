@@ -111,7 +111,7 @@ export default function Grid() {
 
   return (
     <>
-      <a className="header" href="http://localhost:3000">When.</a>
+      <a className="header" href="http://localhost:3000">when.</a>
       <div className="eventGrid">
         <div className="auto_create">auto create</div>
         <div className="i1">

@@ -62,8 +62,8 @@ export default function landing() {
 
     return (
         <>
-            {/* <a className="header" href="http://localhost:3000">When.</a> */}
-            <div className="header" style={{ color: "blue" }}>When.</div>
+            {/* <a className="header" href="http://localhost:3000">when.</a> */}
+            <div className="header" style={{ color: "blue" }}>when.</div>
 
             <div className="center">
                 <form onSubmit={handleSubmit}>

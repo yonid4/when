@@ -8,6 +8,26 @@ html, body {
     overflow: hidden;
 }
 
+.react-datepicker-input {
+    color: black;
+    background-color: transparent; /* Optional: make the background transparent */
+    border: 1px solid white; /* Optional: to match white styling */
+    padding: 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    min-width: 300px;
+}
+
+.react-datepicker-input::placeholder {
+    color: lightgray; /* Placeholder color */
+}
+
+.react-datepicker-wrapper,
+.react-datepicker__input-container {
+    display: block;
+    width: fit-content;
+}
+
 .header {
     color: blue;
     font-weight: bold;
@@ -28,7 +48,7 @@ html, body {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100%;
+    height: 100vh;
     margin:0 auto;
     padding: 80px;
     --button-hover: #383838;
