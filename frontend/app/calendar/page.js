@@ -18,7 +18,7 @@ export default function Landing() {
   const [dateRange, setDateRange] = useState([null, null]);
   const [startDate, endDate] = dateRange;
 
-  // Your existing options arrays...
+  // Options arrays...
   const hourOptions = Array.from({ length: 24 }, (_, i) => ({
     value: i,
     display: `${i % 12 === 0 ? 12 : i % 12} ${i < 12 ? 'AM' : 'PM'}`,
