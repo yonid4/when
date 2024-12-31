@@ -33,7 +33,7 @@ export default function Grid() {
   // Fetch event data
   useEffect(() => {
     // console.log("Backend URL:", process.env.NEXT_PUBLIC_BACKEND_URL);
-    fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/test`)
+    fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/test_db`)
       .then((response) => {
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         return response.json();
