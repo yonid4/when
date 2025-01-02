@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import styles from "./page.module.css";
+import styles from "../page.module.css";
 import React, { useState, useEffect } from "react";
 
 import { Calendar } from '@fullcalendar/core'
@@ -12,7 +12,7 @@ import { throwIfDisallowedDynamic } from "next/dist/server/app-render/dynamic-re
 import { DaySeriesModel } from "@fullcalendar/core/internal";
 
 
-import './App.css';
+import '../App.css';
 
 // Helper function to clean the escaped dates
 function cleanDate(dateString) {
@@ -110,24 +110,27 @@ export default function Grid() {
   }, [viewType]);
 
   return (
-    <div className="gridContainer">
-      <div className="auto_create">auto create</div>
-      <div className="i1">
-        <div className="calendar">
-          <h2>
-            {viewType === "week"
-              ? "Week/Day View"
-              : viewType === "month"
-              ? "Month View"
-              : "Multi-Month View"}
-          </h2>
-          <div id="calendar"></div>
+    <>
+      <a className="header" href="http://localhost:3000">when.</a>
+      <div className="eventGrid">
+        <div className="auto_create">auto create</div>
+        <div className="i1">
+          <div className="calendar">
+            <h2>
+              {viewType === "week"
+                ? "Week/Day View"
+                : viewType === "month"
+                ? "Month View"
+                : "Multi-Month View"}
+            </h2>
+            <div id="calendar"></div>
+          </div>
+          <div className="user_list">user list</div>
+          <div className="preferences">preferences</div>
         </div>
-        <div className="user_list">user list</div>
-        <div className="preferences">preferences</div>
+        <div className="copy_link">copy link</div>
       </div>
-      <div className="copy_link">copy link</div>
-    </div>
+    </>
   );
 }
 

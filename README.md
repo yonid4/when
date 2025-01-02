@@ -29,7 +29,12 @@ python server.py
 . .venv/bin/activate
 ```
 
-## Libraries Installation
+## Backend Libraries Installation
 ```bash
 pip install -r requirements.txt
+```
+
+## Backend Libraries Installation
+```bash
+npm install -r requirements.txt
 ```
