@@ -18,6 +18,7 @@ python create_db.py
 ```
 ### Run Server
 ```bash
+flask run
 python server.py
 ```
 

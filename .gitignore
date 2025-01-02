@@ -2,7 +2,7 @@
 
 # dependencies
 */node_modules
-*/__pycache__
+__pycache__
 /.pnp
 .pnp.*
 .yarn/*
@@ -43,3 +43,6 @@ next-env.d.ts
 
 # backend
 db_config.yml
+
+# vscode
+.vscode
