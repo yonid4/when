@@ -19,7 +19,7 @@ function cleanDate(dateString) {
   return dateString.replace(/^\\*"/, "").replace(/\\*"$/, "");
 }
 
-export default function Grid() {
+export default function Event() {
   const [event, setEvent] = useState({
     id: "",
     name: "",
@@ -111,7 +111,6 @@ export default function Grid() {
 
   return (
     <>
-      <a className="header" href="http://localhost:3000">when.</a>
       <div className="eventGrid">
         <div className="auto_create">auto create</div>
         <div className="i1">

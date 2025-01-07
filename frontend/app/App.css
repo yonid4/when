@@ -54,14 +54,46 @@ html, body {
     --button-hover: #383838;
 }
 
+form {
+    display: flex;
+    flex-direction: column; /* Stack form groups vertically */
+    gap: 15x; /* Adds spacing between form groups */
+}
+
+form .form-group {
+    display: flex;
+    flex-direction: column; /* Stack label and input vertically */
+}
+
 form label {
     color: black;
+    text-align: center;
+    flex-direction: column; /* Stack label and input vertically */
 }
 
 form input {
     color: black;
-    display: block;
-    margin-bottom: 10px; /* Add space between fields */
+    background-color: white;
+    
+    height: 30px;
+    /* width: 180px; */
+    font-size: 15px;
+    margin-top: 5px;
+    
+    border: 1px solid #ccc; /* Add a border */
+    border-radius: 5px; /* Rounded corners */
+}
+
+form button {
+    margin-top: 15px;
+    color: black;
+    background-color: white;
+    font-size: 20px;
+    display: center;
+    position: bottom;
+    right: 47.5%;
+    border: 1px solid black;
+    border-radius: 5px;
 }
 
 #timePicker {
@@ -71,10 +103,12 @@ form input {
 }
 
 select {
+    color: black;
+    background-color: white;
     padding: 8px;
     font-size: 16px;
     border: 1px solid #ccc;
-    border-radius: 4px;
+    border-radius: 5px;
 }
 
 /* grid container for Event Page */
