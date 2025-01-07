@@ -7,7 +7,7 @@ event_user=db.Table('event_user',
 
 class Event(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    # uid = id = db.Column(db.String, nullable=False)  # needed for unique url id
+    uid = id = db.Column(db.String, nullable=False)  # needed for unique url id
     name = db.Column(db.String(128), nullable=False)  
     coordinator = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     startDate = db.Column(db.Date)
