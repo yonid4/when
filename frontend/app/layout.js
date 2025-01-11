@@ -21,13 +21,15 @@ export default function RootLayout({ children }) {
     <>
       <html lang="en">
         <body className={`${geistSans.variable} ${geistMono.variable}`}>
-          <Link className="header" href="/">
-            <Image src={logo} 
-              alt="Logo"
-              height={40}
-              width={120}
-            ></Image>
-          </Link>
+          <div className="header">
+            <Link href="/">
+              <Image src={logo} 
+                alt="Logo"
+                height={40}
+                width={120}
+              ></Image>
+            </Link>
+          </div>
           <div>{children}</div>
         </body>
       </html>

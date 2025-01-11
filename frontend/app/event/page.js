@@ -11,6 +11,7 @@ import timeGridPlugin from '@fullcalendar/timegrid'
 import { throwIfDisallowedDynamic } from "next/dist/server/app-render/dynamic-rendering";
 import { DaySeriesModel } from "@fullcalendar/core/internal";
 
+// import Calendar from 'react-calendar';
 
 import '../App.css';
 
@@ -19,7 +20,7 @@ function cleanDate(dateString) {
   return dateString.replace(/^\\*"/, "").replace(/\\*"$/, "");
 }
 
-export default function Event() {
+function Event() {
   const [event, setEvent] = useState({
     id: "",
     name: "",
@@ -78,10 +79,10 @@ export default function Event() {
           plugins: [timeGridPlugin],
           initialView: "timeGridWeek",
           headerToolbar: { left: "prev,next", center: "title", right: "timeGridWeek,timeGridDay" },
-          
+
           // need to replace this with busy/free times (depends if we 
           // want to show the users the free times or busy times)
-          events: [ 
+          events: [
             { title: "Meeting", start: "2024-12-02T10:00:00", end: "2024-12-02T12:00:00" },
           ],
         });
@@ -119,8 +120,8 @@ export default function Event() {
               {viewType === "week"
                 ? "Week/Day View"
                 : viewType === "month"
-                ? "Month View"
-                : "Multi-Month View"}
+                  ? "Month View"
+                  : "Multi-Month View"}
             </h2>
             <div id="calendar"></div>
           </div>
@@ -133,7 +134,10 @@ export default function Event() {
   );
 }
 
-// export default function Home() {
+export default Event;
+
+
+// Old code. Refrence for getting data from backend //
 function Home() {
   const [event, setEvent] = useState({
     id: "",
@@ -298,106 +302,3 @@ function Home() {
     </div>
   );
 }
-
-
-  // useEffect(() => {
-  //   console.log("Backend URL:", process.env.NEXT_PUBLIC_BACKEND_URL);
-  //   fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/events`).then((response) => {
-  //     if (!response.ok) {
-  //       throw new Error(`HTTP error! Status: ${response.status}`);
-  //     }
-  //     console.log(response);
-  //     response.json().then((event) => {
-        
-  //       console.log(event);
-  //       setEvent ({
-  //         startDate: "2024-12-01T00:00:00",
-  //         endDate: "2024-12-07T23:59:59"
-  //       })
-        
-  //       // setEvent({
-  //       //   name: event.Name,
-  //       //   age: event.Age,
-  //       //   date: event.Date,
-  //       //   programming: event.programming,
-  //       // });  
-  //     })
-  //     .catch((error) => console.error("Error fetching data:", error));});
-  // }, []);
-
-  // useEffect(() => {
-  //   // Initialize Multi-Month Calendar
-  //   const multiMonthEl = document.getElementById("multiMonthCalendar");
-  //   if (multiMonthEl) {
-  //     const calendarMultiMonth = new Calendar(multiMonthEl, {
-  //       plugins: [multiMonthPlugin],
-  //       initialView: "multiMonthYear",
-  //       multiMonthMaxColumns: 1,
-  //       events: [
-  //         { title: "Project Deadline", start: "2024-12-05" },
-  //         { title: "Team Meeting", start: "2024-12-10" },
-  //       ],
-  //     });
-  //     calendarMultiMonth.render();
-  //   }
-
-  //   // Initialize Month Calendar
-  //   const monthEl = document.getElementById("monthCalendar");
-  //   if (monthEl) {
-  //     const calendarMonth = new Calendar(monthEl, {
-  //       plugins: [dayGridPlugin],
-  //       initialView: "dayGridMonth",
-  //       events: [
-  //         { title: "Holiday", start: "2024-12-20", end: "2024-12-25" },
-  //         { title: "Workshop", start: "2024-12-15" },
-  //       ],
-  //     });
-  //     calendarMonth.render();
-  //   }
-
-  //   // Initialize Week/Day Calendar
-  //   const weekEl = document.getElementById("weekCalendar");
-  //   if (weekEl) {
-  //     const calendarWeek = new Calendar(weekEl, {
-  //       plugins: [timeGridPlugin],
-  //       initialView: "timeGridWeek",
-  //       headerToolbar: {
-  //         left: "prev,next",
-  //         center: "title",
-  //         right: "timeGridWeek,timeGridDay",
-  //       },
-  //       events: [
-  //         { title: "Client Meeting", start: "2024-12-08T10:00:00", end: "2024-12-08T12:00:00" },
-  //         { title: "Code Review", start: "2024-12-09T14:00:00", end: "2024-12-09T15:00:00" },
-  //       ],
-  //     });
-  //     calendarWeek.render();
-  //   }
-  // }, []);
-
-
-/* <div>
-  <h2>Multi-Month View</h2>
-  <div id="multiMonthCalendar" style={{ maxWidth: "900px", marginBottom: "20px" }}></div>
-</div>
-
-<div>
-  <h2>Month View</h2>
-  <div id="monthCalendar" style={{ maxWidth: "900px", marginBottom: "20px" }}></div>
-</div>
-
-<div>
-  <h2>Week/Day View</h2>
-  <div id="weekCalendar" style={{ maxWidth: "900px" }}></div>
-</div>
-
-<div className="App">
-    <header className="App-header">
-        <h1>React and flask data</h1>
-        <p>{event.name}</p>
-        <p>{event.age}</p>
-        <p>{event.date}</p>
-        <p>{event.programming}</p>
-
-    </header>
-</div> */

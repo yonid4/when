@@ -38,8 +38,10 @@ html, body {
 
     width: 100vw;
     box-sizing: border-box;
-    display: block; 
-    margin: 0; 
+    display: flex;
+    align-items: center;
+    padding-left: 10px; 
+    /* margin: 0;  */
     /* padding: 0; */
 }
 

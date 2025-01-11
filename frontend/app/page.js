@@ -7,14 +7,14 @@ import { format } from "date-fns";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
-export default function Landing() {
+function Landing() {
   const [startHour, setStartHour] = useState("");
   const [startMinute, setStartMinute] = useState("");
   const [endHour, setEndHour] = useState("");
   const [endMinute, setEndMinute] = useState("");
   const [lengthHours, setLengthHours] = useState("");
   const [lengthMinutes, setLengthMinutes] = useState("");
-  // State for date range
+  // State for event's date range
   const [dateRange, setDateRange] = useState([null, null]);
   const [startDate, endDate] = dateRange;
 
@@ -24,10 +24,6 @@ export default function Landing() {
     display: `${i % 12 === 0 ? 12 : i % 12} ${i < 12 ? 'AM' : 'PM'}`,
   }));
 
-  // const minuteOptions = Array.from({ length: 6 }, (_, i) => ({
-  //   value: i * 10,
-  //   display: `${(i * 10).toString().padStart(2, '0') + " minutes"}`,
-  // }));
   const minuteOptions = Array.from({ length: 7 }, (_, i) => ({
     display: `${i * 10} minutes`,
   }));
@@ -192,3 +188,5 @@ export default function Landing() {
     </>
   )
 }
+
+export default Landing;

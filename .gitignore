@@ -17,6 +17,7 @@ __pycache__
 # next.js
 */.next
 /out/
+node_modules/
 
 # production
 /build
