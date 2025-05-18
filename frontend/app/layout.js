@@ -20,13 +20,14 @@ export default function RootLayout({ children }) {
   return (
     <>
       <html lang="en">
-        <body className={`${geistSans.variable} ${geistMono.variable}`}>
+        <body className={`${geistSans.variable} ${geistMono.variable}`} suppressHydrationWarning>
           <div className="header">
             <Link href="/">
               <Image src={logo} 
                 alt="Logo"
                 height={40}
                 width={120}
+                priority
               ></Image>
             </Link>
           </div>

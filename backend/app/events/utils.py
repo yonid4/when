@@ -10,7 +10,7 @@ def get_event_by_uid(urlId):
 
 def create_event(name, coordinator, start, end, earliest, latest, length, numParticipants=None, users=None):
     event = Event(name, coordinator, start, end, earliest, latest, length, numParticipants, users[coordinator])
-    event.urlId = generate_uid()  # some unique id generator
+    event.urlId = generate_urlId()  # some unique id generator
     db.session.add(event)
     db.session.commit()
 

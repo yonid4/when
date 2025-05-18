@@ -65,13 +65,12 @@ function Landing() {
     <>
       <div className="center">
         <form onSubmit={handleSubmit}>
-          <div class="form-group">
+          <div className="form-group">
             <label htmlFor="eventName">Event Name:</label>
-            <input type="text" id="eventName" name="eventname" placeholder="Event name.." style={{ color: "white" }}></input>
+            <input type="text" id="eventName" name="eventname" placeholder="Event name.."></input>
           </div>
 
-          {/* <div></div> */}
-          <div class="form-group">
+          <div className="form-group">
             <label>Event Date Range:</label>
             <DatePicker
               selected={startDate}
@@ -86,28 +85,26 @@ function Landing() {
             />
           </div>
 
-          <div class="form-group">
-            <label for="eventStartTime">No Earlier Than:</label>
+          <div className="form-group">
+            <label htmlFor="eventStartTime">No Earlier Than:</label>
             <div id="eventStartTime" style={{ display: "flex", width: "300px", gap: "5px", alignItems: "center" }}>
-              {/* Hour Dropdown for Event Start Time */}
               <select id="startHour" name="startHour" value={startHour} onChange={(e) => setStartHour(e.target.value)} style={{ fontSize: "12px" }}>
                 <option value="" disabled>
                   Select Hour
                 </option>
-                {hourOptions.map(option => (
-                  <option key={option.value} value={option.value}>
+                {hourOptions.map((option, index) => (
+                  <option key={`start-hour-${index}`} value={option.value}>
                     {option.display}
                   </option>
                 ))}
               </select>
 
-              {/* Minute Dropdown for Event Start Time */}
               <select id="startMinute" name="startMinute" value={startMinute} onChange={(e) => setStartMinute(e.target.value)} style={{ fontSize: "12px" }}>
                 <option value="" disabled>
                   Select Minutes
                 </option>
-                {minuteOptions.map(option => (
-                  <option key={option.value} value={option.value}>
+                {minuteOptions.map((option, index) => (
+                  <option key={`start-minute-${index}`} value={option.value}>
                     {option.display}
                   </option>
                 ))}
@@ -115,28 +112,26 @@ function Landing() {
             </div>
           </div>
 
-          <div class="form-group">
-            <label for="eventEndTime">No Earlier Than:</label>
+          <div className="form-group">
+            <label htmlFor="eventEndTime">No Earlier Than:</label>
             <div id="eventEndTime" style={{ display: "flex", width: "300px", gap: "5px", alignItems: "center" }}>
-              {/* Hour Dropdown for Event End Time */}
               <select id="endHour" name="endHour" value={endHour} onChange={(e) => setEndHour(e.target.value)} style={{ fontSize: "12px" }}>
                 <option value="" disabled>
                   Select Hour
                 </option>
-                {hourOptions.map(option => (
-                  <option key={option.value} value={option.value}>
+                {hourOptions.map((option, index) => (
+                  <option key={`end-hour-${index}`} value={option.value}>
                     {option.display}
                   </option>
                 ))}
               </select>
 
-              {/* Minutes Dropdown for Evenet End Time */}
               <select id="endMinute" name="endMinute" value={endMinute} onChange={(e) => setEndMinute(e.target.value)} style={{ fontSize: "12px" }}>
                 <option value="" disabled>
                   Select Minutes
                 </option>
-                {minuteOptions.map(option => (
-                  <option key={option.value} value={option.value}>
+                {minuteOptions.map((option, index) => (
+                  <option key={`end-minute-${index}`} value={option.value}>
                     {option.display}
                   </option>
                 ))}
@@ -144,29 +139,26 @@ function Landing() {
             </div>
           </div>
 
-          <div class="form-group">
-            {/* Event Length label & input */}
-            <label for="eventLength">Estimated  Event Length</label>
+          <div className="form-group">
+            <label htmlFor="eventLength">Estimated Event Length</label>
             <div id="eventLength" style={{ display: "flex", width: "300px", gap: "5px", alignItems: "center" }}>
-              {/* Hour Dropdown for Event Length */}
               <select id="lengthHours" name="lengthHours" value={lengthHours} onChange={(e) => setLengthHours(e.target.value)} style={{ fontSize: "12px" }}>
                 <option value="" disabled>
                   Select Hours
                 </option>
                 {hoursCount.map(hour => (
-                  <option key={hour} value={hour}>
+                  <option key={`length-hour-${hour}`} value={hour}>
                     {hour}
                   </option>
                 ))}
               </select>
 
-              {/* Minute Dropdown for Event Length */}
               <select id="lengthMinutes" name="lengthMinutes" value={lengthMinutes} onChange={(e) => setLengthMinutes(e.target.value)} style={{ fontSize: "12px" }}>
                 <option value="" disabled>
                   Select Minutes
                 </option>
-                {minuteOptions.map(option => (
-                  <option key={option.value} value={option.value}>
+                {minuteOptions.map((option, index) => (
+                  <option key={`length-minute-${index}`} value={option.value}>
                     {option.display}
                   </option>
                 ))}
@@ -174,9 +166,8 @@ function Landing() {
             </div>
           </div>
 
-          <div class="form-group">
-            {/* Number of Participants label & input */}
-            <label for="participantsCount">No. of participants:</label>
+          <div className="form-group">
+            <label htmlFor="participantsCount">No. of participants:</label>
             <input type="number" id="participantsCount" name="participantscount" placeholder="Number of Participants.."></input>
           </div>
 
