@@ -1,50 +1,8 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# Environment files
+.env
+.env.local
+.env.*.local
 
-# dependencies
-*/node_modules
-__pycache__
-/.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
-
-# testing
-/coverage
-
-# next.js
-*/.next
-/out/
-node_modules/
-
-# production
-/build
-
-# misc
-.DS_Store
-*.pem
-
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# env files (can opt-in for committing if needed)
-.env*
-.venv
-venv/
-
-# vercel
-.vercel
-
-# typescript
-*.tsbuildinfo
-next-env.d.ts
-
-# backend
-db_config.yml
-
-# vscode
-.vscode
+# Keep template files in git
+!.env.example
+!.env.template
