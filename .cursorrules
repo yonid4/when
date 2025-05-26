@@ -1,0 +1,209 @@
+# Cursor Rules for Event Coordination App
+# This file defines coding standards, patterns, and best practices for the project
+
+project_context: |
+  This is an event coordination application built with:
+  - Backend: Python Flask with Supabase database
+  - Frontend: React with Node.js
+  - External APIs: Google Calendar API
+  - Real-time features: Supabase subscriptions
+  - Background jobs for calendar synchronization
+
+code_style:
+  general:
+    - "Use double quotes for all strings in JavaScript, Python, and other languages"
+    - "Use meaningful variable and function names that clearly describe their purpose"
+    - "Keep line length under 100 characters when possible"
+    - "Use consistent indentation: 2 spaces for JavaScript/JSX, 4 spaces for Python"
+    - "Add blank lines between logical sections of code for readability"
+  
+  javascript_react:
+    - "Always use functional components with hooks instead of class components"
+    - "Prefer const for variables that don't change, let for variables that do"
+    - "Use arrow functions for inline functions and callbacks"
+    - "Destructure props and state when accessing multiple properties"
+    - "Use template literals with ${} for string interpolation instead of concatenation"
+  
+  python_flask:
+    - "Use snake_case for variable and function names"
+    - "Use PascalCase for class names"
+    - "Use UPPER_CASE for constants"
+    - "Keep functions focused on single responsibilities"
+
+import_organization:
+  order: |
+    1. Local/relative imports first (from current project)
+    2. External library imports second
+    3. Separate groups with blank lines
+  
+  javascript_example: |
+    // Local imports first
+    import { useAuth } from "../hooks/useAuth";
+    import { EventCard } from "../components/events/EventCard";
+    import { API_BASE_URL } from "../utils/constants";
+    
+    // External libraries second
+    import React, { useState, useEffect } from "react";
+    import axios from "axios";
+    import { createClient } from "@supabase/supabase-js";
+  
+  python_example: |
+    # Local imports first
+    from app.models.user import User
+    from app.services.google_calendar import GoogleCalendarService
+    from app.utils.timezone import convert_to_utc
+    
+    # External libraries second
+    import os
+    from flask import Flask, request, jsonify
+    from datetime import datetime, timedelta
+
+framework_patterns:
+  react_components:
+    - "Always use functional components with hooks"
+    - "Use useState for local component state"
+    - "Use useEffect for side effects (API calls, subscriptions)"
+    - "Use useContext for sharing state across components"
+    - "Create custom hooks for reusable logic"
+    - "Prefer composition over inheritance"
+    - "Use React.memo() for performance optimization when needed"
+  
+  flask_api:
+    - "Use Flask blueprints to organize routes logically"
+    - "Keep route handlers thin - move business logic to services"
+    - "Always return consistent JSON response formats"
+    - "Use decorators for authentication and validation"
+    - "Separate database operations into model or service classes"
+
+database_patterns:
+  supabase:
+    - "Use selective try-catch blocks only where error handling is critical"
+    - "Don't wrap every database operation in try-catch - only operations that need specific error handling"
+    - "Use Supabase real-time subscriptions for live collaboration features"
+    - "Structure queries to minimize data transfer and improve performance"
+    - "Use transactions for operations that must succeed or fail together"
+  
+  error_handling:
+    - "Handle errors gracefully with user-friendly messages"
+    - "Log errors with sufficient context for debugging"
+    - "Use try-catch blocks for: API calls, file operations, external service calls"
+    - "Don't use try-catch for: simple variable assignments, basic calculations, routine database queries"
+
+api_patterns:
+  rest_endpoints:
+    - "Use RESTful conventions: GET for retrieval, POST for creation, PUT for updates, DELETE for removal"
+    - "Return appropriate HTTP status codes (200, 201, 400, 401, 404, 500)"
+    - "Include error messages in response body for 4xx and 5xx responses"
+    - "Use consistent response format: { success: boolean, data: any, message: string }"
+    - "Validate input data before processing"
+  
+  authentication:
+    - "Always verify JWT tokens for protected routes"
+    - "Include user context in request handling when needed"
+    - "Use proper CORS configuration for cross-origin requests"
+
+security_rules:
+  secrets_detection:
+    - "⚠️ NEVER hardcode API keys, secrets, or passwords in source code"
+    - "⚠️ Use environment variables for all sensitive configuration"
+    - "⚠️ Warning: Detected potential hardcoded secret - use process.env.VARIABLE_NAME instead"
+    - "⚠️ Google API keys should come from environment variables, not hardcoded strings"
+    - "⚠️ Database connection strings must use environment variables"
+    - "⚠️ JWT secrets and encryption keys must be in environment variables"
+  
+  data_handling:
+    - "Always validate and sanitize user input"
+    - "Use parameterized queries to prevent SQL injection"
+    - "Don't log sensitive information (passwords, tokens, personal data)"
+    - "Encrypt sensitive data at rest when required"
+
+google_calendar_integration:
+  patterns:
+    - "Always handle Google API rate limits gracefully"
+    - "Cache calendar data when appropriate to reduce API calls"
+    - "Use incremental sync when possible for large calendars"
+    - "Handle timezone conversions properly (store in UTC, display in user timezone)"
+    - "Implement proper OAuth2 flow for Google authentication"
+  
+  error_handling:
+    - "Handle Google API errors: rate limits, authentication failures, network issues"
+    - "Provide fallback behavior when Google Calendar is unavailable"
+    - "Retry failed requests with exponential backoff"
+
+real_time_features:
+  supabase_subscriptions:
+    - "Set up subscriptions for event updates, participant changes, and availability updates"
+    - "Clean up subscriptions in useEffect cleanup functions"
+    - "Handle connection drops and reconnection gracefully"
+    - "Batch real-time updates when possible to avoid UI thrashing"
+
+background_jobs:
+  patterns:
+    - "Use background jobs for: calendar synchronization, availability calculations, cleanup tasks"
+    - "Make jobs idempotent (safe to run multiple times)"
+    - "Include proper logging and error handling in background jobs"
+    - "Set appropriate timeouts and retry policies"
+
+file_organization:
+  structure: |
+    - Keep related functionality together in logical folders
+    - Use index.js files for clean imports from folders
+    - Separate concerns: components, services, utilities, hooks
+    - Create reusable components in common/ folders
+    - Group related API calls in service files
+  
+  naming_conventions:
+    - "React components: PascalCase (EventCard.jsx)"
+    - "Hooks: camelCase starting with 'use' (useAuth.js)"
+    - "Utilities: camelCase (dateUtils.js)"
+    - "Services: camelCase with 'Service' suffix (authService.js)"
+    - "Python files: snake_case (google_calendar.py)"
+    - "Python classes: PascalCase (GoogleCalendarService)"
+
+testing_reminders:
+  general:
+    - "Consider writing tests for complex business logic"
+    - "Test error handling paths, not just happy paths"
+    - "Mock external API calls in tests"
+    - "Test timezone handling and edge cases"
+  
+  critical_areas:
+    - "Availability calculation logic should be thoroughly tested"
+    - "Authentication and authorization flows need test coverage"
+    - "Google Calendar integration should have integration tests"
+    - "Real-time subscription handling should be tested"
+
+performance_considerations:
+  frontend:
+    - "Use React.memo for expensive components"
+    - "Debounce user input for search and filtering"
+    - "Implement virtual scrolling for large lists"
+    - "Optimize calendar rendering for large date ranges"
+  
+  backend:
+    - "Use database indexes for frequently queried fields"
+    - "Implement caching for expensive calculations"
+    - "Use background jobs for heavy processing"
+    - "Optimize database queries to avoid N+1 problems"
+
+common_patterns:
+  timezone_handling:
+    - "Always store times in UTC in the database"
+    - "Convert to user timezone only for display"
+    - "Use libraries like date-fns or moment.js for timezone operations"
+    - "Handle daylight saving time transitions properly"
+  
+  availability_calculation:
+    - "Pre-compute availability when users join events"
+    - "Use efficient algorithms for finding overlapping free time"
+    - "Consider performance for events with many participants"
+    - "Update availability incrementally when possible"
+
+code_review_checklist:
+  before_commit:
+    - "Check for hardcoded secrets or API keys"
+    - "Verify proper error handling for external API calls"
+    - "Ensure timezone handling is correct"
+    - "Confirm responsive design works on mobile devices"
+    - "Test real-time features work as expected"
+    - "Validate that database operations are efficient"
