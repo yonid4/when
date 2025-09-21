@@ -1,12 +1,11 @@
-from app.models import Event, AvailableSlot, UserBusySlot, EventParticipant
+from ..models.event import Event
+from ..models.availability import AvailabilitySlot
+from ..models.event_participant import EventParticipant
+from ..models.preference import UserEventPreference
 from datetime import datetime, timedelta, time
-from app import db
 
 class AvailabilityCalc:
-    def __init__(self, db):
-        self.db = db
-
-    def calculate_availability_for_event(self, event_id: int) -> list[AvailableSlot]:
+    def calculate_availability_for_event(self, event_id: int) -> list[AvailabilitySlot]:
         """
         Calculates and stores the common available time slots for all participants
         of a given event, considering their busy schedules and the event's constraints.
@@ -34,7 +33,7 @@ class AvailabilityCalc:
         if not participant_user_ids:
             # If there are no participants, there's no common availability.
             # Clear any existing slots and update timestamp.
-            AvailableSlot.query.filter_by(event_id=event_id).delete()
+            AvailabilitySlot.query.filter_by(event_id=event_id).delete()
             event.availability_last_calculated = datetime.utcnow()
             self.db.session.commit()
             return []
@@ -44,11 +43,11 @@ class AvailabilityCalc:
         # to reduce the amount of data fetched and processed in memory.
         # We assume UserBusySlot.start_time and .end_time are stored in UTC.
         # time.max and time.min are used to represent the full extent of the start/end dates.
-        busy_slots_query = UserBusySlot.query.filter(
-            UserBusySlot.user_id.in_(participant_user_ids),
-            UserBusySlot.start_time < (datetime.combine(event.end_date, time.max)),
-            UserBusySlot.end_time > (datetime.combine(event.start_date, time.min))
-        ).order_by(UserBusySlot.start_time).all() # Order for efficient processing later
+        busy_slots_query = AvailabilitySlot.query.filter(
+            AvailabilitySlot.user_id.in_(participant_user_ids),
+            AvailabilitySlot.start_time < (datetime.combine(event.end_date, time.max)),
+            AvailabilitySlot.end_time > (datetime.combine(event.start_date, time.min))
+        ).order_by(AvailabilitySlot.start_time).all() # Order for efficient processing later
 
         # Calculate the common available slots based on event constraints and busy times
         calculated_slots_tuples = self._calculate_common_free_slots(
@@ -58,13 +57,13 @@ class AvailabilityCalc:
         )
 
         # Delete existing AvailableSlots for this event to replace them with the new calculation.
-        AvailableSlot.query.filter_by(event_id=event_id).delete()
+        AvailabilitySlot.query.filter_by(event_id=event_id).delete()
         self.db.session.flush() # Ensure deletions are processed before adding new ones
 
         # Add the newly calculated available slots to the database session.
         new_available_slots_objects = []
         for slot_start, slot_end in calculated_slots_tuples:
-            new_slot = AvailableSlot(
+            new_slot = AvailabilitySlot(
                 event_id=event.id,
                 start_time=slot_start,
                 end_time=slot_end,
@@ -85,7 +84,7 @@ class AvailabilityCalc:
         self,
         event: Event,
         participant_user_ids: list[int],
-        all_busy_slots: list[UserBusySlot]
+        all_busy_slots: list[AvailabilitySlot]
     ) -> list[tuple[datetime, datetime]]:
         """
         Core logic to calculate when all participants are available.
@@ -112,7 +111,7 @@ class AvailabilityCalc:
         for user_id in participant_user_ids:
             # Filter busy slots for the current user and sort them.
             user_specific_busy = sorted(
-                [(slot.start_time, slot.end_time) for slot in all_busy_slots if slot.user_id == user_id],
+                [(slot.start_time_utc, slot.end_time_utc) for slot in all_busy_slots if slot.user_id == user_id],
                 key=lambda x: x[0]
             )
             busy_periods_by_user[user_id] = user_specific_busy
@@ -125,7 +124,7 @@ class AvailabilityCalc:
         while current_date <= event.end_date:
             # 1. Define the daily availability window in UTC.
             # datetime.combine creates a naive datetime object. We assume it represents UTC
-            # as per the model's storage convention (start_time, end_time in UserBusySlot are UTC).
+            # as per the model's storage convention (start_time, end_time in AvailabilitySlot are UTC).
             day_start_boundary_utc = datetime.combine(current_date, event.earliest_daily_start_time)
             day_end_boundary_utc = datetime.combine(current_date, event.latest_daily_end_time)
 

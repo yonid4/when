@@ -4,7 +4,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 // import Layout from "./layout";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
-// import Events from "./pages/Events";
+import EventPage from "./pages/EventPage";
 // import Calendar from "./pages/Calendar";
 
 // // ProtectedRoute component
@@ -19,22 +19,7 @@ const App = () => (
     <Routes>
       <Route path="/" element={<Dashboard />} />
       <Route path="/login" element={<Login />} />
-      {/* <Route
-        path="/events"
-        element={
-          <ProtectedRoute>
-            <Events />
-          </ProtectedRoute>
-        } */}
-      {/* /> */}
-      {/* <Route
-        path="/calendar"
-        element={
-          <ProtectedRoute>
-            <Calendar />
-          </ProtectedRoute>
-        }
-      /> */}
+      <Route path="/:eventUid" element={<EventPage />} />
       {/* Add more protected routes as needed */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

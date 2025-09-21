@@ -96,7 +96,7 @@ event-coordination-app/
 FLASK_APP=run.py
 FLASK_ENV=development
 SUPABASE_URL=your_supabase_url
-SUPABASE_KEY=your_supabase_key
+SUPABASE_ANON_KEY=your_supabase_key
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
 ```
