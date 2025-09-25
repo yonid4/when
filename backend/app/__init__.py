@@ -49,6 +49,15 @@ def create_app(config_name="development"):
     # Initialize Supabase client
     init_supabase(config_name)
     
+    # Add a simple health check route
+    @app.route('/')
+    def health_check():
+        return {"status": "ok", "message": "Event Coordination API is running"}, 200
+    
+    @app.route('/health')
+    def health():
+        return {"status": "healthy", "service": "event-coordination-api"}, 200
+
     # Register blueprints
     app.register_blueprint(user_bp)
     app.register_blueprint(event_bp)
