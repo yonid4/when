@@ -18,10 +18,10 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 app = Flask(__name__)
 CORS(app) 
 
-database_URI = generate_uri_from_file('db_config.yml')
-app.config['SQLALCHEMY_DATABASE_URI'] = database_URI
+# database_URI = generate_uri_from_file('db_config.yml')
+# app.config['SQLALCHEMY_DATABASE_URI'] = database_URI
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:password@localhost/when'
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'when.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'when.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
