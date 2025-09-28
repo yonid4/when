@@ -269,6 +269,19 @@ storybook-static/
 build/ # Create React App build output
 # .env files are project specific, see below
 
+# Supabase / Database
+# -----------------------------------------------------------------------------
+# Supabase local development files
+supabase/.branches
+supabase/.temp
+supabase/logs
+supabase/config.toml.bak
+
+# Database files
+*.sqlite3
+*.db
+*.sqlite
+
 # General / Project Specific
 # -----------------------------------------------------------------------------
 # Environment variables
@@ -276,13 +289,17 @@ build/ # Create React App build output
 .env.*
 !.env.example
 !.env.sample
+!.env.template
 
-# Local configuration files (if any)
+# Local configuration files
 local_settings.py
+config.local.py
+settings.local.py
 
-# Docker (if you store any local state/build artifacts outside of versioned Dockerfiles)
-docker-compose.override.yml # Often used for local overrides
-# Any other Docker build artifacts or local volume data you don't want to commit
+# Docker
+docker-compose.override.yml
+docker-compose.local.yml
+.dockerignore
 
 # Build artifacts
 dist/
@@ -294,19 +311,25 @@ out/
 *.tmp
 *.bak
 *.swp
+*.swo
+*~
 
 # Operating System Files
 .DS_Store
 Thumbs.db
+Desktop.ini
 
 # Sensitive files - ensure these are never committed!
 # .env files are already listed above
 # Add any other files containing secrets, API keys, passwords, etc.
-# For example:
-# secrets.json
-# credentials.yml
-# *.pem
-# *.key
+secrets.json
+credentials.yml
+*.pem
+*.key
+*.p12
+*.pfx
+service-account*.json
+google-credentials.json
 
 # Large media files (if not using Git LFS)
 # *.mp4
@@ -314,14 +337,46 @@ Thumbs.db
 # *.psd
 # *.ai
 
-# Specific to your project structure
-# frontend/node_modules/ (already covered by node_modules/)
-# backend/venv/ (already covered by venv/)
-# backend/instance/ (already covered by instance/)
+# Project-specific patterns
+# -----------------------------------------------------------------------------
+# Frontend build outputs
+frontend/build/
+frontend/dist/
 
-# If you use SQLite for local dev and don't want to commit the db file
-# *.sqlite3
-# *.db
+# Backend specific
+backend/instance/
+backend/migrations/versions/
+backend/.flaskenv
 
-# Logs directory if you create one at the root
+# Logs and debugging
 logs/
+*.log
+debug.log
+error.log
+
+# IDE and editor specific
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+.vscode/extensions.json
+.vscode/.ropeproject
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# Package managers
+package-lock.json.backup
+yarn.lock.backup
+pnpm-lock.yaml.backup
+
+# OS generated files
+.DS_Store?
+.Spotlight-V100
+.Trashes
+Icon?
+ehthumbs.db
+Thumbs.db

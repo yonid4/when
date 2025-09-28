@@ -4,6 +4,7 @@ import CalendarView from "../components/calendar/CalendarView";
 import UserList from "../components/event/UserList";
 import Preferences from "../components/event/Preferences";
 import { useEnsureProfile } from "../hooks/useEnsureProfile";
+import "../styles/event-page.css";
 
 const EventPage = () => {
   const { eventUid } = useParams();
@@ -95,43 +96,75 @@ const EventPage = () => {
     );
   }
 
+  // Determine if user is coordinator (for now, assume all users are coordinators)
+  const isCoordinator = true; // TODO: Replace with actual role check
+
   return (
-    <div className="container mx-auto p-4 h-screen">
-      <div className="grid grid-cols-2 grid-rows-2 gap-4 h-full">
-        {/* Top Left - Calendar */}
-        <div className="bg-white rounded-lg shadow p-4">
-          <CalendarView
-            // events={events}
-            onSelectSlot={handleSelectSlot}
-            onSelectEvent={handleSelectEvent}
-          />
+    <div className={`event-page-container ${isCoordinator ? 'coordinator-layout' : 'participant-layout'}`}>
+      {/* Header Section - Coordinator only */}
+      {isCoordinator && (
+        <div className="event-header">
+          <h1>Coordinator's Event Page</h1>
+          <div className="header-controls">
+            <div className="flex items-center space-x-4">
+              <label className="flex items-center space-x-2">
+                <span>Auto Create Earliest Preferred Event</span>
+                <div className="toggle-switch">
+                  <input type="checkbox" />
+                  <span className="toggle-slider"></span>
+                </div>
+              </label>
+            </div>
+            <button>
+              Copy Link
+            </button>
+          </div>
         </div>
+      )}
 
-        {/* Top Right - User List */}
-        <div className="bg-white rounded-lg shadow">
-          <UserList
-            participants={participants}
-            onUserSelect={handleUserSelect}
-          />
+      {/* Login Section - Participant only */}
+      {!isCoordinator && (
+        <div className="event-login">
+          <h2>Log in with Google/Name if not logged in</h2>
+          <button>
+            Copy Link
+          </button>
         </div>
+      )}
 
-        {/* Bottom Left - Calendar (same component, different view) */}
-        <div className="bg-white rounded-lg shadow p-4">
-          <CalendarView
-            // events={events}
-            onSelectSlot={handleSelectSlot}
-            onSelectEvent={handleSelectEvent}
-          />
-        </div>
-
-        {/* Bottom Right - Preferences */}
-        <div className="bg-white rounded-lg shadow">
-          <Preferences
-            preferences={preferences}
-            onPreferenceChange={handlePreferenceChange}
-          />
-        </div>
+      {/* Calendar Section */}
+      <div className="event-calendar">
+        <CalendarView
+          // events={events}
+          onSelectSlot={handleSelectSlot}
+          onSelectEvent={handleSelectEvent}
+        />
       </div>
+
+      {/* User List Section */}
+      <div className="event-users">
+        <UserList
+          participants={participants}
+          onUserSelect={handleUserSelect}
+        />
+      </div>
+
+      {/* Preferences Section */}
+      <div className="event-preferences">
+        <Preferences
+          preferences={preferences}
+          onPreferenceChange={handlePreferenceChange}
+        />
+      </div>
+
+      {/* Actions Section - Coordinator only */}
+      {isCoordinator && (
+        <div className="event-actions">
+          <button className="create-event-btn">
+            Create Event Invite
+          </button>
+        </div>
+      )}
     </div>
   );
 };
