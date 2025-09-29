@@ -187,18 +187,18 @@ const Dashboard = () => {
             {error}
           </div>
         )}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem" }}>
-          <h1 style={{ margin: 0, color: "#222" }}>Dashboard</h1>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2.6rem" }}>
+          <h1 style={{ margin: 0, color: "#222", fontSize: "2.34rem" }}>Dashboard</h1>
           <button
             onClick={() => setShowModal(true)}
             style={{
               background: "var(--secondary-color)",
               color: "#fff",
               border: "none",
-              borderRadius: 6,
-              padding: "0.75rem 1.5rem",
+              borderRadius: 8,
+              padding: "0.975rem 1.95rem",
               fontWeight: 600,
-              fontSize: "1rem",
+              fontSize: "1.3rem",
               cursor: "pointer",
               boxShadow: "0 2px 8px rgba(0,0,0,0.06)"
             }}
@@ -208,9 +208,9 @@ const Dashboard = () => {
         </div>
 
         {/* Coordinating Events */}
-        <section style={{ marginBottom: "2.5rem" }}>
-          <h2 style={{ color: "var(--secondary-color)", fontSize: "1.2rem", marginBottom: "1rem" }}>Coordinating</h2>
-          <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap" }}>
+        <section style={{ marginBottom: "3.25rem" }}>
+          <h2 style={{ color: "var(--secondary-color)", fontSize: "1.56rem", marginBottom: "1.3rem" }}>Coordinating</h2>
+          <div style={{ display: "flex", gap: "1.95rem", flexWrap: "wrap" }}>
             {coordinatingEvents.length === 0 ? (
               <div style={{ color: "#888" }}>No events to coordinate.</div>
             ) : (
@@ -219,21 +219,21 @@ const Dashboard = () => {
                   key={event.id}
                   onClick={() => navigate(`/${event.id}`)}
                   style={{
-                    minWidth: 220,
+                    minWidth: 286,
                     background: "#fff",
-                    borderRadius: 8,
+                    borderRadius: 10,
                     boxShadow: "0 2px 8px rgba(0,0,0,0.07)",
-                    padding: "1.25rem 1.5rem",
+                    padding: "1.625rem 1.95rem",
                     cursor: "pointer",
                     border: `2px solid var(--secondary-color)`,
                     transition: "box-shadow 0.2s, border 0.2s",
-                    marginBottom: "1rem"
+                    marginBottom: "1.3rem"
                   }}
                   onMouseOver={e => e.currentTarget.style.boxShadow = "0 4px 16px rgba(220,0,78,0.12)"}
                   onMouseOut={e => e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.07)"}
                 >
-                  <div style={{ fontWeight: 700, fontSize: "1.1rem", marginBottom: 8 }}>{event.name}</div>
-                  <div style={{ color: "#666", fontSize: "0.97rem" }}>{formatDateRange(event.start, event.end)}</div>
+                  <div style={{ fontWeight: 700, fontSize: "1.43rem", marginBottom: 10 }}>{event.name}</div>
+                  <div style={{ color: "#666", fontSize: "1.26rem" }}>{formatDateRange(event.start, event.end)}</div>
                 </div>
               ))
             )}
@@ -242,8 +242,8 @@ const Dashboard = () => {
 
         {/* Participating Events */}
         <section>
-          <h2 style={{ color: "var(--secondary-color)", fontSize: "1.2rem", marginBottom: "1rem" }}>Participating</h2>
-          <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap" }}>
+          <h2 style={{ color: "var(--secondary-color)", fontSize: "1.56rem", marginBottom: "1.3rem" }}>Participating</h2>
+          <div style={{ display: "flex", gap: "1.95rem", flexWrap: "wrap" }}>
             {participatingEvents.length === 0 ? (
               <div style={{ color: "#888" }}>No events you're participating in.</div>
             ) : (
@@ -252,21 +252,21 @@ const Dashboard = () => {
                   key={event.id}
                   onClick={() => navigate(`/${event.id}`)}
                   style={{
-                    minWidth: 220,
+                    minWidth: 286,
                     background: "#fff",
-                    borderRadius: 8,
+                    borderRadius: 10,
                     boxShadow: "0 2px 8px rgba(0,0,0,0.07)",
-                    padding: "1.25rem 1.5rem",
+                    padding: "1.625rem 1.95rem",
                     cursor: "pointer",
                     border: `2px solid var(--secondary-color)`,
                     transition: "box-shadow 0.2s, border 0.2s",
-                    marginBottom: "1rem"
+                    marginBottom: "1.3rem"
                   }}
                   onMouseOver={e => e.currentTarget.style.boxShadow = "0 4px 16px rgba(225,196,255,0.12)"}
                   onMouseOut={e => e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.07)"}
                 >
-                  <div style={{ fontWeight: 700, fontSize: "1.1rem", marginBottom: 8 }}>{event.name}</div>
-                  <div style={{ color: "#666", fontSize: "0.97rem" }}>{formatDateRange(event.start, event.end)}</div>
+                  <div style={{ fontWeight: 700, fontSize: "1.43rem", marginBottom: 10 }}>{event.name}</div>
+                  <div style={{ color: "#666", fontSize: "1.26rem" }}>{formatDateRange(event.start, event.end)}</div>
                 </div>
               ))
             )}

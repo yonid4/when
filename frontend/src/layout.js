@@ -60,7 +60,11 @@ const Layout = ({ children }) => {
         height: "64px",
         background: "var(--primary-color)",
         boxShadow: "0 2px 4px rgba(0,0,0,0.04)",
-        padding: "0 2rem"
+        padding: "0 0",
+        paddingLeft: "2rem",
+        paddingRight: "2rem",
+        width: "100%",
+        boxSizing: "border-box"
       }}>
         <button
           onClick={() => navigate("/")}

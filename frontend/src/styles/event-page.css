@@ -61,12 +61,32 @@
 
 .event-users {
   grid-area: users;
-  background: white;
-  border-radius: 8px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
-  border: 2px solid var(--secondary-color);
-  overflow-y: auto;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Custom scrollbar for participants list */
+.event-users .chakra-stack {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e0 transparent;
+}
+
+.event-users .chakra-stack::-webkit-scrollbar {
+  width: 6px;
+}
+
+.event-users .chakra-stack::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.event-users .chakra-stack::-webkit-scrollbar-thumb {
+  background-color: #cbd5e0;
+  border-radius: 3px;
+}
+
+.event-users .chakra-stack::-webkit-scrollbar-thumb:hover {
+  background-color: #a0aec0;
 }
 
 .event-preferences {
@@ -119,18 +139,48 @@
 }
 
 /* Component specific styles */
-.event-header h1 {
+.event-header .header-layout {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.event-header .header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.event-header .header-right {
+  display: flex;
+  align-items: center;
+}
+
+.event-header .page-title {
   margin: 0;
-  font-size: 1.5rem;
-  font-weight: 600;
+  font-size: 1rem;
+  font-weight: 500;
   color: var(--secondary-color);
 }
 
-.event-header .header-controls {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 0.5rem;
+.event-header .copy-link-btn {
+  background: var(--secondary-color);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+  font-size: 0.875rem;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  transition: all 0.2s;
+  align-self: flex-start;
+}
+
+.event-header .copy-link-btn:hover {
+  background: #b8003a;
+  box-shadow: 0 2px 8px rgba(220,0,78,0.12);
 }
 
 .event-login {
