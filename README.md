@@ -104,7 +104,7 @@ npm install
 ```bash
 # Terminal 1 (Backend)
 cd backend
-python run.py
+flask run
 
 # Terminal 2 (Frontend)
 cd frontend
