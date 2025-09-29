@@ -1,6 +1,10 @@
 :root {
-  --primary-color: #e1c4ff;
-  --secondary-color: #dc004e;
+  --primary-color: #FFFFFF;
+  --secondary-color: #2B2B2B;
+  --salt-pepper-white: #FFFFFF;
+  --salt-pepper-light-gray: #D4D4D4;
+  --salt-pepper-medium-gray: #B3B3B3;
+  --salt-pepper-dark: #2B2B2B;
 }
 
 body {
@@ -9,3 +13,4 @@ body {
   background: #f7f9fb;
   color: #222;
 }
+

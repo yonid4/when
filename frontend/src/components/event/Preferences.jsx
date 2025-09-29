@@ -2,15 +2,23 @@ import React from "react";
 
 const Preferences = ({ preferences, onPreferenceChange }) => {
   return (
-    <div className="h-full w-full p-4 bg-white rounded-lg shadow">
-      <h2 className="text-xl font-semibold mb-4">Event Preferences</h2>
+    <div className="h-full w-full p-4 rounded-lg shadow" style={{ 
+      backgroundColor: "var(--salt-pepper-white)", 
+      color: "var(--salt-pepper-dark)" 
+    }}>
+      <h2 className="text-xl font-semibold mb-4" style={{ color: "var(--salt-pepper-dark)" }}>Event Preferences</h2>
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium mb-1" style={{ color: "var(--salt-pepper-dark)" }}>
             Duration
           </label>
           <select
-            className="w-full p-2 border rounded-md"
+            className="w-full p-2 rounded-md" 
+            style={{ 
+              border: "1px solid var(--salt-pepper-light-gray)", 
+              backgroundColor: "var(--salt-pepper-white)", 
+              color: "var(--salt-pepper-dark)" 
+            }}
             value={preferences?.duration}
             onChange={(e) => onPreferenceChange("duration", e.target.value)}
           >
@@ -22,11 +30,16 @@ const Preferences = ({ preferences, onPreferenceChange }) => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium mb-1" style={{ color: "var(--salt-pepper-dark)" }}>
             Time Zone
           </label>
           <select
-            className="w-full p-2 border rounded-md"
+            className="w-full p-2 rounded-md" 
+            style={{ 
+              border: "1px solid var(--salt-pepper-light-gray)", 
+              backgroundColor: "var(--salt-pepper-white)", 
+              color: "var(--salt-pepper-dark)" 
+            }}
             value={preferences?.timezone}
             onChange={(e) => onPreferenceChange("timezone", e.target.value)}
           >
@@ -38,11 +51,16 @@ const Preferences = ({ preferences, onPreferenceChange }) => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium mb-1" style={{ color: "var(--salt-pepper-dark)" }}>
             Meeting Type
           </label>
           <select
-            className="w-full p-2 border rounded-md"
+            className="w-full p-2 rounded-md" 
+            style={{ 
+              border: "1px solid var(--salt-pepper-light-gray)", 
+              backgroundColor: "var(--salt-pepper-white)", 
+              color: "var(--salt-pepper-dark)" 
+            }}
             value={preferences?.meetingType}
             onChange={(e) => onPreferenceChange("meetingType", e.target.value)}
           >
@@ -53,11 +71,16 @@ const Preferences = ({ preferences, onPreferenceChange }) => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium mb-1" style={{ color: "var(--salt-pepper-dark)" }}>
             Reminder
           </label>
           <select
-            className="w-full p-2 border rounded-md"
+            className="w-full p-2 rounded-md" 
+            style={{ 
+              border: "1px solid var(--salt-pepper-light-gray)", 
+              backgroundColor: "var(--salt-pepper-white)", 
+              color: "var(--salt-pepper-dark)" 
+            }}
             value={preferences?.reminder}
             onChange={(e) => onPreferenceChange("reminder", e.target.value)}
           >

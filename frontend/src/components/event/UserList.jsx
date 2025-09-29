@@ -99,16 +99,16 @@ const UserList = ({ participants, onUserSelect, isCoordinator = false, onInviteU
   };
 
   return (
-    <Card h="full" w="full" variant="outline" borderWidth={2} borderColor="var(--secondary-color)" display="flex" flexDirection="column">
+    <Card h="full" w="full" variant="outline" borderWidth={2} borderColor="var(--salt-pepper-medium-gray)" display="flex" flexDirection="column">
       <CardBody p={4} flex="1" overflow="hidden" display="flex" flexDirection="column">
         <VStack spacing={4} align="stretch" flex="1" overflow="hidden">
           {/* Coordinator invitation section */}
           {isCoordinator && (
             <Box>
-              <Card bg="gray.50" variant="outline" flexShrink={0}>
+              <Card bg="var(--salt-pepper-white)" variant="outline" flexShrink={0}>
                 <CardBody p={3}>
                   <VStack spacing={4} align="stretch">
-                    <Heading size="sm" color="gray.700">
+                    <Heading size="sm" color="var(--salt-pepper-dark)">
                       Invite Participant
                     </Heading>
                     <HStack spacing={3}>
@@ -120,10 +120,10 @@ const UserList = ({ participants, onUserSelect, isCoordinator = false, onInviteU
                           onChange={handleEmailChange}
                           onKeyPress={handleKeyPress}
                           size="sm"
-                          borderColor={emailError ? "red.500" : "gray.300"}
+                          borderColor={emailError ? "var(--salt-pepper-medium-gray)" : "var(--salt-pepper-light-gray)"}
                           _focus={{
-                            borderColor: "blue.500",
-                            boxShadow: "0 0 0 1px var(--chakra-colors-blue-500)",
+                            borderColor: "var(--salt-pepper-dark)",
+                            boxShadow: "0 0 0 1px var(--salt-pepper-dark)",
                           }}
                         />
                         <FormErrorMessage fontSize="xs">{emailError}</FormErrorMessage>
@@ -133,7 +133,7 @@ const UserList = ({ participants, onUserSelect, isCoordinator = false, onInviteU
                         isDisabled={inviteStatus === "sending" || !email}
                         isLoading={inviteStatus === "sending"}
                         loadingText="Sending"
-                        colorScheme="blue"
+                        bg="var(--salt-pepper-dark)" color="var(--salt-pepper-white)" _hover={{ bg: "var(--salt-pepper-medium-gray)" }}
                         size="sm"
                         minW="80px"
                       >
@@ -161,18 +161,18 @@ const UserList = ({ participants, onUserSelect, isCoordinator = false, onInviteU
           {/* Pending invites section */}
           {isCoordinator && pendingInvites.length > 0 && (
             <Box flexShrink={0}>
-              <Heading size="xs" color="gray.700" mb={2}>
+              <Heading size="xs" color="var(--salt-pepper-dark)" mb={2}>
                 Pending Invitations
               </Heading>
               <VStack spacing={1} align="stretch">
                 {pendingInvites.map((invite) => (
-                  <Card key={invite.id} bg="yellow.50" variant="outline" borderColor="yellow.200">
+                  <Card key={invite.id} bg="var(--salt-pepper-light-gray)" variant="outline" borderColor="var(--salt-pepper-medium-gray)">
                     <CardBody p={2}>
                       <Flex align="center" justify="space-between">
-                        <Text fontSize="sm" color="gray.700">
+                        <Text fontSize="sm" color="var(--salt-pepper-dark)">
                           {invite.email}
                         </Text>
-                        <Badge colorScheme="yellow" size="sm">
+                        <Badge bg="var(--salt-pepper-medium-gray)" color="var(--salt-pepper-white)" size="sm">
                           Pending
                         </Badge>
                       </Flex>
@@ -185,18 +185,18 @@ const UserList = ({ participants, onUserSelect, isCoordinator = false, onInviteU
 
           {/* Divider between sections */}
           {isCoordinator && (pendingInvites.length > 0 || participants?.length > 0) && (
-            <Divider borderColor="gray.300" />
+            <Divider borderColor="var(--salt-pepper-light-gray)" />
           )}
 
           {/* Participants list */}
           <Box flex="1" overflow="hidden" display="flex" flexDirection="column">
-            <Heading size="xs" color="gray.700" mb={2} flexShrink={0}>
+            <Heading size="xs" color="var(--salt-pepper-dark)" mb={2} flexShrink={0}>
               Active Participants
             </Heading>
             {participants?.length === 0 ? (
-              <Card variant="outline" borderStyle="dashed" borderColor="gray.300" flexShrink={0}>
+              <Card variant="outline" borderStyle="dashed" borderColor="var(--salt-pepper-light-gray)" flexShrink={0}>
                 <CardBody p={3} textAlign="center">
-                  <Text color="gray.500" fontSize="xs">
+                  <Text color="var(--salt-pepper-medium-gray)" fontSize="xs">
                     No participants yet
                   </Text>
                 </CardBody>
@@ -209,7 +209,7 @@ const UserList = ({ participants, onUserSelect, isCoordinator = false, onInviteU
                       key={participant.id}
                       variant="outline"
                       cursor="pointer"
-                      _hover={{ bg: "gray.50", borderColor: "var(--secondary-color)" }}
+                      _hover={{ bg: "var(--salt-pepper-light-gray)", borderColor: "var(--salt-pepper-dark)" }}
                       onClick={() => onUserSelect(participant)}
                       transition="all 0.2s"
                       flexShrink={0}
@@ -221,14 +221,14 @@ const UserList = ({ participants, onUserSelect, isCoordinator = false, onInviteU
                             size="xs"
                             name={participant.name}
                             src={participant.avatar_url} // Google profile picture from Supabase session
-                            bg="gray.200"
-                            color="gray.600"
+                            bg="var(--salt-pepper-light-gray)"
+                            color="var(--salt-pepper-medium-gray)"
                           />
                           <Box>
                             <Text fontWeight="medium" fontSize="xs" lineHeight="1.2">
                               {participant.name}
                             </Text>
-                            <Text fontSize="2xs" color="gray.500" lineHeight="1.1">
+                            <Text fontSize="2xs" color="var(--salt-pepper-medium-gray)" lineHeight="1.1">
                               {participant.email}
                             </Text>
                           </Box>

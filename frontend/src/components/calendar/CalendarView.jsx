@@ -51,7 +51,7 @@ const CalendarView = ({ events = [], onSelectSlot, onSelectEvent }) => {
         className="rbc-date-header-text"
         fontWeight="medium"
         fontSize="sm"
-        color="gray.700"
+        color="var(--salt-pepper-dark)"
         textAlign="center"
         p={1}
         cursor="default"
@@ -90,7 +90,7 @@ const CalendarView = ({ events = [], onSelectSlot, onSelectEvent }) => {
           'a': {
             fontWeight: 'bold',
             fontSize: '0.95rem',
-            color: 'var(--chakra-colors-gray-800)',
+            color: 'var(--salt-pepper-dark)',
           }
         },
         // Style the month view date cells
@@ -99,46 +99,46 @@ const CalendarView = ({ events = [], onSelectSlot, onSelectEvent }) => {
           'a': {
             fontWeight: 'bold',
             fontSize: '1rem',
-            color: 'var(--chakra-colors-blue-600)',
+            color: 'var(--salt-pepper-dark)',
           }
         },
         // Clean day/date headers styling
         '.rbc-header': {
-          borderBottom: '1px solid var(--chakra-colors-gray-200)',
+          borderBottom: '1px solid var(--salt-pepper-light-gray)',
           padding: '8px 4px',
           backgroundColor: 'transparent',
           fontSize: '0.875rem',
           fontWeight: '500',
-          color: 'var(--chakra-colors-gray-700)',
+          color: 'var(--salt-pepper-dark)',
         },
         // Style the time slot labels
         '.rbc-time-header-gutter': {
-          backgroundColor: 'var(--chakra-colors-gray-50)',
+          backgroundColor: 'var(--salt-pepper-white)',
         },
         '.rbc-time-slot': {
           fontSize: '0.75rem',
-          color: 'var(--chakra-colors-gray-600)',
+          color: 'var(--salt-pepper-medium-gray)',
         },
         // Event styling
         '.rbc-event': {
-          backgroundColor: 'var(--chakra-colors-blue-500)',
+          backgroundColor: 'var(--salt-pepper-dark)',
           borderRadius: '4px',
           border: 'none',
           fontSize: '0.75rem',
         },
         // Selected event styling
         '.rbc-event.rbc-selected': {
-          backgroundColor: 'var(--chakra-colors-blue-700)',
+          backgroundColor: 'var(--salt-pepper-medium-gray)',
         },
         // Grid lines
         '.rbc-time-view': {
-          border: '1px solid var(--chakra-colors-gray-200)',
+          border: '1px solid var(--salt-pepper-light-gray)',
         },
         '.rbc-time-content': {
           border: 'none',
         },
         '.rbc-timeslot-group': {
-          borderBottom: '1px solid var(--chakra-colors-gray-100)',
+          borderBottom: '1px solid var(--salt-pepper-light-gray)',
         }
       }}
     >

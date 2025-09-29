@@ -4,7 +4,7 @@
 .calendar-container .rbc-date-header-text {
   cursor: default;
   pointer-events: none;
-  color: #333;
+  color: var(--salt-pepper-dark);
   font-weight: 500;
 }
 
@@ -15,11 +15,11 @@
   cursor: default;
   background-color: transparent !important;
   background: transparent !important;
-  border-bottom: 1px solid #e2e8f0 !important;
+  border-bottom: 1px solid var(--salt-pepper-light-gray) !important;
   padding: 8px 4px !important;
   font-size: 0.875rem !important;
   font-weight: 500 !important;
-  color: #4a5568 !important;
+  color: var(--salt-pepper-dark) !important;
   text-align: center !important;
   display: flex !important;
   align-items: center !important;
@@ -62,7 +62,7 @@
 .calendar-container {
   height: 100%;
   width: 100%;
-  background: #f7f9fb !important;
+  background: var(--salt-pepper-white) !important;
 }
 
 /* Ensure calendar takes full height */
@@ -75,60 +75,60 @@
 .calendar-container .rbc-date-cell a {
   font-weight: bold !important;
   font-size: 0.95rem !important;
-  color: #2d3748 !important;
+  color: var(--salt-pepper-dark) !important;
 }
 
 /* Month view date styling */
 .calendar-container .rbc-month-view .rbc-date-cell a {
   font-weight: bold !important;
   font-size: 1rem !important;
-  color: #3182ce !important;
+  color: var(--salt-pepper-dark) !important;
 }
 
 /* Enhanced styling for better appearance */
 .calendar-container .rbc-month-view,
 .calendar-container .rbc-week-view,
 .calendar-container .rbc-day-view {
-  border: 1px solid #e2e8f0 !important;
+  border: 1px solid var(--salt-pepper-light-gray) !important;
   border-radius: 8px !important;
   overflow: hidden !important;
 }
 
 /* Improve current day highlighting with lighter background */
 .calendar-container .rbc-today {
-  background-color: #ebf8ff !important;
+  background-color: var(--salt-pepper-light-gray) !important;
 }
 
 /* Make today's header have light background only */
 .calendar-container .rbc-header.rbc-today {
-  background-color: #dbeafe !important;
+  background-color: var(--salt-pepper-light-gray) !important;
 }
 
 /* Make today's day background have light background only */
 .calendar-container .rbc-day-bg.rbc-today {
-  background-color: #ebf8ff !important;
+  background-color: var(--salt-pepper-light-gray) !important;
 }
 
 /* Make today's day slot in time area have darker borders (7am-9pm only) */
 .calendar-container .rbc-time-content .rbc-day-slot.rbc-today {
-  border-left: 2px solid #bebebe !important;
-  border-right: 2px solid #bebebe !important;
-  background-color: #ebf8ff !important;
+  border-left: 2px solid var(--salt-pepper-medium-gray) !important;
+  border-right: 2px solid var(--salt-pepper-medium-gray) !important;
+  background-color: var(--salt-pepper-light-gray) !important;
 }
 
 /* Make today's time slots have darker horizontal lines (only in time content area) */
 .calendar-container .rbc-time-content .rbc-today .rbc-timeslot-group {
-  border-bottom: 2px solid #bebebe !important;
+  border-bottom: 2px solid var(--salt-pepper-medium-gray) !important;
 }
 
 .calendar-container .rbc-time-content .rbc-today .rbc-time-slot {
-  border-bottom: 1px solid #bebebe !important;
+  border-bottom: 1px solid var(--salt-pepper-medium-gray) !important;
 }
 
 /* Style the time gutter - force consistent width with box-sizing */
 .calendar-container .rbc-time-header-gutter {
-  background-color: #f7fafc !important;
-  border-right: 1px solid #e2e8f0 !important;
+  background-color: var(--salt-pepper-white) !important;
+  border-right: 1px solid var(--salt-pepper-light-gray) !important;
   width: 80px !important;
   min-width: 80px !important;
   max-width: 80px !important;
@@ -180,7 +180,7 @@
   width: calc(100% / 7) !important;
   flex: none !important;
   min-width: 0 !important;
-  border-right: 1px solid #e2e8f0 !important;
+  border-right: 1px solid var(--salt-pepper-light-gray) !important;
   box-sizing: border-box !important;
 }
 
@@ -201,7 +201,7 @@
   width: calc(100% / 7) !important;
   flex: none !important;
   min-width: 0 !important;
-  border-right: 1px solid #f1f5f9 !important;
+  border-right: 1px solid var(--salt-pepper-light-gray) !important;
   box-sizing: border-box !important;
 }
 
@@ -219,7 +219,7 @@
   width: calc(100% / 7) !important;
   flex: none !important;
   min-width: 0 !important;
-  border-right: 1px solid #f1f5f9 !important;
+  border-right: 1px solid var(--salt-pepper-light-gray) !important;
   box-sizing: border-box !important;
 }
 
@@ -230,15 +230,15 @@
 /* Style the time labels */
 .calendar-container .rbc-label {
   font-size: 0.75rem !important;
-  color: #718096 !important;
+  color: var(--salt-pepper-dark) !important;
   font-weight: 500 !important;
   text-align: center !important;
 }
 
 /* Force time column to match header gutter width with box-sizing */
 .calendar-container .rbc-time-gutter {
-  background-color: #f7fafc !important;
-  border-right: 1px solid #e2e8f0 !important;
+  background-color: var(--salt-pepper-white) !important;
+  border-right: 1px solid var(--salt-pepper-light-gray) !important;
   width: 80px !important;
   min-width: 80px !important;
   max-width: 80px !important;
@@ -249,7 +249,7 @@
 
 /* Style the time slot container to match day slot width */
 .calendar-container .rbc-timeslot-group {
-  border-bottom: 1px solid #f1f5f9 !important;
+  border-bottom: 1px solid var(--salt-pepper-light-gray) !important;
   display: flex !important;
   width: 100% !important;
   flex: none !important;
@@ -259,14 +259,14 @@
 /* Style individual time slots */
 .calendar-container .rbc-time-slot {
   font-size: 0.75rem !important;
-  color: #718096 !important;
-  border-bottom: 1px solid #f1f5f9 !important;
+  color: var(--salt-pepper-medium-gray) !important;
+  border-bottom: 1px solid var(--salt-pepper-light-gray) !important;
   text-align: center !important;
 }
 
 /* Event styling */
 .calendar-container .rbc-event {
-  background-color: #3182ce !important;
+  background-color: var(--salt-pepper-dark) !important;
   border-radius: 4px !important;
   border: none !important;
   font-size: 0.75rem !important;
@@ -274,18 +274,18 @@
 
 /* Selected event styling */
 .calendar-container .rbc-event.rbc-selected {
-  background-color: #2c5282 !important;
+  background-color: var(--salt-pepper-medium-gray) !important;
 }
 
 /* Grid lines and borders */
 .calendar-container .rbc-time-view {
-  border: 1px solid #e2e8f0 !important;
+  border: 1px solid var(--salt-pepper-light-gray) !important;
 }
 
 
 /* Make horizontal lines in today column more visible (only in time content area) */
 .calendar-container .rbc-time-content .rbc-day-slot.rbc-today .rbc-timeslot-group {
-  border-bottom: 2px solid #bebebe !important;
+  border-bottom: 2px solid var(--salt-pepper-medium-gray) !important;
 }
 
 /* Toolbar styling for Chakra UI buttons */
@@ -296,8 +296,8 @@
 
 .calendar-container .rbc-toolbar button {
   background-color: transparent !important;
-  border: 1px solid #e2e8f0 !important;
-  color: #4a5568 !important;
+  border: 1px solid var(--salt-pepper-light-gray) !important;
+  color: var(--salt-pepper-dark) !important;
   padding: 0.5rem 1rem !important;
   border-radius: 6px !important;
   font-weight: 500 !important;
@@ -307,14 +307,14 @@
 }
 
 .calendar-container .rbc-toolbar button:hover {
-  background-color: #f7fafc !important;
-  border-color: #3182ce !important;
-  color: #3182ce !important;
+  background-color: var(--salt-pepper-white) !important;
+  border-color: var(--salt-pepper-dark) !important;
+  color: var(--salt-pepper-dark) !important;
 }
 
 .calendar-container .rbc-toolbar button.rbc-active {
-  background-color: #3182ce !important;
-  border-color: #3182ce !important;
+  background-color: var(--salt-pepper-dark) !important;
+  border-color: var(--salt-pepper-dark) !important;
   color: white !important;
 }
 
@@ -328,10 +328,10 @@
 }
 
 .calendar-container .rbc-time-content::-webkit-scrollbar-thumb {
-  background-color: #cbd5e0;
+  background-color: var(--salt-pepper-light-gray);
   border-radius: 4px;
 }
 
 .calendar-container .rbc-time-content::-webkit-scrollbar-thumb:hover {
-  background-color: #a0aec0;
+  background-color: var(--salt-pepper-medium-gray);
 }
