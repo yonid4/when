@@ -1,0 +1,6 @@
+database: mysql
+username: root
+password: your_mysql_password
+host: localhost
+port: 3306
+db_name: when

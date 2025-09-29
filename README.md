@@ -1,93 +1,154 @@
-# Project Name
+# Event Coordination App
 
-This project consists of a backend and a frontend. Follow the instructions below to set up and run each part.
+A full-stack application for coordinating events and managing availability across multiple calendars. Built with React, Flask, and Supabase.
 
-## Backend
+## 🌟 Features
+
+- **Smart Event Scheduling**: Automatically find the best time slots for all participants
+- **Google Calendar Integration**: Seamless sync with Google Calendar
+- **Real-time Updates**: Live updates for event changes and availability
+- **User Preferences**: Set and manage personal scheduling preferences
+- **Cross-timezone Support**: Handle participants from different time zones
+- **Background Processing**: Automated calendar sync and availability calculations
+
+## 🏗️ Tech Stack
+
+### Frontend
+- React.js
+- Supabase Client
+- Modern UI Components
+- Real-time Subscriptions
+
+### Backend
+- Flask (Python)
+- RESTful API
+- Background Job Processing
+- Google Calendar API Integration
+
+### Database
+- Supabase (PostgreSQL)
+- Real-time Subscriptions
+- Authentication
+
+## 🚀 Getting Started
 
 ### Prerequisites
-- Python 3.9 or higher
-- pip (Python package manager)
-- MySQL server installed and running
-- pkg-config and MySQL development libraries (for macOS, install via Homebrew):
-  ```sh
-  brew install pkg-config mysql
-  ```
+- Python 3.8+
+- Node.js 16+
+- Docker and Docker Compose
+- Google Cloud Platform Account
+- Supabase Account
 
-### Setup
-1. Navigate to the backend directory:
-   ```sh
-   cd backend
-   ```
-2. Install the required dependencies:
-   ```sh
-   pip install -r requirements.txt
-   ```
-3. Configure your MySQL database settings in the backend configuration file (if necessary).
+### Installation
 
-### Running the Backend
-To start the backend server, run:
-```sh
-python app.py
-```
-The server will start on `http://localhost:5000`.
-
-## Frontend
-
-### Prerequisites
-- Node.js and npm installed
-
-### Setup
-1. Navigate to the frontend directory:
-   ```sh
-   cd frontend
-   ```
-2. Install the required dependencies:
-   ```sh
-   npm install
-   ```
-
-### Running the Frontend
-To start the frontend development server, run:
-```sh
-npm start
-```
-The frontend will be available at `http://localhost:3000`.
-
-## Additional Information
-- Ensure that the backend server is running before starting the frontend.
-- For any issues, check the console logs for both the backend and frontend.
-
-# WHEN
-
-## Frontend:
+1. Clone the repository:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/merilynk/when.git
+cd when 
 ```
 
-## Backend:
-### Initialize Database
+2. Set up the backend:
 ```bash
-python create_db.py
-```
-### Run Server
-```bash
-flask run
-```
-### Backend Libraries Installation
-```bash
+cd backend
+python -m venv venv
+source venv/bin/activate  # On Windows: .\venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-## Activate Virtual Environment
+3. Set up the frontend:
 ```bash
-.venv/Scripts/activate
-# or
-. .venv/bin/activate
+cd frontend
+npm install
 ```
 
+4. Configure environment variables:
+   - Copy `.env.example` to `.env` in both frontend and backend directories
+   - Update the variables with your configuration
+
+5. Start the development servers:
+```bash
+# Terminal 1 (Backend)
+cd backend
+flask run
+
+# Terminal 2 (Frontend)
+cd frontend
+npm start
+```
+
+## 📁 Project Structure
+
+```
+event-coordination-app/
+├── backend/          # Flask API Server
+├── frontend/         # React Application
+├── shared/           # Shared utilities
+├── docs/            # Documentation
+└── scripts/         # Deployment scripts
+```
+
+## 🔧 Configuration
+
+### Environment Variables
+
+#### Backend (.env)
+```
+FLASK_APP=run.py
+FLASK_ENV=development
+SUPABASE_URL=your_supabase_url
+SUPABASE_ANON_KEY=your_supabase_key
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+```
+
+#### Frontend (.env)
+```
+REACT_APP_API_URL=http://localhost:5000
+REACT_APP_SUPABASE_URL=your_supabase_url
+REACT_APP_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+## 🧪 Testing
+
+### Backend Tests
+```bash
+cd backend
+pytest
+```
+
+### Frontend Tests
+```bash
+cd frontend
+npm test
+```
+
+## 📚 API Documentation
+
+Detailed API documentation can be found in the `docs/api.md` file.
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 👥 Authors
+
+- Your Name - Initial work
+
+## 🙏 Acknowledgments
+
+- Google Calendar API
+- Supabase Team
+- React Community
+- Flask Community
+
+## 📞 Support
+
+For support, email support@yourdomain.com or open an issue in the repository.

@@ -1,28 +1,64 @@
+"""
+Initialize the Flask application.
+"""
+
+import os
+from dotenv import load_dotenv
 from flask import Flask
 from flask_cors import CORS
 
-from config import Config
-from app.extensions import db
+# Load environment variables from .env file
+load_dotenv()
 
-def create_app(config_class=Config):
+# Verify required environment variables
+required_vars = ["SUPABASE_URL", "SUPABASE_ANON_KEY"]
+missing_vars = [var for var in required_vars if not os.getenv(var)]
+if missing_vars:
+    raise ValueError(
+        f"Missing required environment variables: {', '.join(missing_vars)}. "
+        "Please set them in your .env file."
+    )
+
+from .config import config
+from .routes.users import user_bp
+from .routes.events import event_bp
+from .routes.auth import auth_bp
+from .routes.availability import availability_bp
+from .routes.preferences import preferences_bp
+# from .routes.calendar import calendar_bp
+from .utils.supabase_client import init_supabase
+
+def create_app(config_name="development"):
+    """
+    Create and configure the Flask application.
+    
+    Args:
+        config_name (str): The configuration to use (development, testing, production)
+        
+    Returns:
+        Flask: The configured Flask application
+    """
     app = Flask(__name__)
+    
+    # Load configuration
+    app.config.from_object(config[config_name])
+    
+    # Initialize extensions
     CORS(app)
-    app.config.from_object(config_class)
+    
+    # Initialize Supabase client
+    init_supabase(config_name)
+    
+    # Register blueprints
+    app.register_blueprint(user_bp)
+    app.register_blueprint(event_bp)
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(availability_bp)
+    app.register_blueprint(preferences_bp)
+    # app.register_blueprint(calendar_bp)
 
-    # Initialize Flask extensions here
-    # such as SQL-Alchemy
-    db.init_app(app)
-
-    # Register blueprints here
-    from app.main import bp as main_bp
-    app.register_blueprint(main_bp, url_prefix='/')
-    from app.events import bp as events_bp
-    app.register_blueprint(events_bp, url_prefix='/events')
-    from app.users import bp as users_bp
-    app.register_blueprint(users_bp, url_prefix='/users')
-
-    @app.route('/testpage')
-    def test_page():
-        return '<h1>Testing the Flask Application Factory Pattern</h1>'
+    # # Initialize background jobs
+    # from .background_jobs import init_background_jobs
+    # init_background_jobs(app)
 
     return app
