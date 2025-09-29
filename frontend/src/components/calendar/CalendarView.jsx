@@ -43,17 +43,24 @@ const CalendarView = ({ events = [], onSelectSlot, onSelectEvent }) => {
     return { min: new Date(0, 0, 0, minHour, 0, 0), max: new Date(0, 0, 0, maxHour, 0, 0) };
   }, [events]);
 
-  // Custom date header component with Chakra UI styling
+  // Custom date header component with Chakra UI styling - plain text only
   const CustomDateHeader = ({ date, label }) => {
     return (
       <Box 
-        as="span" 
+        as="div" 
         className="rbc-date-header-text"
         fontWeight="medium"
         fontSize="sm"
         color="gray.700"
         textAlign="center"
         p={1}
+        cursor="default"
+        pointerEvents="none"
+        background="transparent"
+        border="none"
+        _hover={{ background: "transparent" }}
+        _focus={{ background: "transparent", outline: "none" }}
+        _active={{ background: "transparent" }}
       >
         {label}
       </Box>
@@ -99,7 +106,7 @@ const CalendarView = ({ events = [], onSelectSlot, onSelectEvent }) => {
         '.rbc-header': {
           borderBottom: '1px solid var(--chakra-colors-gray-200)',
           padding: '8px 4px',
-          backgroundColor: 'var(--chakra-colors-gray-50)',
+          backgroundColor: 'transparent',
           fontSize: '0.875rem',
           fontWeight: '500',
           color: 'var(--chakra-colors-gray-700)',

@@ -142,8 +142,9 @@
 .event-header .header-layout {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   gap: 1rem;
+  min-height: 60px;
 }
 
 .event-header .header-left {
@@ -155,6 +156,14 @@
 .event-header .header-right {
   display: flex;
   align-items: center;
+  height: 100%;
+}
+
+.event-header .header-right label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 100%;
 }
 
 .event-header .page-title {
@@ -202,9 +211,12 @@
 /* Toggle Switch Styles */
 .toggle-switch {
   position: relative;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 50px;
   height: 24px;
+  flex-shrink: 0;
 }
 
 .toggle-switch input {
