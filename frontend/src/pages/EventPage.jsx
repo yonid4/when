@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { createClient } from "@supabase/supabase-js";
 import CalendarView from "../components/calendar/CalendarView";
 import UserList from "../components/event/UserList";
@@ -21,11 +21,33 @@ const supabase = createClient(
 
 const EventPage = () => {
   const { eventUid } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [events, setEvents] = useState([]);
   const [participants, setParticipants] = useState();
   const [preferences, setPreferences] = useState();
   const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { error: profileError } = useEnsureProfile();
+
+  useEffect(() => {
+    // Check authentication status
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session);
+    };
+
+    checkAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     const fetchEventData = async () => {
@@ -148,6 +170,15 @@ const EventPage = () => {
     return null;
   };
 
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      navigate("/login");
+    } catch (error) {
+      console.error("Error logging out:", error);
+    }
+  };
+
   const handleInviteUser = async (email) => {
     // Handle user invitation logic
     console.log("Inviting user:", email);
@@ -190,8 +221,71 @@ const EventPage = () => {
   // Determine if user is coordinator (for now, assume all users are coordinators)
   const isCoordinator = true; // TODO: Replace with actual role check
 
+  // Don't show logout button on login page
+  const showLogoutButton = isAuthenticated && location.pathname !== "/login";
+
   return (
-    <div className={`event-page-container ${isCoordinator ? 'coordinator-layout' : 'participant-layout'}`}>
+    <div style={{ minHeight: "100vh", background: "var(--salt-pepper-white)" }}>
+      {/* Header from Layout */}
+      <header style={{
+        gridArea: "layout-header",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: showLogoutButton ? "space-between" : "flex-start",
+        height: "64px",
+        background: "var(--primary-color)",
+        boxShadow: "0 2px 4px rgba(0,0,0,0.04)",
+        padding: "0 2rem",
+        width: "100%",
+        boxSizing: "border-box"
+      }}>
+        <button
+          onClick={() => navigate("/")}
+          style={{
+            background: "none",
+            border: "none",
+            padding: 0,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center"
+          }}
+          aria-label="Go to home page"
+        >
+          <img
+            src="/when_logo.png"
+            alt="When logo"
+            style={{ height: "40px", width: "auto" }}
+          />  
+        </button>
+        {showLogoutButton && (
+          <button
+            onClick={handleLogout}
+            style={{
+              background: "none",
+              border: "1px solid var(--salt-pepper-dark)",
+              color: "var(--salt-pepper-dark)",
+              padding: "0.5rem 1rem",
+              borderRadius: "4px",
+              cursor: "pointer",
+              fontSize: "0.9rem",
+              fontWeight: 500,
+              transition: "all 0.2s"
+            }}
+            onMouseOver={e => {
+              e.currentTarget.style.background = "var(--salt-pepper-dark)";
+              e.currentTarget.style.color = "var(--salt-pepper-white)";
+            }}
+            onMouseOut={e => {
+              e.currentTarget.style.background = "none";
+              e.currentTarget.style.color = "var(--salt-pepper-dark)";
+            }}
+          >
+            Logout
+          </button>
+        )}
+      </header>
+      
+      <div className={`event-page-container ${isCoordinator ? 'coordinator-layout' : 'participant-layout'}`} style={{ height: "calc(100vh - 64px)" }}>
       {/* Header Section - Coordinator only */}
       {isCoordinator && (
         <div className="event-header">
@@ -252,14 +346,7 @@ const EventPage = () => {
         />
       </div>
 
-      {/* Actions Section - Coordinator only */}
-      {isCoordinator && (
-        <div className="event-actions">
-          <button className="create-event-btn">
-            Create Event Invite
-          </button>
-        </div>
-      )}
+      </div>
     </div>
   );
 };

@@ -218,17 +218,17 @@ const UserList = ({ participants, onUserSelect, isCoordinator = false, onInviteU
                       <CardBody p={2}>
                         <HStack spacing={2}>
                           <Avatar
-                            size="xs"
+                            size="sm"
                             name={participant.name}
                             src={participant.avatar_url} // Google profile picture from Supabase session
                             bg="var(--salt-pepper-light-gray)"
                             color="var(--salt-pepper-medium-gray)"
                           />
                           <Box>
-                            <Text fontWeight="medium" fontSize="xs" lineHeight="1.2">
+                            <Text fontWeight="medium" fontSize="md" lineHeight="1.2">
                               {participant.name}
                             </Text>
-                            <Text fontSize="2xs" color="var(--salt-pepper-medium-gray)" lineHeight="1.1">
+                            <Text fontSize="md" color="var(--salt-pepper-medium-gray)" lineHeight="1.1">
                               {participant.email}
                             </Text>
                           </Box>
