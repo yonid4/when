@@ -25,7 +25,7 @@ from .routes.events import event_bp
 from .routes.auth import auth_bp
 from .routes.availability import availability_bp
 from .routes.preferences import preferences_bp
-# from .routes.calendar import calendar_bp
+from .routes.google_calendar import calendar_bp
 from .utils.supabase_client import init_supabase
 
 def create_app(config_name="development"):
@@ -43,8 +43,15 @@ def create_app(config_name="development"):
     # Load configuration
     app.config.from_object(config[config_name])
     
-    # Initialize extensions
-    CORS(app)
+    # Initialize CORS to allow frontend origins and auth headers
+    CORS(
+        app,
+        resources={r"/api/*": {"origins": ["http://localhost:3000", "http://127.0.0.1:3000"]}},
+        supports_credentials=True,
+        allow_headers="*",
+        methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        expose_headers=["Content-Type", "Authorization"]
+    )
     
     # Initialize Supabase client
     init_supabase(config_name)
@@ -55,7 +62,7 @@ def create_app(config_name="development"):
     app.register_blueprint(auth_bp)
     app.register_blueprint(availability_bp)
     app.register_blueprint(preferences_bp)
-    # app.register_blueprint(calendar_bp)
+    app.register_blueprint(calendar_bp)
 
     # # Initialize background jobs
     # from .background_jobs import init_background_jobs

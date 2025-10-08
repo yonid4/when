@@ -32,3 +32,23 @@ class Event(BaseModel):
 
     def __repr__(self):
         return f'<Event {self.name}>'
+
+    def to_dict(self) -> dict:
+        """Convert to dictionary for Supabase operations."""
+        return {
+            "id": self.id,
+            "uid": self.uid,
+            "name": self.name,
+            "description": self.description,
+            "coordinator_id": self.coordinator_id,
+            "earliest_date": self.earliest_date.isoformat() if self.earliest_date else None,
+            "latest_date": self.latest_date.isoformat() if self.latest_date else None,
+            "earliest_hour": self.earliest_hour.isoformat() if self.earliest_hour else None,
+            "latest_hour": self.latest_hour.isoformat() if self.latest_hour else None,
+            "duration_minutes": self.duration_minutes,
+            "status": self.status,
+            "selected_start_time_utc": self.selected_start_time_utc.isoformat() if self.selected_start_time_utc else None,
+            "selected_end_time_utc": self.selected_end_time_utc.isoformat() if self.selected_end_time_utc else None,
+            "created_at": self.created_at.isoformat(),
+            "updated_at": self.updated_at.isoformat(),
+        }

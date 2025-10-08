@@ -4,9 +4,9 @@ Event routes for managing events and event participants.
 
 from flask import Blueprint, request, jsonify
 from ..utils.decorators import require_auth
-from ..utils.supabase_client import get_supabase
 from datetime import datetime
 import logging
+from ..services.events import EventsService
 
 event_bp = Blueprint("events", __name__, url_prefix="/api/events")
 
@@ -57,17 +57,20 @@ def create_event():
                 'message': error_msg
             }), 400
 
-        # Get Supabase client
-        supabase = get_supabase()
-        
         # Parse dates and times
         start_date = parse_iso_date(data.get("start_date"))
         end_date = parse_iso_date(data.get("end_date"))
         earliest_hour = parse_time_str(data.get("earliest_daily_start_time"))
         latest_hour = parse_time_str(data.get("latest_daily_end_time"))
         
+        # Generate a 12-character UID for the event
+        import string
+        import random
+        event_uid = ''.join(random.choices(string.ascii_letters + string.digits, k=12))
+        
         # Create event
         event_data = {
+            "uid": event_uid,
             "name": data.get("name"),
             "description": data.get("description"),
             "coordinator_id": user_id,
@@ -81,26 +84,17 @@ def create_event():
         
         logging.info(f"[EVENT] Inserting event data: {event_data}")
         
-        event = (
-            supabase.table("events")
-            .insert(event_data)
-            .execute()
-        )
+        # Pass the access token to ensure RLS compliance
+        access_token = getattr(request, "access_token", None)
+        events_service = EventsService(access_token)
+
+        event = events_service.create_event(event_data)
 
         # Add creator as participant
-        event_id = event.data[0]["id"]
-        (
-            supabase.table("event_participants")
-            .insert({
-                "event_id": event_id,
-                "user_id": user_id,
-                "status": "accepted"
-            })
-            .execute()
-        )
+        events_service.add_participant(event['id'], user_id)
 
-        logging.info(f"[EVENT] Successfully created event {event_id}")
-        return jsonify(event.data[0]), 201
+        logging.info(f"[EVENT] Successfully created event {event['id']}")
+        return jsonify(event), 201
 
     except ValueError as e:
         error_msg = str(e)
@@ -117,44 +111,52 @@ def create_event():
             'message': error_msg
         }), 400
 
+@event_bp.route('/', methods=['GET'])
+@require_auth
+def get_user_events():
+    """
+    Get all events for the authenticated user (coordinator and participant).
+    Requires authentication.
+    """
+    try:
+        user_id = request.user.id
+        access_token = getattr(request, "access_token", None)
+        events_service = EventsService(access_token)
+        
+        events = events_service.get_user_events(user_id)
+        
+        logging.info(f"[EVENT] Retrieved {len(events)} events for user {user_id}")
+        return jsonify(events), 200
+        
+    except Exception as e:
+        error_msg = str(e)
+        logging.error(f"[EVENT] Failed to get user events: {error_msg}")
+        return jsonify({
+            'error': 'Failed to get user events',
+            'message': error_msg
+        }), 400
+
 @event_bp.route('/<string:event_id>', methods=['GET'])
 @require_auth
 def get_event(event_id):
     """
-    Get event details.
+    Get event details by UID or ID.
     Requires authentication.
     """
     try:
-        # Get Supabase client
-        supabase = get_supabase()
-        
-        # Get event
-        event = (
-            supabase.table("events")
-            .select("*")
-            .eq("id", event_id)
-            .execute()
-        )
-
-        if not event.data:
+        access_token = getattr(request, "access_token", None)
+        events_service = EventsService(access_token)
+        # Try to get by UID first (since event_id in URL is actually the UID)
+        event = events_service.get_event_by_uid(event_id)
+        if not event:
+            # Fallback to ID lookup for backward compatibility
+            event = events_service.get_event(event_id)
+        if not event:
             return jsonify({
                 'error': 'Event not found',
-                'message': f'No event found with id {event_id}'
+                'message': f'No event found with id/uid {event_id}'
             }), 404
-
-        # Get participants
-        participants = (
-            supabase.table("event_participants")
-            .select("*, profiles(*)")
-            .eq("event_id", event_id)
-            .execute()
-        )
-
-        event_data = event.data[0]
-        event_data["participants"] = participants.data
-
-        return jsonify(event_data), 200
-
+        return jsonify(event), 200
     except Exception as e:
         return jsonify({
             'error': 'Failed to get event',
@@ -164,99 +166,56 @@ def get_event(event_id):
 @event_bp.route('/<string:event_id>', methods=['PUT'])
 @require_auth
 def update_event(event_id):
-    # TODO: Check if it will be possible to update an event
-    return 201
-
-    # user_id = request.user.id
-    # data = request.get_json()
-
-    # try:
-    #     # Get Supabase client
-    #     supabase = get_supabase()
-        
-    #     # Check if user is the creator
-    #     event = (
-    #         supabase.table("events")
-    #         .select("creator_id")
-    #         .eq("id", event_id)
-    #         .execute()
-    #     )
-
-    #     if not event.data:
-    #         return jsonify({
-    #             'error': 'Event not found',
-    #             'message': f'No event found with id {event_id}'
-    #         }), 404
-
-    #     if event.data[0]["creator_id"] != user_id:
-    #         return jsonify({
-    #             'error': 'Unauthorized',
-    #             'message': 'Only the event creator can update the event'
-    #         }), 403
-
-    #     # Update event
-    #     updated_event = (
-    #         supabase.table("events")
-    #         .update({
-    #             "name": data.get("name"),
-    #             "description": data.get("description"),
-    #             "start_time_utc": data.get("start_time_utc"),
-    #             "end_time_utc": data.get("end_time_utc"),
-    #             "timezone": data.get("timezone"),
-    #             "location": data.get("location"),
-    #             "is_online": data.get("is_online"),
-    #             "meeting_link": data.get("meeting_link"),
-    #             "status": data.get("status")
-    #         })
-    #         .eq("id", event_id)
-    #         .execute()
-    #     )
-
-    #     return jsonify(updated_event.data[0]), 200
-
-    # except Exception as e:
-    #     return jsonify({
-    #         'error': 'Failed to update event',
-    #         'message': str(e)
-    #     }), 400
+    """
+    Update an event.
+    Requires authentication.
+    """
+    try:
+        user_id = request.user.id
+        data = request.get_json()
+        access_token = getattr(request, "access_token", None)
+        events_service = EventsService(access_token)
+        event = events_service.update_event(event_id, data)
+        return jsonify(event), 200
+    except Exception as e:
+        return jsonify({
+            'error': 'Failed to update event',
+            'message': str(e)
+        }), 400
 
 @event_bp.route('/<string:event_id>', methods=['DELETE'])
 @require_auth
 def delete_event(event_id):
     """
     Delete an event.
-    Only the event creator can delete the event.
     Requires authentication.
     """
-    user_id = request.user.id
-
     try:
-        # Get Supabase client
-        supabase = get_supabase()
+        user_id = request.user.id
+        access_token = getattr(request, "access_token", None)
+        events_service = EventsService(access_token)
         
-        # Check if user is the creator
-        event = (
-            supabase.table("events")
-            .select("creator_id")
-            .eq("id", event_id)
-            .execute()
-        )
-
-        if not event.data:
+        # Check if user is coordinator
+        event = events_service.get_event(event_id)
+        if not event:
             return jsonify({
                 'error': 'Event not found',
                 'message': f'No event found with id {event_id}'
             }), 404
-
-        if event.data[0]["creator_id"] != user_id:
+            
+        if event.get('coordinator_id') != user_id:
             return jsonify({
-                'error': 'Unauthorized',
-                'message': 'Only the event creator can delete the event'
+                'error': 'Access denied',
+                'message': 'Only the event coordinator can delete the event'
             }), 403
-
-        # Delete event (this will cascade delete participants and availability and preferences)
-        supabase.table("events").delete().eq("id", event_id).execute()
-
+        
+        success = events_service.delete_event(event_id)
+        if not success:
+            return jsonify({
+                'error': 'Failed to delete event',
+                'message': 'Event could not be deleted'
+            }), 400
+            
         return jsonify({
             'message': 'Event deleted successfully'
         }), 200
@@ -264,6 +223,29 @@ def delete_event(event_id):
     except Exception as e:
         return jsonify({
             'error': 'Failed to delete event',
+            'message': str(e)
+        }), 400
+
+@event_bp.route('/<string:event_uid>/participants', methods=['GET'])
+@require_auth
+def get_event_participants(event_uid):
+    """
+    Get participants of an event by UID.
+    Requires authentication.
+    """
+    try:
+        access_token = getattr(request, "access_token", None)
+        events_service = EventsService(access_token)
+        
+        logging.info(f"[EVENT] Getting participants for event UID: {event_uid}")
+        participants = events_service.get_event_participants(event_uid)
+        logging.info(f"[EVENT] Found {len(participants)} participants")
+        
+        return jsonify(participants), 200
+    except Exception as e:
+        logging.error(f"[EVENT] Failed to get participants: {str(e)}")
+        return jsonify({
+            'error': 'Failed to get participants',
             'message': str(e)
         }), 400
 
@@ -279,21 +261,15 @@ def add_participant(event_id):
     participant_id = data.get("user_id")
 
     try:
-        # Get Supabase client
-        supabase = get_supabase()
-        
-        # Add participant
-        participant = (
-            supabase.table("event_participants")
-            .insert({
-                "event_id": event_id,
-                "user_id": participant_id,
-                "status": "pending"
-            })
-            .execute()
-        )
-
-        return jsonify(participant.data[0]), 201
+        access_token = getattr(request, "access_token", None)
+        events_service = EventsService(access_token)
+        participant = events_service.add_participant(event_id, participant_id)
+        if not participant:
+            return jsonify({
+                'error': 'Failed to add participant',
+                'message': 'User may already be a participant or event not found'
+            }), 400
+        return jsonify(participant), 201
 
     except Exception as e:
         return jsonify({
@@ -301,41 +277,28 @@ def add_participant(event_id):
             'message': str(e)
         }), 400
 
-@event_bp.route('/<string:event_id>/participants/<string:user_id>', methods=['PUT'])
+@event_bp.route('/<string:event_id>/participants/<string:participant_id>', methods=['DELETE'])
 @require_auth
-def update_participant_status(event_id, user_id):
+def remove_participant(event_id, participant_id):
     """
-    Update a participant's status.
+    Remove a participant from an event.
     Requires authentication.
     """
-    data = request.get_json()
-    status = data.get("status")
-
-    if status not in ["pending", "accepted", "declined"]:
-        return jsonify({
-            'error': 'Invalid status',
-            'message': 'Status must be one of: pending, accepted, declined'
-        }), 400
-
     try:
-        # Get Supabase client
-        supabase = get_supabase()
-        
-        # Update participant status
-        participant = (
-            supabase.table("event_participants")
-            .update({
-                "status": status
-            })
-            .eq("event_id", event_id)
-            .eq("user_id", user_id)
-            .execute()
-        )
-
-        return jsonify(participant.data[0]), 200
+        access_token = getattr(request, "access_token", None)
+        events_service = EventsService(access_token)
+        success = events_service.remove_participant(event_id, participant_id)
+        if not success:
+            return jsonify({
+                'error': 'Failed to remove participant',
+                'message': 'Participant may not exist or event not found'
+            }), 400
+        return jsonify({
+            'message': 'Participant removed successfully'
+        }), 200
 
     except Exception as e:
         return jsonify({
-            'error': 'Failed to update participant status',
+            'error': 'Failed to remove participant',
             'message': str(e)
         }), 400

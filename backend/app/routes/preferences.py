@@ -4,10 +4,12 @@ User preferences routes for managing event preferences.
 
 from flask import Blueprint, request, jsonify
 from ..utils.decorators import require_auth
-from ..utils.supabase_client import get_supabase
+from ..services.preference import PreferencesService
+from ..models.preference import UserEventPreference
 from datetime import datetime
 
 preferences_bp = Blueprint("preferences", __name__, url_prefix="/api/preferences")
+preferences_service = PreferencesService()
 
 @preferences_bp.route('/<string:event_id>', methods=['POST'])
 @require_auth
@@ -20,26 +22,24 @@ def add_preference(event_id):
     data = request.get_json()
 
     try:
-        # Get Supabase client
-        supabase = get_supabase()
-        
-        # Add preference
-        preference_data = {
-            "event_id": event_id,
-            "user_id": user_id,
-            "availability_slot_id": data.get("availability_slot_id"),
-            "preferred_start_time_utc": data.get("preferred_start_time_utc"),
-            "preferred_end_time_utc": data.get("preferred_end_time_utc"),
-            "preference_strength": data.get("preference_strength", 1)
-        }
-        
-        result = (
-            supabase.table("user_event_preferences")
-            .insert(preference_data)
-            .execute()
+        # Build model then persist via service
+        user_pref = UserEventPreference(
+            event_id=event_id,
+            user_id=user_id,
+            availability_slot_id=data.get("availability_slot_id"),
+            preferred_start_time_utc=data.get("preferred_start_time_utc"),
+            preferred_end_time_utc=data.get("preferred_end_time_utc"),
+            preference_strength=data.get("preference_strength", 1)
         )
 
-        return jsonify(result.data[0]), 201
+        created = preferences_service.add_preference(user_pref.to_dict())
+        if not created:
+            return jsonify({
+                'error': 'Failed to add preference',
+                'message': 'Validation failed or insert error'
+            }), 400
+
+        return jsonify(created), 201
 
     except Exception as e:
         return jsonify({
@@ -55,18 +55,8 @@ def get_preferences(event_id):
     Requires authentication.
     """
     try:
-        # Get Supabase client
-        supabase = get_supabase()
-        
-        # Get preferences
-        preferences = (
-            supabase.table("user_event_preferences")
-            .select("*, profiles(*)")
-            .eq("event_id", event_id)
-            .execute()
-        )
-
-        return jsonify(preferences.data), 200
+        prefs = preferences_service.get_event_preferences(event_id)
+        return jsonify(prefs), 200
 
     except Exception as e:
         return jsonify({
@@ -82,19 +72,8 @@ def get_user_preferences(event_id, user_id):
     Requires authentication.
     """
     try:
-        # Get Supabase client
-        supabase = get_supabase()
-        
-        # Get user's preferences
-        preferences = (
-            supabase.table("user_event_preferences")
-            .select("*")
-            .eq("event_id", event_id)
-            .eq("user_id", user_id)
-            .execute()
-        )
-
-        return jsonify(preferences.data), 200
+        prefs = preferences_service.get_user_preferences(event_id, user_id)
+        return jsonify(prefs), 200
 
     except Exception as e:
         return jsonify({
@@ -110,15 +89,13 @@ def delete_user_preferences(preference_id):
     Requires authentication.
     """
     try:
-        # Get Supabase client
-        supabase = get_supabase()
-        
-        # Delete user's preferences
-        supabase.table("user_event_preferences").delete().eq("id", preference_id).execute()
-
-        return jsonify({
-            'message': 'Preferences deleted successfully'
-        }), 200
+        ok = preferences_service.delete_preference(preference_id)
+        if not ok:
+            return jsonify({
+                'error': 'Failed to delete preferences',
+                'message': 'Delete unsuccessful'
+            }), 400
+        return jsonify({'message': 'Preferences deleted successfully'}), 200
 
     except Exception as e:
         return jsonify({

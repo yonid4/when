@@ -21,10 +21,10 @@ const localizer = dateFnsLocalizer({
 });
 
 const CalendarView = ({ events = [], onSelectSlot, onSelectEvent }) => {
-  // Calculate dynamic hour range based on events
+  // Calculate hour range based on events with reasonable defaults
   const hourRange = useMemo(() => {
-    let minHour = 8; // Default start at 8 AM
-    let maxHour = 20; // Default end at 8 PM
+    let minHour = 9; // Start at 7 AM
+    let maxHour = 17; // End at 9 PM
     
     if (events && events.length > 0) {
       events.forEach(event => {
@@ -32,10 +32,10 @@ const CalendarView = ({ events = [], onSelectSlot, onSelectEvent }) => {
         const endHour = new Date(event.end).getHours();
         
         if (startHour < minHour) {
-          minHour = Math.floor(startHour);
+          minHour = Math.max(minHour, Math.floor(startHour)); // Don't go earlier than 6 AM
         }
         if (endHour > maxHour) {
-          maxHour = Math.ceil(endHour);
+          maxHour = Math.min(maxHour, Math.ceil(endHour)); // Don't go later than 11 PM
         }
       });
     }

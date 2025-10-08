@@ -1,13 +1,18 @@
 """
 Google Calendar service for handling OAuth and calendar operations.
+
+Notes:
+- Credentials are stored on the `profiles` table under `google_auth_token`.
+- `get_calendar_service` refreshes tokens when expired and persists the fresh token.
+- Always handle rate limits and errors at call sites; this module raises on fatal issues.
 """
 
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
-from flask import current_app, url_for, request
-import json
-from typing import Dict, Any, Optional
+from flask import current_app
+from typing import Optional
+from google.auth.transport.requests import Request
 
 SCOPES = [
     "https://www.googleapis.com/auth/calendar",
@@ -75,18 +80,6 @@ def get_credentials_from_code(code: str) -> Credentials:
     except Exception as e:
         raise ValueError(f"Failed to get credentials: {str(e)}")
 
-def get_calendar_service(credentials: Credentials):
-    """
-    Create a Google Calendar API service instance.
-    
-    Args:
-        credentials (Credentials): Google API credentials
-        
-    Returns:
-        Resource: Google Calendar API service
-    """
-    return build("calendar", "v3", credentials=credentials)
-
 def store_credentials(user_id: str, credentials: Credentials) -> None:
     """
     Store user's Google credentials securely.
@@ -129,7 +122,12 @@ def get_stored_credentials(user_id: str) -> Optional[Credentials]:
     supabase = get_supabase()
     
     # Get user profile with stored credentials
-    response = supabase.table("profiles").select("google_auth_token").eq("id", user_id).execute()
+    response = (
+        supabase.table("profiles")
+        .select("google_auth_token")
+        .eq("id", user_id)
+        .execute()
+    )
     
     if not response.data or not response.data[0].get("google_auth_token"):
         return None
@@ -144,3 +142,107 @@ def get_stored_credentials(user_id: str) -> Optional[Credentials]:
         client_secret=creds_dict["client_secret"],
         scopes=creds_dict["scopes"]
     )
+
+def refresh_credentials_if_needed(credentials: Credentials) -> Credentials:
+    """
+    Refresh credentials if they are expired and have a refresh token.
+
+    Args:
+        credentials (Credentials): User's current Google OAuth credentials.
+
+    Returns:
+        Credentials: Valid credentials (refreshed if needed).
+    """
+    # Checks if credentials are expired or invalid
+    if credentials and credentials.expired and credentials.refresh_token:
+        try:
+            # This does the actual refresh using the refresh token
+            credentials.refresh(Request())
+        except Exception as e:
+            raise ValueError(f"Failed to refresh credentials: {str(e)}")
+    return credentials
+
+def validate_credentials(credentials: Credentials) -> bool:
+    """
+    Validates Google OAuth credentials.
+    Checks if credentials are valid or can be refreshed.
+
+    Returns:
+        bool: True if credentials are valid or can be refreshed, otherwise False.
+    """
+    if not credentials:
+        return False
+    if credentials.valid:
+        return True
+    if credentials.expired and credentials.refresh_token:
+        try:
+            credentials.refresh(Request())
+            return credentials.valid
+        except Exception:
+            return False
+    return False
+
+def get_calendar_service(credentials: Credentials, user_id: str):
+    """
+    Create a Google Calendar API service instance.
+    
+    Args:
+        credentials (Credentials): Google API credentials
+        user_id (str): User's ID
+    Returns:
+        Resource: Google Calendar API service
+    """
+    credentials = refresh_credentials_if_needed(credentials)
+    store_credentials(user_id, credentials)
+    return build("calendar", "v3", credentials=credentials)
+
+def revoke_credentials(user_id: str) -> None:
+    """
+    Revokes the user's stored Google OAuth credentials.
+
+    Args:
+        user_id (str): The user's unique ID.
+    """
+    import requests
+
+    credentials = get_stored_credentials(user_id)
+    if credentials and credentials.token:
+        revoke_url = "https://oauth2.googleapis.com/revoke"
+        try:
+            response = requests.post(revoke_url, params={'token': credentials.token})
+            response.raise_for_status()
+        except Exception:
+            pass  # Optionally log or handle revocation errors here
+    # Remove credentials from storage
+    from ..utils.supabase_client import get_supabase
+    supabase = get_supabase()
+
+    supabase.table("profiles").update({
+        "google_auth_token": None
+    }).eq("id", user_id).execute()
+
+def get_user_calendars(user_id: str) -> list:
+    """
+    Lists all available calendars for the user.
+
+    Args:
+        user_id (str): The user's unique ID.
+
+    Returns:
+        list: List of calendar dicts (e.g., with 'id' and 'summary').
+    """
+    credentials = get_stored_credentials(user_id)
+    if not validate_credentials(credentials):
+        raise Exception("Invalid Google credentials")
+    service = build("calendar", "v3", credentials=credentials)
+    calendars = []
+    page_token = None
+    while True:
+        calendar_list = service.calendarList().list(pageToken=page_token).execute()
+        items = calendar_list.get('items', [])
+        calendars.extend(items)
+        page_token = calendar_list.get('nextPageToken')
+        if not page_token:
+            break
+    # Optionally, extract only relevant fields
+    return [{"id": c["id"], "summary": c.get("summary"), "primary": c.get("primary", False)} for c in calendars]

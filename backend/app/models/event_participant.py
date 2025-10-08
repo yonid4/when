@@ -15,3 +15,12 @@ class EventParticipant(BaseModel):
 
     def __repr__(self):
         return f'<EventParticipant event_id={self.event_id} user_id={self.user_id}>'
+
+    def to_dict(self) -> dict:
+        """Convert to dictionary for Supabase operations."""
+        return {
+            "event_id": self.event_id,
+            "user_id": self.user_id,
+            "status": self.status,
+            "joined_at": self.joined_at.isoformat(),
+        }

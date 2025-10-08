@@ -1,11 +1,6 @@
 import { useEffect, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
-import axios from "axios";
-
-const supabase = createClient(
-  process.env.REACT_APP_SUPABASE_URL,
-  process.env.REACT_APP_SUPABASE_ANON_KEY
-);
+import { supabase } from "../services/supabaseClient";
+import api from "../services/api";
 
 export const useEnsureProfile = () => {
   const [error, setError] = useState(null);
@@ -16,27 +11,50 @@ export const useEnsureProfile = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
       const userId = session.user.id;
-      const fetchProfile = async () => {
+      const fetchOrCreateProfile = async () => {
         try {
-          await axios.get(
-            `http://localhost:5000/api/users/${userId}`,
-            {
-              headers: {
-                Authorization: `Bearer ${session.access_token}`,
-              },
+          const profileResponse = await api.get(`/api/users/${userId}`);
+          // Profile exists, check if it needs enrichment with Google data
+          const profile = profileResponse.data;
+          
+          // If profile exists but doesn't have Google data, enrich it
+          if (profile && !profile.google_auth_token && session.user.app_metadata?.provider === 'google') {
+            try {
+              console.log('Enriching profile with Google data...');
+              await api.post('/api/auth/enrich-profile');
+              console.log('Profile enriched successfully');
+            } catch (enrichErr) {
+              console.warn('Failed to enrich profile with Google data:', enrichErr);
+              // Don't fail the entire flow if enrichment fails
             }
-          );
-          // Profile exists, do nothing
+          }
         } catch (err) {
-          if (err.response && err.response.status === 404 && retryCount < 3) {
-            retryCount++;
-            setTimeout(fetchProfile, 500 * retryCount); // Exponential backoff
+          const status = err?.response?.status;
+          if (status === 404) {
+            try {
+              const email = session.user.email;
+              const full_name = session.user.user_metadata?.full_name || email;
+              const avatar_url = session.user.user_metadata?.avatar_url;
+              await api.post(`/api/users`, {
+                email_address: email,
+                full_name,
+                avatar_url
+              });
+              return;
+            } catch (createErr) {
+              if (retryCount < 3) {
+                retryCount++;
+                setTimeout(fetchOrCreateProfile, 500 * retryCount);
+                return;
+              }
+            }
+            setError("Your account is being set up or there was a problem fetching your profile. Please refresh the page in a few seconds or contact support if this persists.");
           } else {
             setError("Your account is being set up or there was a problem fetching your profile. Please refresh the page in a few seconds or contact support if this persists.");
           }
         }
       };
-      fetchProfile();
+      fetchOrCreateProfile();
     };
     ensureProfile();
   }, []);

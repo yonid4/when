@@ -1,326 +1,318 @@
-/* Calendar customizations with Chakra UI integration */
+/* ============================================
+   FRESH CALENDAR CSS - Clean Implementation
+   ============================================ */
 
-/* Disable date header clicks and make them appear as plain text */
-.calendar-container .rbc-date-header-text {
-  cursor: default;
-  pointer-events: none;
-  color: var(--salt-pepper-dark);
-  font-weight: 500;
-}
-
-/* Style headers with better centering - force transparent background */
-.calendar-container .rbc-header,
-.calendar-container .rbc-header *,
-.calendar-container .rbc-time-header-cell .rbc-header {
-  cursor: default;
-  background-color: transparent !important;
-  background: transparent !important;
-  border-bottom: 1px solid var(--salt-pepper-light-gray) !important;
-  padding: 8px 4px !important;
-  font-size: 0.875rem !important;
-  font-weight: 500 !important;
-  color: var(--salt-pepper-dark) !important;
-  text-align: center !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  min-height: 40px !important;
-  height: 40px !important;
-}
-
-.calendar-container .rbc-header:hover,
-.calendar-container .rbc-header:focus,
-.calendar-container .rbc-header:active {
-  background-color: transparent !important;
-  background: transparent !important;
-}
-
-/* Ensure date headers look like plain text, not buttons */
-.calendar-container .rbc-button-link,
-.calendar-container .rbc-header button,
-.calendar-container .rbc-header a,
-.calendar-container .rbc-header [role="button"] {
-  text-decoration: none !important;
-  color: inherit !important;
-  cursor: default !important;
-  pointer-events: none !important;
-  background: transparent !important;
-  border: none !important;
-  outline: none !important;
-  box-shadow: none !important;
-}
-
-/* Remove all button styling from header elements */
-.calendar-container .rbc-header * {
-  cursor: default !important;
-  pointer-events: none !important;
-  background: transparent !important;
-  border: none !important;
-}
-
-/* Style the calendar container */
+/* Calendar Container */
 .calendar-container {
   height: 100%;
   width: 100%;
-  background: var(--salt-pepper-white) !important;
+  background: white;
 }
 
-/* Ensure calendar takes full height */
 .calendar-container .rbc-calendar {
   height: 100%;
   font-family: inherit;
+  display: flex;
+  flex-direction: column;
 }
 
-/* Make date numbers more prominent */
-.calendar-container .rbc-date-cell a {
-  font-weight: bold !important;
-  font-size: 0.95rem !important;
-  color: var(--salt-pepper-dark) !important;
-}
+/* ============================================
+   TIME VIEW STRUCTURE
+   ============================================ */
 
-/* Month view date styling */
-.calendar-container .rbc-month-view .rbc-date-cell a {
-  font-weight: bold !important;
-  font-size: 1rem !important;
-  color: var(--salt-pepper-dark) !important;
-}
-
-/* Enhanced styling for better appearance */
-.calendar-container .rbc-month-view,
-.calendar-container .rbc-week-view,
-.calendar-container .rbc-day-view {
-  border: 1px solid var(--salt-pepper-light-gray) !important;
-  border-radius: 8px !important;
-  overflow: hidden !important;
-}
-
-/* Improve current day highlighting with lighter background */
-.calendar-container .rbc-today {
-  background-color: var(--salt-pepper-light-gray) !important;
-}
-
-/* Make today's header have light background only */
-.calendar-container .rbc-header.rbc-today {
-  background-color: var(--salt-pepper-light-gray) !important;
-}
-
-/* Make today's day background have light background only */
-.calendar-container .rbc-day-bg.rbc-today {
-  background-color: var(--salt-pepper-light-gray) !important;
-}
-
-/* Make today's day slot in time area have darker borders (7am-9pm only) */
-.calendar-container .rbc-time-content .rbc-day-slot.rbc-today {
-  border-left: 2px solid var(--salt-pepper-medium-gray) !important;
-  border-right: 2px solid var(--salt-pepper-medium-gray) !important;
-  background-color: var(--salt-pepper-light-gray) !important;
-}
-
-/* Make today's time slots have darker horizontal lines (only in time content area) */
-.calendar-container .rbc-time-content .rbc-today .rbc-timeslot-group {
-  border-bottom: 2px solid var(--salt-pepper-medium-gray) !important;
-}
-
-.calendar-container .rbc-time-content .rbc-today .rbc-time-slot {
-  border-bottom: 1px solid var(--salt-pepper-medium-gray) !important;
-}
-
-/* Style the time gutter - force consistent width with box-sizing */
-.calendar-container .rbc-time-header-gutter {
-  background-color: var(--salt-pepper-white) !important;
-  border-right: 1px solid var(--salt-pepper-light-gray) !important;
-  width: 80px !important;
-  min-width: 80px !important;
-  max-width: 80px !important;
-  text-align: center !important;
-  flex: 0 0 80px !important;
-  flex-shrink: 0 !important;
-  height: 40px !important;
-  box-sizing: border-box !important;
-}
-
-/* OUTER HEADER: Must not have a negative margin */
-.calendar-container .rbc-time-header.rbc-overflowing {
-  height: 40px !important;
-  min-height: 40px !important;
-  max-height: 40px !important;
-  display: flex !important;
-  box-sizing: border-box !important;
-}
-
-/* CRITICAL FIX: Target inner content to shift columns left */
-.calendar-container .rbc-time-header-content {
-  height: 40px !important;
-  display: flex !important;
-  width: calc(100% - 80px) !important;
-  box-sizing: border-box !important;
-  overflow: visible !important;
-  /* Apply negative margin to compensate for NEW 4px scrollbar width */
-  margin-right: -4px !important;
-}
-
-/* Hide or minimize the allday cell section */
-.calendar-container .rbc-allday-cell {
-  display: none !important;
-}
-
-/* Ensure the time header cell row matches header height and layout */
-.calendar-container .rbc-time-header-cell {
-  height: 40px !important;
-  min-height: 40px !important;
-  max-height: 40px !important;
-  display: flex !important;
-  box-sizing: border-box !important;
-  width: 100% !important;
-  flex: 1 !important;
-}
-
-/* Force day headers to have exact 1/7th width */
-.calendar-container .rbc-time-header-cell .rbc-header {
-  width: calc(100% / 7) !important;
-  flex: none !important;
-  min-width: 0 !important;
-  border-right: 1px solid var(--salt-pepper-light-gray) !important;
-  box-sizing: border-box !important;
-}
-
-/* Remove border from last header */
-.calendar-container .rbc-time-header-cell .rbc-header:last-child {
-  border-right: none !important;
-}
-
-/* Ensure the day slots in the time grid have matching layout */
-.calendar-container .rbc-time-content {
-  display: flex !important;
-  box-sizing: border-box !important;
-  width: 100% !important;
-}
-
-/* Force day columns to have exact 1/7th width */
-.calendar-container .rbc-day-slot:not(.rbc-time-column) {
-  width: calc(100% / 7) !important;
-  flex: none !important;
-  min-width: 0 !important;
-  border-right: 1px solid var(--salt-pepper-light-gray) !important;
-  box-sizing: border-box !important;
-}
-
-/* Remove border from last day column */
-.calendar-container .rbc-day-slot:last-child {
-  border-right: none !important;
-}
-
-/* Ensure row backgrounds match the same layout */
-.calendar-container .rbc-row-bg {
-  display: flex !important;
-}
-
-.calendar-container .rbc-day-bg {
-  width: calc(100% / 7) !important;
-  flex: none !important;
-  min-width: 0 !important;
-  border-right: 1px solid var(--salt-pepper-light-gray) !important;
-  box-sizing: border-box !important;
-}
-
-.calendar-container .rbc-day-bg:last-child {
-  border-right: none !important;
-}
-
-/* Style the time labels */
-.calendar-container .rbc-label {
-  font-size: 0.75rem !important;
-  color: var(--salt-pepper-dark) !important;
-  font-weight: 500 !important;
-  text-align: center !important;
-}
-
-/* Force time column to match header gutter width with box-sizing */
-.calendar-container .rbc-time-gutter {
-  background-color: var(--salt-pepper-white) !important;
-  border-right: 1px solid var(--salt-pepper-light-gray) !important;
-  width: 80px !important;
-  min-width: 80px !important;
-  max-width: 80px !important;
-  flex: 0 0 80px !important;
-  flex-shrink: 0 !important;
-  box-sizing: border-box !important;
-}
-
-/* Style the time slot container to match day slot width */
-.calendar-container .rbc-timeslot-group {
-  border-bottom: 1px solid var(--salt-pepper-light-gray) !important;
-  display: flex !important;
-  width: 100% !important;
-  flex: none !important;
-  box-sizing: border-box !important;
-}
-
-/* Style individual time slots */
-.calendar-container .rbc-time-slot {
-  font-size: 0.75rem !important;
-  color: var(--salt-pepper-medium-gray) !important;
-  border-bottom: 1px solid var(--salt-pepper-light-gray) !important;
-  text-align: center !important;
-}
-
-/* Event styling */
-.calendar-container .rbc-event {
-  background-color: var(--salt-pepper-dark) !important;
-  border-radius: 4px !important;
-  border: none !important;
-  font-size: 0.75rem !important;
-}
-
-/* Selected event styling */
-.calendar-container .rbc-event.rbc-selected {
-  background-color: var(--salt-pepper-medium-gray) !important;
-}
-
-/* Grid lines and borders */
 .calendar-container .rbc-time-view {
-  border: 1px solid var(--salt-pepper-light-gray) !important;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
+/* ============================================
+   HEADER SECTION (Fixed Height)
+   ============================================ */
 
-/* Make horizontal lines in today column more visible (only in time content area) */
-.calendar-container .rbc-time-content .rbc-day-slot.rbc-today .rbc-timeslot-group {
-  border-bottom: 2px solid var(--salt-pepper-medium-gray) !important;
+.calendar-container .rbc-time-header {
+  display: flex;
+  border-bottom: 1px solid #e2e8f0;
+  height: 40px;
+  min-height: 40px;
+  max-height: 40px;
+  flex-shrink: 0;
+  position: relative;
 }
 
-/* Toolbar styling for Chakra UI buttons */
+.calendar-container .rbc-time-header.rbc-overflowing {
+  border-bottom: 1px solid #e2e8f0;
+}
+
+/* Time Gutter Header (Left corner) */
+.calendar-container .rbc-time-header-gutter {
+  width: 80px;
+  min-width: 80px;
+  max-width: 80px;
+  flex: 0 0 80px;
+  background: white;
+  border-right: 1px solid #e2e8f0;
+}
+
+/* Day Headers Container */
+.calendar-container .rbc-time-header-content {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* Individual Day Headers */
+.calendar-container .rbc-header {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  border-right: 1px solid #e2e8f0;
+  padding: 8px 4px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #2b2b2b;
+  cursor: default;
+}
+
+.calendar-container .rbc-header:last-child {
+  border-right: none;
+}
+
+/* Today's header highlighting */
+.calendar-container .rbc-header.rbc-today {
+  background-color: #f7f9fb;
+}
+
+/* Disable header interactions */
+.calendar-container .rbc-header button,
+.calendar-container .rbc-header a {
+  all: unset;
+  pointer-events: none;
+  cursor: default;
+}
+
+/* Hide all-day section */
+.calendar-container .rbc-allday-cell {
+  display: none;
+}
+
+/* ============================================
+   TIME CONTENT AREA (Scrollable, Fills Remaining Space)
+   ============================================ */
+
+.calendar-container .rbc-time-content {
+  flex: 1;
+  display: flex;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* Create a wrapper for day columns that accounts for scrollbar */
+.calendar-container .rbc-time-content::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 0px;
+  pointer-events: none;
+}
+
+/* ============================================
+   TIME GUTTER (Left Side - Hour Labels)
+   ============================================ */
+
+.calendar-container .rbc-time-gutter {
+  width: 80px;
+  min-width: 80px;
+  max-width: 80px;
+  flex: 0 0 80px;
+  background: white;
+  border-right: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Hour Group in Time Gutter */
+.calendar-container .rbc-time-gutter .rbc-timeslot-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+/* Remove border from last hour group */
+.calendar-container .rbc-time-gutter .rbc-timeslot-group:last-child {
+  border-bottom: none;
+}
+
+/* Individual Time Slot (30 minutes) */
+.calendar-container .rbc-time-gutter .rbc-time-slot {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 4px;
+  font-size: 0.75rem;
+  color: #64748b;
+  position: relative;
+}
+
+/* Add line at 30-minute mark */
+.calendar-container .rbc-time-gutter .rbc-time-slot:nth-child(2) {
+  border-top: 1px solid #e2e8f0;
+}
+
+/* ============================================
+   DAY COLUMNS (Calendar Grid)
+   ============================================ */
+
+.calendar-container .rbc-time-content > .rbc-time-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* Day Column (Each day in the week) */
+.calendar-container .rbc-day-slot.rbc-time-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #e2e8f0;
+  position: relative;
+  min-width: 0;
+}
+
+/* Remove border from last day */
+.calendar-container .rbc-day-slot.rbc-time-column:last-child {
+  border-right: none;
+}
+
+/* Today column highlighting */
+.calendar-container .rbc-day-slot.rbc-today {
+  background-color: #f7f9fb;
+}
+
+/* Hour Group in Day Column */
+.calendar-container .rbc-day-slot.rbc-time-column .rbc-timeslot-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+/* Remove border from last hour group */
+.calendar-container .rbc-day-slot.rbc-time-column .rbc-timeslot-group:last-child {
+  border-bottom: none;
+}
+
+/* Time Slot within Day Column (30 minutes) */
+.calendar-container .rbc-day-slot.rbc-time-column .rbc-time-slot {
+  flex: 1;
+  position: relative;
+  min-height: 30px;
+}
+
+/* Add horizontal line at 30-minute mark */
+.calendar-container .rbc-day-slot.rbc-time-column .rbc-time-slot:nth-child(2) {
+  border-top: 1px solid #e2e8f0;
+}
+
+/* Stronger borders for today's column */
+.calendar-container .rbc-day-slot.rbc-today.rbc-time-column {
+  border-left: 2px solid #cbd5e0;
+  border-right: 2px solid #cbd5e0;
+}
+
+.calendar-container .rbc-day-slot.rbc-today .rbc-timeslot-group {
+  border-bottom-color: #cbd5e0;
+}
+
+.calendar-container .rbc-day-slot.rbc-today .rbc-time-slot:nth-child(2) {
+  border-top-color: #cbd5e0;
+}
+
+/* ============================================
+   EVENTS
+   ============================================ */
+
+.calendar-container .rbc-event {
+  background-color: #2b2b2b;
+  border-radius: 4px;
+  border: none;
+  padding: 2px 5px;
+  font-size: 0.75rem;
+  color: white;
+}
+
+.calendar-container .rbc-event.rbc-selected {
+  background-color: #64748b;
+}
+
+.calendar-container .rbc-event-label {
+  font-size: 0.75rem;
+}
+
+.calendar-container .rbc-event-content {
+  font-size: 0.75rem;
+}
+
+/* ============================================
+   TOOLBAR
+   ============================================ */
+
 .calendar-container .rbc-toolbar {
-  margin-bottom: 1rem !important;
-  padding: 0 !important;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding: 0;
 }
 
 .calendar-container .rbc-toolbar button {
-  background-color: transparent !important;
-  border: 1px solid var(--salt-pepper-light-gray) !important;
-  color: var(--salt-pepper-dark) !important;
-  padding: 0.5rem 1rem !important;
-  border-radius: 6px !important;
-  font-weight: 500 !important;
-  margin: 0 2px !important;
-  cursor: pointer !important;
-  transition: all 0.2s !important;
+  background-color: white;
+  border: 1px solid #e2e8f0;
+  color: #2b2b2b;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-weight: 500;
+  margin: 0 2px;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
 .calendar-container .rbc-toolbar button:hover {
-  background-color: var(--salt-pepper-white) !important;
-  border-color: var(--salt-pepper-dark) !important;
-  color: var(--salt-pepper-dark) !important;
+  border-color: #2b2b2b;
+  background-color: #f7f9fb;
 }
 
 .calendar-container .rbc-toolbar button.rbc-active {
-  background-color: var(--salt-pepper-dark) !important;
-  border-color: var(--salt-pepper-dark) !important;
-  color: white !important;
+  background-color: #2b2b2b;
+  border-color: #2b2b2b;
+  color: white;
 }
 
-/* Custom scrollbar for calendar */
+.calendar-container .rbc-toolbar-label {
+  font-weight: 600;
+  font-size: 1rem;
+  color: #2b2b2b;
+}
+
+/* ============================================
+   SCROLLBAR STYLING
+   ============================================ */
+
 .calendar-container .rbc-time-content::-webkit-scrollbar {
-  width: 4px; /* 50% of 8px */
+  width: 4px;
 }
 
 .calendar-container .rbc-time-content::-webkit-scrollbar-track {
@@ -328,10 +320,47 @@
 }
 
 .calendar-container .rbc-time-content::-webkit-scrollbar-thumb {
-  background-color: var(--salt-pepper-light-gray);
+  background-color: #e2e8f0;
   border-radius: 4px;
 }
 
 .calendar-container .rbc-time-content::-webkit-scrollbar-thumb:hover {
-  background-color: var(--salt-pepper-medium-gray);
+  background-color: #cbd5e0;
+}
+
+/* ============================================
+   MONTH VIEW (Basic Styling)
+   ============================================ */
+
+.calendar-container .rbc-month-view {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.calendar-container .rbc-month-row {
+  border-top: 1px solid #e2e8f0;
+}
+
+.calendar-container .rbc-day-bg {
+  border-left: 1px solid #e2e8f0;
+}
+
+.calendar-container .rbc-day-bg.rbc-today {
+  background-color: #f7f9fb;
+}
+
+.calendar-container .rbc-off-range-bg {
+  background-color: #fafafa;
+}
+
+.calendar-container .rbc-date-cell {
+  padding: 4px 8px;
+}
+
+.calendar-container .rbc-date-cell a {
+  font-weight: bold;
+  font-size: 0.95rem;
+  color: #2b2b2b;
+  text-decoration: none;
 }

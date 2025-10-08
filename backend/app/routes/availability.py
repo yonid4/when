@@ -1,4 +1,11 @@
 """
+Not used anymore with current arcitechture
+"""
+
+
+
+
+"""
 Availability routes for managing user availability slots.
 """
 

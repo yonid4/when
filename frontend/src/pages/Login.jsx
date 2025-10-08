@@ -1,18 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Layout from "../layout";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.REACT_APP_SUPABASE_URL,
-  process.env.REACT_APP_SUPABASE_ANON_KEY,
-  {
-    auth: {
-      autoRefreshToken: true,
-      persistSession: true,
-      detectSessionInUrl: true
-    }
-  }
-);
+import { supabase } from "../services/supabaseClient";
 
 const Login = () => {
   const [error, setError] = useState(null);
@@ -25,7 +13,7 @@ const Login = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: window.location.origin + "/" // redirect to dashboard page
+          redirectTo: window.location.origin + "/"
         }
       });
       if (error) {

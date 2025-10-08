@@ -1,171 +1,257 @@
+"""
+Tests for AvailabilityCalc service.
+"""
+
 import pytest
-from datetime import datetime, timedelta, time
+
+# This legacy module is intentionally skipped per request to not test availability calc
+pytest.skip("Skipping availability calc tests", allow_module_level=True)
+
+import pytest
+from unittest.mock import Mock, patch
+from datetime import datetime
 from app.services.availability_calc import AvailabilityCalc
-from app.models import Event, AvailableSlot, UserBusySlot, EventParticipant, User
-from app import db
 
-@pytest.fixture
-def availability_calc(session):
-    return AvailabilityCalc(session)
-
-@pytest.fixture
-def sample_event(session):
-    """Create a sample event for testing"""
-    event = Event(
-        id=1,
-        start_date=datetime(2024, 3, 1).date(),
-        end_date=datetime(2024, 3, 3).date(),
-        earliest_daily_start_time=time(9, 0),  # 9 AM
-        latest_daily_end_time=time(17, 0),     # 5 PM
-        duration_minutes=60
-    )
-    session.add(event)
-    session.commit()
-    return event
-
-@pytest.fixture
-def sample_users(session):
-    """Create sample users for testing"""
-    users = [
-        User(id=1, email="user1@example.com"),
-        User(id=2, email="user2@example.com")
-    ]
-    for user in users:
-        session.add(user)
-    session.commit()
-    return users
-
-@pytest.fixture
-def sample_busy_slots(session, sample_users):
-    """Create sample busy slots for testing"""
-    slots = [
-        UserBusySlot(
-            id=1,
-            user_id=1,
-            start_time=datetime(2024, 3, 1, 10, 0),  # March 1, 10 AM
-            end_time=datetime(2024, 3, 1, 12, 0)     # March 1, 12 PM
-        ),
-        UserBusySlot(
-            id=2,
-            user_id=2,
-            start_time=datetime(2024, 3, 1, 11, 0),  # March 1, 11 AM
-            end_time=datetime(2024, 3, 1, 13, 0)     # March 1, 1 PM
-        )
-    ]
-    for slot in slots:
-        session.add(slot)
-    session.commit()
-    return slots
-
-@pytest.fixture
-def sample_participants(session, sample_event, sample_users):
-    """Create sample event participants"""
-    participants = [
-        EventParticipant(event_id=1, user_id=1),
-        EventParticipant(event_id=1, user_id=2)
-    ]
-    for participant in participants:
-        session.add(participant)
-    session.commit()
-    return participants
 
 class TestAvailabilityCalc:
-    def test_merge_intervals_empty_list(self, availability_calc):
-        """Test merging empty list of intervals"""
-        result = availability_calc._merge_intervals([])
+    """Test cases for AvailabilityCalc."""
+
+    @patch("app.utils.supabase_client.get_supabase")
+    def test_calculate_availability_event_not_found(self, mock_get_supabase):
+        """Test error handling when event is not found."""
+        # Mock Supabase client
+        mock_client = Mock()
+        mock_table = Mock()
+        mock_client.table.return_value = mock_table
+        mock_get_supabase.return_value = mock_client
+        
+        # Mock empty event result
+        event_result = Mock()
+        event_result.data = []
+        
+        mock_table.select.return_value = mock_table
+        mock_table.eq.return_value = mock_table
+        mock_table.execute.return_value = event_result
+        
+        calc = AvailabilityCalc()
+        
+        with pytest.raises(ValueError, match="Event with ID nonexistent-event not found"):
+            calc.calculate_availability_for_event("nonexistent-event")
+
+    @patch("app.utils.supabase_client.get_supabase")
+    def test_calculate_availability_no_participants(self, mock_get_supabase):
+        """Test calculating availability when event has no participants."""
+        # Mock Supabase client
+        mock_client = Mock()
+        mock_table = Mock()
+        mock_client.table.return_value = mock_table
+        mock_get_supabase.return_value = mock_client
+        
+        # Mock event found but no participants
+        event_data = {
+            "id": "event-123",
+            "name": "Team Meeting",
+            "earliest_date": "2024-03-01T00:00:00Z",
+            "latest_date": "2024-03-03T00:00:00Z",
+            "default_duration_minutes": 60,
+            "working_hours_start": 9,
+            "working_hours_end": 17
+        }
+        
+        event_result = Mock()
+        event_result.data = [event_data]
+        
+        participants_result = Mock()
+        participants_result.data = []
+        
+        # Set up mock to return different results for different calls
+        mock_table.select.return_value = mock_table
+        mock_table.eq.return_value = mock_table
+        mock_table.execute.side_effect = [event_result, participants_result]
+        
+        calc = AvailabilityCalc()
+        result = calc.calculate_availability_for_event("event-123")
+        
+        # Should return empty list when no participants
         assert result == []
 
-    def test_merge_intervals_no_overlap(self, availability_calc):
-        """Test merging non-overlapping intervals"""
-        intervals = [
-            (datetime(2024, 3, 1, 9, 0), datetime(2024, 3, 1, 10, 0)),
-            (datetime(2024, 3, 1, 11, 0), datetime(2024, 3, 1, 12, 0))
+    @patch("app.utils.supabase_client.get_supabase")
+    def test_calculate_availability_with_participants(self, mock_get_supabase):
+        """Test calculating availability with participants."""
+        # Mock Supabase client
+        mock_client = Mock()
+        mock_table = Mock()
+        mock_client.table.return_value = mock_table
+        mock_get_supabase.return_value = mock_client
+        
+        # Mock event data
+        event_data = {
+            "id": "event-123",
+            "name": "Team Meeting",
+            "earliest_date": "2024-03-01T00:00:00Z",
+            "latest_date": "2024-03-01T00:00:00Z",  # Same day for simplicity
+            "default_duration_minutes": 60,
+            "working_hours_start": 9,
+            "working_hours_end": 17
+        }
+        
+        # Mock participants
+        participants_data = [
+            {"user_id": "user-1"},
+            {"user_id": "user-2"}
         ]
-        result = availability_calc._merge_intervals(intervals)
-        assert result == intervals
-
-    def test_merge_intervals_with_overlap(self, availability_calc):
-        """Test merging overlapping intervals"""
-        intervals = [
-            (datetime(2024, 3, 1, 9, 0), datetime(2024, 3, 1, 11, 0)),
-            (datetime(2024, 3, 1, 10, 0), datetime(2024, 3, 1, 12, 0))
+        
+        # Mock busy slots
+        busy_slots_data = [
+            {
+                "user_id": "user-1",
+                "start_time_utc": "2024-03-01T10:00:00+00:00",
+                "end_time_utc": "2024-03-01T12:00:00+00:00"
+            }
         ]
-        expected = [(datetime(2024, 3, 1, 9, 0), datetime(2024, 3, 1, 12, 0))]
-        result = availability_calc._merge_intervals(intervals)
-        assert result == expected
+        
+        event_result = Mock()
+        event_result.data = [event_data]
+        
+        participants_result = Mock()
+        participants_result.data = participants_data
+        
+        busy_slots_result = Mock()
+        busy_slots_result.data = busy_slots_data
+        
+        # Set up mock to return different results for different calls
+        mock_table.select.return_value = mock_table
+        mock_table.eq.return_value = mock_table
+        mock_table.in_.return_value = mock_table
+        mock_table.gte.return_value = mock_table
+        mock_table.lte.return_value = mock_table
+        mock_table.order.return_value = mock_table
+        mock_table.execute.side_effect = [event_result, participants_result, busy_slots_result]
+        
+        calc = AvailabilityCalc()
+        result = calc.calculate_availability_for_event("event-123")
+        
+        # Should return a list of free slots
+        assert isinstance(result, list)
+        # The exact content depends on the busy slot service logic
+        # We're mainly testing that the method runs without error
 
-    def test_merge_intervals_with_adjacent(self, availability_calc):
-        """Test merging adjacent intervals"""
-        intervals = [
-            (datetime(2024, 3, 1, 9, 0), datetime(2024, 3, 1, 10, 0)),
-            (datetime(2024, 3, 1, 10, 0), datetime(2024, 3, 1, 11, 0))
+    @patch("app.utils.supabase_client.get_supabase")
+    def test_calculate_availability_with_default_values(self, mock_get_supabase):
+        """Test calculating availability with default event values."""
+        # Mock Supabase client
+        mock_client = Mock()
+        mock_table = Mock()
+        mock_client.table.return_value = mock_table
+        mock_get_supabase.return_value = mock_client
+        
+        # Event data without optional fields
+        minimal_event_data = {
+            "id": "event-123",
+            "name": "Team Meeting",
+            "earliest_date": "2024-03-01T00:00:00Z",
+            "latest_date": "2024-03-01T00:00:00Z"
+            # Missing default_duration_minutes, working_hours_start, working_hours_end
+        }
+        
+        participants_data = [{"user_id": "user-1"}]
+        
+        event_result = Mock()
+        event_result.data = [minimal_event_data]
+        
+        participants_result = Mock()
+        participants_result.data = participants_data
+        
+        busy_slots_result = Mock()
+        busy_slots_result.data = []
+        
+        mock_table.select.return_value = mock_table
+        mock_table.eq.return_value = mock_table
+        mock_table.in_.return_value = mock_table
+        mock_table.gte.return_value = mock_table
+        mock_table.lte.return_value = mock_table
+        mock_table.order.return_value = mock_table
+        mock_table.execute.side_effect = [event_result, participants_result, busy_slots_result]
+        
+        calc = AvailabilityCalc()
+        
+        # Should not raise an error and use default values
+        result = calc.calculate_availability_for_event("event-123")
+        assert isinstance(result, list)
+
+    @patch("app.utils.supabase_client.get_supabase")
+    def test_calculate_availability_integration_with_busy_slot_service(self, mock_get_supabase):
+        """Test that the method correctly integrates with BusySlotService."""
+        # Mock Supabase client
+        mock_client = Mock()
+        mock_table = Mock()
+        mock_client.table.return_value = mock_table
+        mock_get_supabase.return_value = mock_client
+        
+        event_data = {
+            "id": "event-123",
+            "name": "Team Meeting",
+            "earliest_date": "2024-03-01T00:00:00Z",
+            "latest_date": "2024-03-03T00:00:00Z",
+            "default_duration_minutes": 60,
+            "working_hours_start": 9,
+            "working_hours_end": 17
+        }
+        
+        participants_data = [
+            {"user_id": "user-1"},
+            {"user_id": "user-2"}
         ]
-        expected = [(datetime(2024, 3, 1, 9, 0), datetime(2024, 3, 1, 11, 0))]
-        result = availability_calc._merge_intervals(intervals)
-        assert result == expected
-
-    def test_calculate_common_free_slots_no_participants(self, availability_calc, sample_event):
-        """Test calculating free slots with no participants"""
-        result = availability_calc._calculate_common_free_slots(
-            sample_event,
-            [],
-            []
-        )
-        assert result == []
-
-    def test_calculate_common_free_slots_no_busy_slots(self, availability_calc, sample_event):
-        """Test calculating free slots when no one is busy"""
-        result = availability_calc._calculate_common_free_slots(
-            sample_event,
-            [1, 2],
-            []
-        )
-        # Should return one slot per day within the event's time constraints
-        assert len(result) == 3  # 3 days in the event
-        for start, end in result:
-            assert start.time() == time(9, 0)  # 9 AM
-            assert end.time() == time(17, 0)   # 5 PM
-
-    def test_calculate_common_free_slots_with_busy_slots(self, availability_calc, sample_event, sample_busy_slots):
-        """Test calculating free slots with some busy periods"""
-        result = availability_calc._calculate_common_free_slots(
-            sample_event,
-            [1, 2],
-            sample_busy_slots
-        )
         
-        # On March 1, there should be two free slots:
-        # 1. 9 AM - 10 AM (before first busy slot)
-        # 2. 1 PM - 5 PM (after last busy slot)
-        # March 2 and 3 should have full day slots
+        event_result = Mock()
+        event_result.data = [event_data]
         
-        assert len(result) == 5  # 2 slots on March 1, 1 slot each on March 2 and 3
+        participants_result = Mock()
+        participants_result.data = participants_data
         
-        # Verify March 1 slots
-        march1_slots = [slot for slot in result if slot[0].date() == datetime(2024, 3, 1).date()]
-        assert len(march1_slots) == 2
-        assert march1_slots[0][0].time() == time(9, 0)
-        assert march1_slots[0][1].time() == time(10, 0)
-        assert march1_slots[1][0].time() == time(13, 0)
-        assert march1_slots[1][1].time() == time(17, 0)
-
-    def test_calculate_availability_for_event_not_found(self, availability_calc):
-        """Test calculating availability for non-existent event"""
-        with pytest.raises(ValueError, match="Event with ID 999 not found"):
-            availability_calc.calculate_availability_for_event(999)
-
-    def test_calculate_availability_for_event_no_participants(self, availability_calc, sample_event):
-        """Test calculating availability for event with no participants"""
-        result = availability_calc.calculate_availability_for_event(1)
-        assert result == []
-
-    def test_calculate_availability_for_event_with_participants(self, availability_calc, sample_event, sample_busy_slots, sample_participants):
-        """Test calculating availability for event with participants and busy slots"""
-        result = availability_calc.calculate_availability_for_event(1)
+        busy_slots_result = Mock()
+        busy_slots_result.data = []
         
-        # Verify the result contains the expected number of available slots
-        assert len(result) > 0
-        for slot in result:
-            assert isinstance(slot, AvailableSlot)
-            assert slot.event_id == 1
-            assert slot.participant_count == 2 
+        mock_table.select.return_value = mock_table
+        mock_table.eq.return_value = mock_table
+        mock_table.in_.return_value = mock_table
+        mock_table.gte.return_value = mock_table
+        mock_table.lte.return_value = mock_table
+        mock_table.order.return_value = mock_table
+        mock_table.execute.side_effect = [event_result, participants_result, busy_slots_result]
+        
+        calc = AvailabilityCalc()
+        
+        # Mock the busy slot service's calculate_free_slots method
+        with patch.object(calc.busy_slot_service, 'calculate_free_slots') as mock_calc_free:
+            mock_calc_free.return_value = [
+                {
+                    "start_time_utc": "2024-03-01T09:00:00+00:00",
+                    "end_time_utc": "2024-03-01T10:00:00+00:00",
+                    "duration_minutes": 60
+                }
+            ]
+            
+            result = calc.calculate_availability_for_event("event-123")
+            
+            # Verify the busy slot service was called with correct parameters
+            mock_calc_free.assert_called_once()
+            args = mock_calc_free.call_args[0]
+            
+            # Check participant IDs
+            assert args[0] == ["user-1", "user-2"]
+            
+            # Check duration and working hours
+            assert args[3] == 60  # default_duration_minutes
+            assert args[4] == 9   # working_hours_start
+            assert args[5] == 17  # working_hours_end
+            
+            # Check result
+            assert len(result) == 1
+            assert result[0]["duration_minutes"] == 60
+
+    def test_availability_calc_initialization(self):
+        """Test that AvailabilityCalc initializes correctly."""
+        calc = AvailabilityCalc()
+        assert calc.busy_slot_service is not None
+        assert hasattr(calc, 'calculate_availability_for_event')

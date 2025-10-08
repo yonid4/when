@@ -1,124 +1,139 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { createClient } from "@supabase/supabase-js";
+import { useParams } from "react-router-dom";
+import api from "../services/api";
+import { me } from "../services/authService";
 import CalendarView from "../components/calendar/CalendarView";
 import UserList from "../components/event/UserList";
-import Preferences from "../components/event/Preferences";
+import EventInformation from "../components/event/EventInformation";
+import CalendarConnectPrompt from "../components/calendar/CalendarConnectPrompt";
 import { useEnsureProfile } from "../hooks/useEnsureProfile";
+import { useCalendarConnection } from "../hooks/useCalendarConnection";
 import "../styles/event-page.css";
-
-const supabase = createClient(
-  process.env.REACT_APP_SUPABASE_URL,
-  process.env.REACT_APP_SUPABASE_ANON_KEY,
-  {
-    auth: {
-      autoRefreshToken: true,
-      persistSession: true,
-      detectSessionInUrl: true
-    }
-  }
-);
+import "../styles/calendar.css";
 
 const EventPage = () => {
   const { eventUid } = useParams();
-  const navigate = useNavigate();
-  const location = useLocation();
   const [events, setEvents] = useState([]);
-  const [participants, setParticipants] = useState();
-  const [preferences, setPreferences] = useState();
+  const [participants, setParticipants] = useState([]);
+  const [eventData, setEventData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { error: profileError } = useEnsureProfile();
+  
+  // Calendar connection logic
+  const {
+    needsCalendarPrompt,
+    calendarPromptContext,
+    shouldShowCalendarPrompt,
+    showCalendarPrompt,
+    hideCalendarPrompt,
+    connectGoogleCalendar,
+    handleCalendarConnected,
+    handleSkipCalendar,
+    markFirstEventView
+  } = useCalendarConnection();
 
   useEffect(() => {
-    // Check authentication status
+    // Check authentication status through backend API
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setIsAuthenticated(!!session);
+      try {
+        const user = await me();
+        setIsAuthenticated(!!user);
+      } catch (error) {
+        console.error("Auth check failed:", error);
+        setIsAuthenticated(false);
+      }
     };
 
     checkAuth();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsAuthenticated(!!session);
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
   }, []);
 
   useEffect(() => {
     const fetchEventData = async () => {
       try {
         setLoading(true);
-        // TODO: Replace with your actual API call
-        // const response = await fetch(`/api/events/${eventUid}`);
-        // const data = await response.json();
         
-        // Mock events for dynamic hour range testing
+        // Mark that user has viewed an event
+        markFirstEventView();
+        
+        // Check if calendar prompt should be shown
+        if (shouldShowCalendarPrompt('view')) {
+          showCalendarPrompt('view');
+        }
+        
+        // Fetch event details from backend
+        try {
+          console.log(`[DEBUG] Fetching event details for UID: ${eventUid}`);
+          const eventResponse = await api.get(`/api/events/${eventUid}`);
+          console.log(`[DEBUG] Event response:`, eventResponse.data);
+          
+          if (eventResponse.data && eventResponse.data.name) {
+            setEventData(eventResponse.data);
+            console.log(`[DEBUG] Successfully loaded event: ${eventResponse.data.name}`);
+          } else {
+            console.warn("[DEBUG] Event data received but missing name field");
+            setEventData({
+              name: "Event Data Incomplete",
+              earliest_date: "2024-01-01",
+              latest_date: "2024-01-31",
+              earliest_hour: "09:00:00",
+              latest_hour: "17:00:00",
+              duration_minutes: 60
+            });
+          }
+        } catch (eventErr) {
+          console.error("Error fetching event details:", eventErr);
+          console.error("Event error details:", eventErr.response?.data);
+          console.error("Event error status:", eventErr.response?.status);
+          // Fallback to mock data if event can't be fetched
+          setEventData({
+            name: "Event Not Found",
+            earliest_date: "2024-01-01",
+            latest_date: "2024-01-31",
+            earliest_hour: "09:00:00",
+            latest_hour: "17:00:00",
+            duration_minutes: 60
+          });
+        }
+        
+        // Mock events for calendar view (since we don't have a full calendar API endpoint yet)
         const mockEvents = [
           {
             id: 1,
             title: "Morning Meeting",
-            start: new Date(2024, 0, 15, 7, 30), // 7:30 AM - should extend range backward
+            start: new Date(2024, 0, 15, 7, 30),
             end: new Date(2024, 0, 15, 9, 0),
           },
           {
             id: 2,
-            title: "Late Evening Call",
-            start: new Date(2024, 0, 16, 21, 0), // 9:00 PM - should extend range forward
+            title: "Late Evening Call", 
+            start: new Date(2024, 0, 16, 21, 0),
             end: new Date(2024, 0, 16, 22, 30),
           },
           {
             id: 3,
             title: "Regular Meeting",
-            start: new Date(2024, 0, 17, 14, 0), // 2:00 PM - within normal range
+            start: new Date(2024, 0, 17, 14, 0),
             end: new Date(2024, 0, 17, 15, 30),
           },
         ];
         
         setEvents(mockEvents);
-        // setParticipants(data.participants);
-        // setPreferences(data.preferences);
         
-        // Get current user profile for demonstration
-        const currentUser = await getCurrentUserProfile();
-        
-        // Temporary mock data for testing
-        const mockParticipants = [
-          {
-            id: 1,
-            name: "John Doe",
-            email: "john@example.com",
-            available: true,
-            avatar_url: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
-          },
-          {
-            id: 2,
-            name: "Jane Smith",
-            email: "jane@example.com",
-            available: false,
-            avatar_url: "https://images.unsplash.com/photo-1494790108755-2616b612b786?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
-          },
-        ];
-        
-        // Add current user to participants if they're logged in
-        if (currentUser && !mockParticipants.find(p => p.email === currentUser.email)) {
-          mockParticipants.unshift({
-            ...currentUser,
-            available: true,
-          });
+        // Fetch participants from backend
+        try {
+          console.log(`[DEBUG] Fetching participants for event UID: ${eventUid}`);
+          const participantsResponse = await api.get(`/api/events/${eventUid}/participants`);
+          console.log(`[DEBUG] Participants response:`, participantsResponse.data);
+          
+          setParticipants(participantsResponse.data);
+        } catch (participantsErr) {
+          console.error("Error fetching participants:", participantsErr);
+          console.error("Participants error details:", participantsErr.response?.data);
+          // Fallback to empty array if participants can't be fetched
+          setParticipants([]);
         }
         
-        setParticipants(mockParticipants);
-        setPreferences({
-          duration: "60",
-          timezone: "UTC",
-          meetingType: "virtual",
-          reminder: "30",
-        });
       } catch (err) {
         console.error("Error fetching event data:", err);
       } finally {
@@ -131,12 +146,6 @@ const EventPage = () => {
     }
   }, [eventUid]);
 
-  const handlePreferenceChange = (key, value) => {
-    setPreferences((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
-  };
 
   const handleUserSelect = (user) => {
     // Handle user selection logic
@@ -155,13 +164,13 @@ const EventPage = () => {
 
   const getCurrentUserProfile = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session && session.user) {
+      const user = await me();
+      if (user) {
         return {
-          id: session.user.id,
-          name: session.user.user_metadata?.full_name || session.user.email,
-          email: session.user.email,
-          avatar_url: session.user.user_metadata?.avatar_url,
+          id: user.id,
+          name: user.full_name || user.email_address,
+          email: user.email_address,
+          avatar_url: user.avatar_url,
         };
       }
     } catch (error) {
@@ -170,14 +179,6 @@ const EventPage = () => {
     return null;
   };
 
-  const handleLogout = async () => {
-    try {
-      await supabase.auth.signOut();
-      navigate("/login");
-    } catch (error) {
-      console.error("Error logging out:", error);
-    }
-  };
 
   const handleInviteUser = async (email) => {
     // Handle user invitation logic
@@ -202,6 +203,20 @@ const EventPage = () => {
     */
   };
 
+  // Calendar connection handlers
+  const handleConnectCalendar = async () => {
+    try {
+      await connectGoogleCalendar();
+      handleCalendarConnected();
+    } catch (error) {
+      console.error('Failed to connect calendar:', error);
+    }
+  };
+
+  const handleSkipCalendarConnection = () => {
+    handleSkipCalendar();
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -221,71 +236,8 @@ const EventPage = () => {
   // Determine if user is coordinator (for now, assume all users are coordinators)
   const isCoordinator = true; // TODO: Replace with actual role check
 
-  // Don't show logout button on login page
-  const showLogoutButton = isAuthenticated && location.pathname !== "/login";
-
   return (
-    <div style={{ minHeight: "100vh", background: "var(--salt-pepper-white)" }}>
-      {/* Header from Layout */}
-      <header style={{
-        gridArea: "layout-header",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: showLogoutButton ? "space-between" : "flex-start",
-        height: "64px",
-        background: "var(--primary-color)",
-        boxShadow: "0 2px 4px rgba(0,0,0,0.04)",
-        padding: "0 2rem",
-        width: "100%",
-        boxSizing: "border-box"
-      }}>
-        <button
-          onClick={() => navigate("/")}
-          style={{
-            background: "none",
-            border: "none",
-            padding: 0,
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center"
-          }}
-          aria-label="Go to home page"
-        >
-          <img
-            src="/when_logo.png"
-            alt="When logo"
-            style={{ height: "40px", width: "auto" }}
-          />  
-        </button>
-        {showLogoutButton && (
-          <button
-            onClick={handleLogout}
-            style={{
-              background: "none",
-              border: "1px solid var(--salt-pepper-dark)",
-              color: "var(--salt-pepper-dark)",
-              padding: "0.5rem 1rem",
-              borderRadius: "4px",
-              cursor: "pointer",
-              fontSize: "0.9rem",
-              fontWeight: 500,
-              transition: "all 0.2s"
-            }}
-            onMouseOver={e => {
-              e.currentTarget.style.background = "var(--salt-pepper-dark)";
-              e.currentTarget.style.color = "var(--salt-pepper-white)";
-            }}
-            onMouseOut={e => {
-              e.currentTarget.style.background = "none";
-              e.currentTarget.style.color = "var(--salt-pepper-dark)";
-            }}
-          >
-            Logout
-          </button>
-        )}
-      </header>
-      
-      <div className={`event-page-container ${isCoordinator ? 'coordinator-layout' : 'participant-layout'}`} style={{ height: "calc(100vh - 64px)" }}>
+    <div className={`event-page-container ${isCoordinator ? 'coordinator-layout' : 'participant-layout'}`} style={{ height: "calc(100vh - 64px - 0.5rem)", background: "var(--salt-pepper-white)" }}>
       {/* Header Section - Coordinator only */}
       {isCoordinator && (
         <div className="event-header">
@@ -319,6 +271,16 @@ const EventPage = () => {
         </div>
       )}
 
+      {/* Event Information Section */}
+      <div className="event-info">
+        <EventInformation
+          eventName={eventData?.name || "Loading..."}
+          dateRange={eventData ? `${new Date(eventData.earliest_date).toLocaleDateString()} - ${new Date(eventData.latest_date).toLocaleDateString()}` : "Loading..."}
+          timeWindow={eventData ? `${eventData.earliest_hour} - ${eventData.latest_hour}` : "Loading..."}
+          duration={eventData ? `${eventData.duration_minutes} minutes` : "Loading..."}
+        />
+      </div>
+
       {/* Calendar Section */}
       <div className="event-calendar">
         <CalendarView
@@ -338,15 +300,14 @@ const EventPage = () => {
         />
       </div>
 
-      {/* Preferences Section */}
-      <div className="event-preferences">
-        <Preferences
-          preferences={preferences}
-          onPreferenceChange={handlePreferenceChange}
-        />
-      </div>
-
-      </div>
+      {/* Calendar Connect Prompt */}
+      <CalendarConnectPrompt
+        context={calendarPromptContext}
+        onConnect={handleConnectCalendar}
+        onSkip={handleSkipCalendarConnection}
+        onClose={hideCalendarPrompt}
+        isVisible={needsCalendarPrompt}
+      />
     </div>
   );
 };

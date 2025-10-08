@@ -22,4 +22,17 @@ class UserEventPreference(BaseModel):
 
     def __repr__(self):
         return f'<UserEventPreference user_id={self.user_id} event_id={self.event_id}>'
-
+    
+    def to_dict(self) -> dict:
+        """Convert to dictionary for Supabase operations."""
+        return {
+            "id": self.id,
+            "event_id": self.event_id,
+            "user_id": self.user_id,
+            "availability_slot_id": self.availability_slot_id,
+            "preferred_start_time_utc": self.preferred_start_time_utc.isoformat() if self.preferred_start_time_utc else None,
+            "preferred_end_time_utc": self.preferred_end_time_utc.isoformat() if self.preferred_end_time_utc else None,
+            "preference_strength": self.preference_strength,
+            "created_at": self.created_at.isoformat(),
+            "updated_at": self.updated_at.isoformat(),
+        }

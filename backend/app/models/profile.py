@@ -26,3 +26,17 @@ class Profile(BaseModel):
 
     def __repr__(self):
         return f'<Profile {self.full_name}>'
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for Supabase operations."""
+        return {
+            "id": self.id,
+            "full_name": self.full_name,
+            "avatar_url": self.avatar_url,
+            "google_auth_token": self.google_auth_token,
+            "google_calendar_id": self.google_calendar_id,
+            "timezone": self.timezone,
+            "created_at": self.created_at.isoformat(),
+            "updated_at": self.updated_at.isoformat(),
+            "email_address": self.email_address,
+        }
