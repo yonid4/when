@@ -8,10 +8,16 @@ from ..utils.supabase_client import get_supabase
 from ..services.auth import AuthService
 from ..services.users import UsersService
 from ..services import google_calendar
+from datetime import timezone, timedelta
 import logging
 
 # Set up basic logging config if not already set
 logging.basicConfig(level=logging.DEBUG)
+
+# Suppress specific noisy HTTP client logs
+logging.getLogger("hpack.hpack").setLevel(logging.WARNING)
+logging.getLogger("httpcore.connection").setLevel(logging.WARNING)
+logging.getLogger("httpcore.http2").setLevel(logging.WARNING)
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 auth_service = AuthService()
@@ -82,15 +88,18 @@ def get_me():
     """
     auth_header = request.headers.get("Authorization", "")
     token = auth_header.split(" ")[1] if " " in auth_header else None
+    logging.debug(f"[DEBUG] Token: {token}")
     user = auth_service.get_user_from_token(token or "")
+    print(f"[DEBUG] User: {user}")
     if not user:
         return jsonify({
             "error": "Unauthorized",
             "message": "Invalid or expired token"
         }), 401
-    return jsonify(user), 200
+    return jsonify(user.user_metadata), 200
 
 @auth_bp.route("/google", methods=["GET"])
+@require_auth
 def google_auth():
     """
     Initiate Google OAuth flow.
@@ -98,27 +107,33 @@ def google_auth():
     """
     logging.debug("[DEBUG] Entered /api/auth/google route")
     try:
-        # Verify Google OAuth is configured
-        if not current_app.config.get("GOOGLE_CLIENT_ID") or not current_app.config.get("GOOGLE_CLIENT_SECRET"):
-            logging.error("[ERROR] Google OAuth credentials not configured")
-            return jsonify({
-                "error": "Configuration error",
-                "message": "Google OAuth credentials not configured"
-            }), 500
+        # # Verify Google OAuth is configured
+        # if not current_app.config.get("GOOGLE_CLIENT_ID") or not current_app.config.get("GOOGLE_CLIENT_SECRET"):
+        #     logging.error("[ERROR] Google OAuth credentials not configured")
+        #     return jsonify({
+        #         "error": "Configuration error",
+        #         "message": "Google OAuth credentials not configured"
+        #     }), 500
 
-        auth_url = auth_service.get_google_auth_url()
-        logging.debug(f"[DEBUG] Generated Google auth_url: {auth_url}")
-        logging.debug(f"[DEBUG] Using redirect_uri: {current_app.config['GOOGLE_REDIRECT_URI']}")
+        # auth_url = auth_service.get_google_auth_url()
+        # logging.debug(f"[DEBUG] Generated Google auth_url: {auth_url}")
+        # logging.debug(f"[DEBUG] Using redirect_uri: {current_app.config['GOOGLE_REDIRECT_URI']}")
+        # return jsonify({
+        #     "auth_url": auth_url,
+        #     "redirect_uri": current_app.config["GOOGLE_REDIRECT_URI"]
+        # }), 200
+        # Get the user's token from the request
+        user_token = getattr(request, "access_token", None)
+
+        # Get return URL from query params (where to redirectafter OAuth)
+        return_url = request.args.get("return_url", "/")
+        
+        # Generate auth URL with user token in state
+        auth_url = auth_service.get_google_auth_url(user_token, return_url)
+        
         return jsonify({
-            "auth_url": auth_url,
-            "redirect_uri": current_app.config["GOOGLE_REDIRECT_URI"]
+            "auth_url": auth_url
         }), 200
-    except ValueError as e:
-        logging.error(f"[ERROR] ValueError in /api/auth/google: {e}")
-        return jsonify({
-            "error": "Configuration error",
-            "message": str(e)
-        }), 400
     except Exception as e:
         logging.error(f"[ERROR] Exception in /api/auth/google: {e}")
         return jsonify({
@@ -134,6 +149,8 @@ def google_callback():
     """
     logging.debug("[DEBUG] Entered /api/auth/google/callback route")
     code = request.args.get("code")
+    state = request.args.get("state")
+
     if not code:
         logging.error("[ERROR] Missing authorization code in callback")
         return jsonify({
@@ -143,19 +160,28 @@ def google_callback():
 
     try:
         logging.debug(f"[DEBUG] Received code: {code}")
+
+        # Decode state to get user token
+        import json
+        import base64
+        state_data = json.loads(base64.urlsafe_b64decode(state.encode()).decode())
+        user_token = state_data.get('user_token')
+        return_url = state_data.get('return_url', '/')  # Add this line
+        # logging.debug(f"[DEBUG] User token: {user_token}")
+
         # Get credentials from authorization code
         credentials = auth_service.exchange_code_for_credentials(code)
         logging.debug(f"[DEBUG] Obtained credentials: {credentials}")
         
-        # Get user from session
-        session = auth_service.get_session()
-        if not session:
+        # Get user from token (not session)
+        user = auth_service.get_user_from_token(user_token)
+        if not user:
             return jsonify({
-                "error": "Unauthorized",
-                "message": "No active session found"
+                "error": "Invalid user token",
+                "message": "Invalid user token"
             }), 401
             
-        user_id = session.user.id
+        user_id = user.id
         
         # Store credentials
         auth_service.store_google_credentials(user_id, credentials)
@@ -164,12 +190,12 @@ def google_callback():
         # Enrich profile with Google data
         try:
             # Get user metadata from session
-            user_metadata = session.user.user_metadata or {}
+            user_metadata = user.user_metadata or {}
             
             # Prepare profile updates with Google data
             profile_updates = {
                 "avatar_url": user_metadata.get("avatar_url"),
-                "google_auth_token": credentials,  # Store the full credentials object
+                # "google_auth_token": credentials,  # Store the full credentials object
             }
             
             # Get Google Calendar info (primary calendar ID and timezone)
@@ -193,9 +219,9 @@ def google_callback():
                         if stored_creds:
                             service = google_calendar.get_calendar_service(stored_creds, user_id)
                             calendar_details = service.calendars().get(calendarId=primary_calendar["id"]).execute()
-                            timezone = calendar_details.get("timeZone", "UTC")
-                            profile_updates["timezone"] = timezone
-                            logging.info(f"[AUTH] Set timezone to: {timezone}")
+                            user_timezone = calendar_details.get("timeZone", "UTC")
+                            profile_updates["timezone"] = user_timezone
+                            logging.info(f"[AUTH] Set timezone to: {user_timezone}")
                         else:
                             profile_updates["timezone"] = "UTC"
                     except Exception as e:
@@ -212,14 +238,36 @@ def google_callback():
                     "timezone": "UTC"
                 })
             
-            # Update the profile with Google data
-            users_service = UsersService()
-            updated_profile = users_service.update_profile(user_id, profile_updates)
-            
-            if updated_profile:
-                logging.info(f"[AUTH] Enriched profile for user {user_id} with Google data")
-            else:
-                logging.warning(f"[AUTH] Failed to enrich profile for user {user_id}")
+            # Update the profile with Google data (if there are updates)
+            if len(profile_updates) > 1:  # More than just avatar_url
+                users_service = UsersService()
+                updated_profile = users_service.update_profile(user_id, profile_updates)
+                
+                if updated_profile:
+                    logging.info(f"[AUTH] Enriched profile for user {user_id} with Google data")
+                else:
+                    logging.warning(f"[AUTH] Failed to enrich profile for user {user_id}")
+
+            # Auto-sync Google Calendar on connection
+            try:
+                from ..background_jobs.calendar_sync import sync_user_calendar_job
+                from datetime import datetime
+                
+                logging.info(f"[AUTH] Scheduling calendar sync job for user {user_id}")
+                
+                # Schedule job to run immediately
+                current_app.scheduler.add_job(
+                    id=f'sync_calendar_{user_id}_{int(datetime.now(timezone.utc).timestamp())}',
+                    func=sync_user_calendar_job,
+                    args=[user_id],
+                    trigger='date',
+                    run_date=datetime.now(timezone.utc)
+                )
+                
+                logging.info(f"[AUTH] Calendar sync job scheduled for user {user_id}")
+                
+            except Exception as e:
+                logging.error(f"[AUTH] Failed to schedule calendar sync: {e}")
                 
         except Exception as e:
             logging.error(f"[AUTH] Error enriching profile with Google data: {e}")
@@ -227,7 +275,8 @@ def google_callback():
         
         # Redirect to frontend with success
         frontend_url = request.headers.get("Origin", "http://localhost:3000")
-        return redirect(f"{frontend_url}/events")
+        # return redirect(f"{frontend_url}/events")
+        return redirect(f"{frontend_url}{return_url}")
         
     except ValueError as e:
         logging.error(f"[ERROR] ValueError in /api/auth/google/callback: {e}")

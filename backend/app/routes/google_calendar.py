@@ -8,7 +8,7 @@ from ..services.google_calendar import get_stored_credentials, get_calendar_serv
 from ..services.events import EventsService
 from ..services.users import UsersService
 from ..models.busy_slot import BusySlot
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 calendar_bp = Blueprint("google_calendar", __name__, url_prefix="/api/calendar")
 users_service = UsersService()
@@ -20,8 +20,20 @@ def get_connection_status():
     user_id = request.user.id
 
     try:
+        from ..services.google_calendar import get_stored_credentials
+        
+        # Check if user has valid Google credentials
+        credentials = get_stored_credentials(user_id)
+        has_google_auth = credentials is not None
+        
+        # Get calendar ID if exists
         calendar_id = users_service.get_google_calendar_id(user_id)
-        return jsonify({"google_calendar_id": calendar_id}), 200
+        
+        return jsonify({
+            "connected": has_google_auth,
+            "google_calendar_id": calendar_id
+        }), 200
+        
     except Exception as e:
         return jsonify({
             'error': 'Failed to get connection status',
@@ -33,8 +45,31 @@ def get_connection_status():
 @require_auth  
 def get_busy_times(event_id):
     """Get busy time slots from current user's Google Calendar for a specific event."""
-    # TODO
-    pass
+    user_id = request.user.id
+    
+    try:
+        from ..utils.supabase_client import get_supabase
+        supabase = get_supabase()
+        
+        # Get busy slots from database
+        response = supabase.table('busy_slots') \
+            .select('*') \
+            .eq('user_id', user_id) \
+            .order('start_time_utc') \
+            .execute()
+        
+        busy_slots = response.data if response.data else []
+        
+        return jsonify({
+            'busy_slots': busy_slots,
+            'count': len(busy_slots)
+        }), 200
+        
+    except Exception as e:
+        return jsonify({
+            'error': 'Failed to get busy times',
+            'message': str(e)
+        }), 400
     
 
 @calendar_bp.route('/sync/<string:event_id>', methods=['POST'])
@@ -44,6 +79,14 @@ def sync_calendar(event_id):
     user_id = request.user.id
 
     try:
+        # Check if user has Google credentials first
+        credentials = get_stored_credentials(user_id)
+        if not credentials:
+            return jsonify({
+                'error': 'Google Calendar not connected',
+                'message': 'Please connect your Google Calendar first'
+            }), 400
+
         # Get event details
         access_token = getattr(request, "access_token", None)
         events_service = EventsService(access_token)
@@ -64,8 +107,45 @@ def sync_calendar(event_id):
         # Get user's busy times for this event
         busy_times = get_user_busy_times(user_id, event)
 
-        # TODO: store busy times in database table
-        return jsonify(busy_times), 200
+        # Store busy times in database
+        from ..utils.supabase_client import get_supabase
+        supabase = get_supabase()
+        
+        # # Delete old busy slots for this user and event time range
+        # supabase.table('busy_slots').delete().eq('user_id', user_id).execute()
+
+        # Delete old busy slots for this user within the event date range
+        start_date = datetime.fromisoformat(event["earliest_date"].replace('Z', '+00:00'))
+        end_date = datetime.fromisoformat(event["latest_date"].replace('Z', '+00:00'))
+
+        supabase.table('busy_slots') \
+            .delete() \
+            .eq('user_id', user_id) \
+            .gte('start_time_utc', start_date.isoformat()) \
+            .lte('end_time_utc', end_date.isoformat()) \
+            .execute()
+        
+        # Insert new busy slots
+        busy_slots_data = []
+        for busy_time in busy_times:
+            busy_slots_data.append({
+                'user_id': user_id,
+                'start_time_utc': busy_time['start'].isoformat(),  # Access dict keys
+                'end_time_utc': busy_time['end'].isoformat(),
+                'google_event_id': busy_time.get('google_event_id'),
+                'google_calendar_id': 'primary',
+                'event_title': busy_time.get('title'),
+                'event_description': busy_time.get('description'),
+                'last_synced_at': datetime.now(timezone.utc).isoformat()
+            })
+        
+        if busy_slots_data:
+            supabase.table('busy_slots').insert(busy_slots_data).execute()
+        
+        return jsonify({
+            'message': 'Calendar synced successfully',
+            'busy_slots_count': len(busy_slots_data)
+        }), 200
     except Exception as e:
         return jsonify({
             'error': 'Failed to get busy times',
@@ -114,12 +194,18 @@ def get_user_busy_times(user_id, event):
             if 'dateTime' in start and 'dateTime' in end:
                 start_dt = datetime.fromisoformat(start['dateTime'].replace('Z', '+00:00'))
                 end_dt = datetime.fromisoformat(end['dateTime'].replace('Z', '+00:00'))
-                busy_windows.append((start_dt, end_dt))
+                
+                busy_windows.append({
+                    'start': start_dt,
+                    'end': end_dt,
+                    'google_event_id': calendar_event.get('id'),
+                    'title': calendar_event.get('summary', ''),
+                    'description': calendar_event.get('description', '')
+                })
             # Skip all-day events for now (they don't conflict with specific times)
         
         # Sort intervals (merging can be handled by consumer or added here later)
-        busy_windows.sort(key=lambda x: x[0])
-        
+        busy_windows.sort(key=lambda x: x['start'])
         return busy_windows
         
     except Exception as e:

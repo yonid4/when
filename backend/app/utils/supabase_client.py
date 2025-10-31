@@ -40,8 +40,14 @@ def get_supabase(access_token=None) -> Client:
     Get the Supabase client instance.
     """
     url = os.environ.get("SUPABASE_URL")
-    anon_key = os.environ.get("SUPABASE_ANON_KEY")
-    client = create_client(url, anon_key)
+    # key = os.environ.get("SUPABASE_ANON_KEY")
+    key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+    
+    if not url or not key:
+        raise ValueError("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set")
+
+    client = create_client(url, key)
     if access_token:
         client.postgrest.auth(access_token)
+    
     return client

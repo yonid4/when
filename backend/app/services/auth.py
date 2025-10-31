@@ -1,4 +1,7 @@
+import time
 from typing import Optional, Dict, Any, Tuple
+import json
+import base64
 from ..utils.supabase_client import get_supabase
 from . import google_calendar as gc
 
@@ -17,11 +20,33 @@ class AuthService():
     # -----------------------------
     # Google OAuth helpers (delegate to google_calendar service)
     # -----------------------------
-    def get_google_auth_url(self) -> str:
-        """Return Google OAuth authorization URL."""
-        return gc.get_auth_url()
+    def get_google_auth_url(self, user_token=None, return_url='/') -> str:
+        """Return Google OAuth authorization URL with state."""
+        # return gc.get_auth_url()
+        flow = gc.create_flow()
+        
+        # Include user token in state for callback
+        state_data = {
+            'user_token': user_token,
+            'return_url': return_url,
+            'timestamp': time.time()
+        }
+        state = base64.urlsafe_b64encode(json.dumps(state_data).encode()).decode()
+        
+        authorization_url, _ = flow.authorization_url(
+            access_type='offline',
+            include_granted_scopes='true',
+            prompt='consent',
+            state=state  # Pass the state
+        )
+        
+        return authorization_url
 
-    def exchange_code_for_credentials(self, code: str):
+        # auth_url = gc.get_auth_url()
+        # return f"{auth_url}&state={state}"
+
+
+    def exchange_code_for_credentials(self, code: str) -> Dict[str, Any]:
         """Exchange authorization code for Google credentials object."""
         return gc.get_credentials_from_code(code)
 

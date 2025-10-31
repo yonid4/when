@@ -15,8 +15,10 @@ from typing import Optional
 from google.auth.transport.requests import Request
 
 SCOPES = [
-    "https://www.googleapis.com/auth/calendar",
-    # "https://www.googleapis.com/auth/calendar.events"
+    'https://www.googleapis.com/auth/calendar',
+    'https://www.googleapis.com/auth/userinfo.email',
+    'https://www.googleapis.com/auth/userinfo.profile',
+    'openid'
 ]
 
 def create_flow() -> Flow:
@@ -54,11 +56,11 @@ def get_auth_url() -> str:
     """
     try:
         flow = create_flow()
+        # redirect_uri is already set in the flow, no need to pass it again
         return flow.authorization_url(
             access_type="offline",
             include_granted_scopes="true",
-            prompt="consent",
-            redirect_uri=current_app.config["GOOGLE_REDIRECT_URI"]
+            prompt="consent"
         )[0]
     except Exception as e:
         raise ValueError(f"Failed to generate auth URL: {str(e)}")
@@ -76,7 +78,21 @@ def get_credentials_from_code(code: str) -> Credentials:
     try:
         flow = create_flow()
         flow.fetch_token(code=code)
-        return flow.credentials
+
+        token_data = flow.credentials.token
+        refresh_token = flow.credentials.refresh_token
+
+        # Construct credentials from the token response
+        credentials = Credentials(
+            token=flow.credentials.token,
+            refresh_token=flow.credentials.refresh_token,
+            token_uri=current_app.config.get("GOOGLE_TOKEN_URI", "https://oauth2.googleapis.com/token"),
+            client_id=current_app.config['GOOGLE_CLIENT_ID'],
+            client_secret=current_app.config['GOOGLE_CLIENT_SECRET'],
+            scopes=SCOPES
+        )
+        
+        return credentials
     except Exception as e:
         raise ValueError(f"Failed to get credentials: {str(e)}")
 
@@ -89,23 +105,53 @@ def store_credentials(user_id: str, credentials: Credentials) -> None:
         credentials (Credentials): Google API credentials
     """
     from ..utils.supabase_client import get_supabase
+    import logging
     
     supabase = get_supabase()
     
-    # Convert credentials to dict for storage
-    creds_dict = {
-        "token": credentials.token,
-        "refresh_token": credentials.refresh_token,
-        "token_uri": credentials.token_uri,
-        "client_id": credentials.client_id,
-        "client_secret": credentials.client_secret,
-        "scopes": credentials.scopes
-    }
+    if isinstance(credentials, dict):
+        # Already a dict
+        creds_dict = credentials
+    else:
+        # Convert credentials to dict for storage
+        creds_dict = {
+            "token": credentials.token,
+            "refresh_token": credentials.refresh_token,
+            "token_uri": credentials.token_uri,
+            "client_id": credentials.client_id,
+            "client_secret": credentials.client_secret,
+            "scopes": list(credentials.scopes) if credentials.scopes else []
+        }
+
+    logging.debug(f"[DEBUG] Attempting to store credentials for user {user_id}")
+    logging.debug(f"[DEBUG] Credentials dict keys: {creds_dict.keys()}")
+
+    # First, check if the profile exists
+    check_response = supabase.table("profiles").select("id").eq("id", user_id).execute()
+    logging.debug(f"[DEBUG] Profile exists check: {check_response.data}")
+
+    if not check_response.data:
+        logging.error(f"[ERROR] No profile found for user {user_id}")
+        return
     
+    # # Update user profile with credentials
+    # response = supabase.table("profiles").update({
+    #     "google_auth_token": creds_dict
+    # }).eq("id", user_id).execute()
     # Update user profile with credentials
-    supabase.table("profiles").update({
-        "google_auth_token": creds_dict
-    }).eq("id", user_id).execute()
+    try:
+        response = supabase.table("profiles").update({
+            "google_auth_token": creds_dict
+        }).eq("id", user_id).execute()
+        
+        logging.debug(f"[DEBUG] Store credentials response: {response}")
+        logging.debug(f"[DEBUG] Response data: {response.data}")
+        
+        if not response.data:
+            logging.error(f"[ERROR] Update returned no data for user {user_id}")
+    except Exception as e:
+        logging.error(f"[ERROR] Failed to store credentials: {e}")
+        raise e
 
 def get_stored_credentials(user_id: str) -> Optional[Credentials]:
     """

@@ -156,11 +156,15 @@ class UsersService():
                 .eq("id", user_id)
                 .execute()
             )
+
             if not result.data:
                 return None
-            return result.data[0].get("google_calendar_id")
+
+            calendar_id = result.data[0].get("google_calendar_id")
+            return calendar_id
+
         except Exception as e:
-            print(f"Failed to get Google calendar id for user {user_id}: {str(e)}")
+            print(f"Error fetching Google calendar ID for user {user_id}: {str(e)}")
             return None
 
     # -----------------------------
