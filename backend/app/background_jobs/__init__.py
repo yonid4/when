@@ -2,26 +2,24 @@
 Background jobs initialization.
 """
 
-# from flask import current_app
-# from apscheduler.schedulers.background import BackgroundScheduler
-# from apscheduler.triggers.interval import IntervalTrigger
-# from .calendar_sync import sync_calendars
+from flask import current_app
+from apscheduler.schedulers.background import BackgroundScheduler
+from datetime import datetime, timedelta
+import logging
 
-# def init_background_jobs(app):
-#     """Initialize background jobs."""
-#     scheduler = BackgroundScheduler()
+scheduler = BackgroundScheduler()
+
+def init_background_jobs(app):
+    """Initialize APScheduler for background jobs."""
+    if not scheduler.running:
+        scheduler.start()
+        app.scheduler = scheduler
+        logging.info("[SCHEDULER] Background job scheduler started")
     
-#     # Add calendar sync job
-#     scheduler.add_job(
-#         func=sync_calendars,
-#         trigger=IntervalTrigger(minutes=15),
-#         id="calendar_sync",
-#         name="Sync user calendars with Google Calendar",
-#         replace_existing=True
-#     )
-    
-#     # Start the scheduler
-#     scheduler.start()
-    
-#     # Store scheduler in app context
-#     app.scheduler = scheduler
+    # Shutdown scheduler when app context ends
+    import atexit
+    atexit.register(lambda: scheduler.shutdown())
+
+from .calendar_sync import sync_user_calendar_job
+
+__all__ = ['init_background_jobs', 'sync_user_calendar_job']

@@ -212,7 +212,12 @@ def get_event_participants_busy_slots(event_id):
         start_date = datetime.fromisoformat(event["earliest_date"])
         latest_date = datetime.fromisoformat(event["latest_date"])
 
-        slots = busy_slots_service.get_event_participants_busy_slots(event_id, start_date, latest_date)
+        # Use database ID for service call
+        slots = busy_slots_service.get_event_participants_busy_slots(
+            event["id"],  # Use database ID instead of event_id parameter
+            start_date, 
+            latest_date
+        )
 
         return jsonify(slots), 200
 
@@ -231,27 +236,27 @@ def get_merged_busy_slots_for_event(event_id):
     Requires authentication.
     """
     try:
-        # Get event details from database
-        supabase = get_supabase()
-        event_result = (
-            supabase.table("events")
-            .select("earliest_date, latest_date")
-            .eq("id", event_id)
-            .execute()
-        )
+        # Get event details via service (handles UID lookup)
+        access_token = getattr(request, "access_token", None)
+        events_service = EventsService(access_token)
         
-        if not event_result.data:
+        # Use get_event_by_uid since frontend sends UID
+        event = events_service.get_event_by_uid(event_id)
+        if not event:
             return jsonify({
                 'error': 'Event not found',
-                'message': f'No event found with id {event_id}'
+                'message': f'No event found with uid {event_id}'
             }), 404
             
-        event_data = event_result.data[0]
-        start_date = datetime.fromisoformat(event_data["earliest_date"])
-        latest_date = datetime.fromisoformat(event_data["latest_date"])
+        start_date = datetime.fromisoformat(event["earliest_date"])
+        latest_date = datetime.fromisoformat(event["latest_date"])
 
-        # Get merged busy slots using RPC
-        merged_slots = busy_slots_service.get_merged_busy_slots_for_event(event_id, start_date, latest_date)
+        # Get merged busy slots using RPC (pass the database ID to service)
+        merged_slots = busy_slots_service.get_merged_busy_slots_for_event(
+            event["id"],  # Use database ID for service call
+            start_date, 
+            latest_date
+        )
         
         return jsonify({
             "event_id": event_id,

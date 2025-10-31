@@ -3,6 +3,7 @@ Initialize the Flask application.
 """
 
 import os
+import logging
 from dotenv import load_dotenv
 from flask import Flask
 from flask_cors import CORS
@@ -26,6 +27,7 @@ from .routes.auth import auth_bp
 from .routes.availability import availability_bp
 from .routes.preferences import preferences_bp
 from .routes.google_calendar import calendar_bp
+from .routes.busy_slots import busy_slots_bp
 from .utils.supabase_client import init_supabase
 
 def create_app(config_name="development"):
@@ -39,6 +41,11 @@ def create_app(config_name="development"):
         Flask: The configured Flask application
     """
     app = Flask(__name__)
+    
+    # Suppress noisy HTTP client debug logs
+    logging.getLogger("hpack.hpack").setLevel(logging.WARNING)
+    logging.getLogger("httpcore.connection").setLevel(logging.WARNING)
+    logging.getLogger("httpcore.http2").setLevel(logging.WARNING)
     
     # Load configuration
     app.config.from_object(config[config_name])
@@ -63,9 +70,10 @@ def create_app(config_name="development"):
     app.register_blueprint(availability_bp)
     app.register_blueprint(preferences_bp)
     app.register_blueprint(calendar_bp)
+    app.register_blueprint(busy_slots_bp)
 
-    # # Initialize background jobs
-    # from .background_jobs import init_background_jobs
-    # init_background_jobs(app)
+    # Initialize background jobs
+    from .background_jobs import init_background_jobs
+    init_background_jobs(app)
 
     return app
