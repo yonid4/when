@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { useCalendarConnection } from "../hooks/useCalendarConnection";
 import CalendarConnectPrompt from "../components/calendar/CalendarConnectPrompt";
 import { Button } from "../components/common/Button";
-import { Layout } from "../components/common/Layout";
 import "../styles/calendar.css";
 
 const CreateEvent = () => {
@@ -46,9 +45,6 @@ const CreateEvent = () => {
   };
 
   const handleCreateEvent = async () => {
-    // Mark that user has tried to create an event
-    markFirstEventCreation();
-    
     // Check if calendar prompt should be shown
     if (shouldShowCalendarPrompt('create')) {
       showCalendarPrompt('create');
@@ -86,103 +82,101 @@ const CreateEvent = () => {
     }
   };
 
-  const handleSkipCalendar = () => {
+  const onSkipCalendar = () => {
     handleSkipCalendar();
     // Continue with event creation
     createEvent();
   };
 
   return (
-    <Layout>
-      <div className="create-event-page">
-        <h1>Create New Event</h1>
-        
-        <form className="event-form">
+    <div className="create-event-page">
+      <h1>Create New Event</h1>
+      
+      <form className="event-form">
+        <div className="form-group">
+          <label htmlFor="title">Event Title</label>
+          <input
+            type="text"
+            id="title"
+            name="title"
+            value={eventData.title}
+            onChange={handleInputChange}
+            placeholder="Enter event title"
+            required
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="description">Description</label>
+          <textarea
+            id="description"
+            name="description"
+            value={eventData.description}
+            onChange={handleInputChange}
+            placeholder="Enter event description"
+            rows="4"
+          />
+        </div>
+
+        <div className="form-row">
           <div className="form-group">
-            <label htmlFor="title">Event Title</label>
+            <label htmlFor="startDate">Start Date</label>
             <input
-              type="text"
-              id="title"
-              name="title"
-              value={eventData.title}
+              type="datetime-local"
+              id="startDate"
+              name="startDate"
+              value={eventData.startDate}
               onChange={handleInputChange}
-              placeholder="Enter event title"
               required
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="description">Description</label>
-            <textarea
-              id="description"
-              name="description"
-              value={eventData.description}
-              onChange={handleInputChange}
-              placeholder="Enter event description"
-              rows="4"
-            />
-          </div>
-
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="startDate">Start Date</label>
-              <input
-                type="datetime-local"
-                id="startDate"
-                name="startDate"
-                value={eventData.startDate}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="endDate">End Date</label>
-              <input
-                type="datetime-local"
-                id="endDate"
-                name="endDate"
-                value={eventData.endDate}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="location">Location</label>
+            <label htmlFor="endDate">End Date</label>
             <input
-              type="text"
-              id="location"
-              name="location"
-              value={eventData.location}
+              type="datetime-local"
+              id="endDate"
+              name="endDate"
+              value={eventData.endDate}
               onChange={handleInputChange}
-              placeholder="Enter event location"
+              required
             />
           </div>
+        </div>
 
-          <div className="form-actions">
-            <Button
-              type="button"
-              onClick={handleCreateEvent}
-              disabled={isCreating}
-              className="primary"
-            >
-              {isCreating ? "Creating..." : "Create Event"}
-            </Button>
-          </div>
-        </form>
+        <div className="form-group">
+          <label htmlFor="location">Location</label>
+          <input
+            type="text"
+            id="location"
+            name="location"
+            value={eventData.location}
+            onChange={handleInputChange}
+            placeholder="Enter event location"
+          />
+        </div>
 
-        {/* Calendar Connect Prompt */}
-        <CalendarConnectPrompt
-          context={calendarPromptContext}
-          onConnect={handleConnectCalendar}
-          onSkip={handleSkipCalendar}
-          onClose={hideCalendarPrompt}
-          isVisible={needsCalendarPrompt}
-        />
-      </div>
-    </Layout>
+        <div className="form-actions">
+          <Button
+            type="button"
+            onClick={handleCreateEvent}
+            disabled={isCreating}
+            className="primary"
+          >
+            {isCreating ? "Creating..." : "Create Event"}
+          </Button>
+        </div>
+      </form>
+
+      {/* Calendar Connect Prompt */}
+      <CalendarConnectPrompt
+        context={calendarPromptContext}
+        onConnect={handleConnectCalendar}
+        onSkip={onSkipCalendar}
+        onClose={hideCalendarPrompt}
+        isVisible={needsCalendarPrompt}
+      />
+    </div>
   );
 };
 

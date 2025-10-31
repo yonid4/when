@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import api from "../services/api";
 import { me } from "../services/authService";
+import { getMergedBusySlots } from "../services/busySlotsService";
 import CalendarView from "../components/calendar/CalendarView";
 import UserList from "../components/event/UserList";
 import EventInformation from "../components/event/EventInformation";
@@ -17,6 +18,7 @@ const EventPage = () => {
   const [participants, setParticipants] = useState([]);
   const [eventData, setEventData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [busySlotsLoading, setBusySlotsLoading] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { error: profileError } = useEnsureProfile();
   
@@ -30,7 +32,8 @@ const EventPage = () => {
     connectGoogleCalendar,
     handleCalendarConnected,
     handleSkipCalendar,
-    markFirstEventView
+    markFirstEventView,
+    checkGoogleCalendarConnection
   } = useCalendarConnection();
 
   useEffect(() => {
@@ -53,13 +56,28 @@ const EventPage = () => {
       try {
         setLoading(true);
         
+        // // Mark that user has viewed an event
+        // markFirstEventView();
+
+        // Re-check calendar connection (in case user just connected)
+        const isConnected = await checkGoogleCalendarConnection();
+        console.log('[DEBUG] Calendar connected:', isConnected);
+
+        // Check if calendar prompt should be shown
+        const shouldShow = shouldShowCalendarPrompt('view', isConnected);
+        console.log('[DEBUG] Should show calendar prompt:', shouldShow);
+        // console.log('[DEBUG] isChecking:', isChecking);
+        console.log('[DEBUG] needsCalendarPrompt:', needsCalendarPrompt);
+        
+        if (shouldShow) {
+          console.log('[DEBUG] Showing calendar prompt for context: view');
+          showCalendarPrompt('view');
+        } else {
+          console.log('[DEBUG] NOT showing calendar prompt');
+        }
+
         // Mark that user has viewed an event
         markFirstEventView();
-        
-        // Check if calendar prompt should be shown
-        if (shouldShowCalendarPrompt('view')) {
-          showCalendarPrompt('view');
-        }
         
         // Fetch event details from backend
         try {
@@ -96,29 +114,34 @@ const EventPage = () => {
           });
         }
         
-        // Mock events for calendar view (since we don't have a full calendar API endpoint yet)
-        const mockEvents = [
-          {
-            id: 1,
-            title: "Morning Meeting",
-            start: new Date(2024, 0, 15, 7, 30),
-            end: new Date(2024, 0, 15, 9, 0),
-          },
-          {
-            id: 2,
-            title: "Late Evening Call", 
-            start: new Date(2024, 0, 16, 21, 0),
-            end: new Date(2024, 0, 16, 22, 30),
-          },
-          {
-            id: 3,
-            title: "Regular Meeting",
-            start: new Date(2024, 0, 17, 14, 0),
-            end: new Date(2024, 0, 17, 15, 30),
-          },
-        ];
-        
-        setEvents(mockEvents);
+        // Fetch merged busy slots from backend
+        try {
+          setBusySlotsLoading(true);
+          console.log(`[DEBUG] Fetching merged busy slots for event UID: ${eventUid}`);
+          
+          const busySlotsResponse = await getMergedBusySlots(eventUid);
+          console.log(`[DEBUG] Busy slots response:`, busySlotsResponse);
+          
+          // Transform merged busy slots to calendar events format
+          const calendarEvents = busySlotsResponse.merged_busy_slots.map((slot, index) => ({
+            id: `busy-${index}`,
+            title: `${slot.busy_participants_count} participant(s) busy`,
+            start: new Date(slot.start_time),
+            end: new Date(slot.end_time),
+            type: 'busy',
+            participantCount: slot.busy_participants_count,
+          }));
+          
+          setEvents(calendarEvents);
+          console.log(`[DEBUG] Loaded ${calendarEvents.length} busy slots for calendar`);
+        } catch (busySlotsErr) {
+          console.error("Error fetching busy slots:", busySlotsErr);
+          console.error("Busy slots error details:", busySlotsErr.response?.data);
+          // Fallback to empty array if busy slots can't be fetched
+          setEvents([]);
+        } finally {
+          setBusySlotsLoading(false);
+        }
         
         // Fetch participants from backend
         try {
@@ -283,11 +306,17 @@ const EventPage = () => {
 
       {/* Calendar Section */}
       <div className="event-calendar">
-        <CalendarView
-          events={events}
-          onSelectSlot={handleSelectSlot}
-          onSelectEvent={handleSelectEvent}
-        />
+        {busySlotsLoading ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-lg">Loading calendar...</div>
+          </div>
+        ) : (
+          <CalendarView
+            events={events}
+            onSelectSlot={handleSelectSlot}
+            onSelectEvent={handleSelectEvent}
+          />
+        )}
       </div>
 
       {/* User List Section */}

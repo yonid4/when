@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import Layout from "../layout";
 import { supabase } from "../services/supabaseClient";
 
 const Login = () => {
@@ -13,7 +12,11 @@ const Login = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: window.location.origin + "/"
+          redirectTo: window.location.origin + "/",
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
         }
       });
       if (error) {
@@ -50,57 +53,55 @@ const Login = () => {
   }, []);
 
   return (
-    <Layout>
-      <div style={{
-        minHeight: "60vh",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        alignItems: "center"
-      }}>
-        <h2 style={{ color: "var(--secondary-color)", marginBottom: "2rem" }}>
-          Sign in to connect your Google Calendar
-        </h2>
-        {error && (
-          <div style={{
-            color: "#dc3545",
-            marginBottom: "1rem",
-            padding: "0.5rem 1rem",
-            borderRadius: "4px",
-            background: "#f8d7da",
-            border: "1px solid #f5c6cb"
-          }}>
-            {error}
-          </div>
-        )}
-        <button
-          onClick={handleGoogleLogin}
-          disabled={isLoading}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            background: "white",
-            color: "#444",
-            border: "1px solid #ddd",
-            borderRadius: "4px",
-            padding: "0.75rem 2rem",
-            fontSize: "1.1rem",
-            fontWeight: 500,
-            cursor: isLoading ? "not-allowed" : "pointer",
-            boxShadow: "0 2px 4px rgba(0,0,0,0.04)",
-            transition: "all 0.2s",
-            opacity: isLoading ? 0.7 : 1
-          }}
-        >
-          <img
-            src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-            alt="Google logo"
-            style={{ width: 24, height: 24, marginRight: 12 }}
-          />
-          {isLoading ? "Signing in..." : "Sign in with Google"}
-        </button>
-      </div>
-    </Layout>
+    <div style={{
+      minHeight: "60vh",
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "center",
+      alignItems: "center"
+    }}>
+      <h2 style={{ color: "var(--secondary-color)", marginBottom: "2rem" }}>
+        Sign in to connect your Google Calendar
+      </h2>
+      {error && (
+        <div style={{
+          color: "#dc3545",
+          marginBottom: "1rem",
+          padding: "0.5rem 1rem",
+          borderRadius: "4px",
+          background: "#f8d7da",
+          border: "1px solid #f5c6cb"
+        }}>
+          {error}
+        </div>
+      )}
+      <button
+        onClick={handleGoogleLogin}
+        disabled={isLoading}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          background: "white",
+          color: "#444",
+          border: "1px solid #ddd",
+          borderRadius: "4px",
+          padding: "0.75rem 2rem",
+          fontSize: "1.1rem",
+          fontWeight: 500,
+          cursor: isLoading ? "not-allowed" : "pointer",
+          boxShadow: "0 2px 4px rgba(0,0,0,0.04)",
+          transition: "all 0.2s",
+          opacity: isLoading ? 0.7 : 1
+        }}
+      >
+        <img
+          src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+          alt="Google logo"
+          style={{ width: 24, height: 24, marginRight: 12 }}
+        />
+        {isLoading ? "Signing in..." : "Sign in with Google"}
+      </button>
+    </div>
   );
 };
 

@@ -75,6 +75,37 @@ const CalendarView = ({ events = [], onSelectSlot, onSelectEvent }) => {
   //   // ... implementation ...
   // };
 
+  // Custom event style getter for busy slots
+  const eventStyleGetter = (event) => {
+    if (event.type === "busy") {
+      const participantCount = event.participantCount || 1;
+      // Adjust opacity based on number of busy participants (more busy = darker)
+      const baseOpacity = 0.3;
+      const opacityIncrement = 0.15;
+      const opacity = Math.min(baseOpacity + (participantCount * opacityIncrement), 0.9);
+      
+      return {
+        style: {
+          backgroundColor: "var(--salt-pepper-dark)",
+          opacity: opacity,
+          borderRadius: "4px",
+          border: "none",
+          fontSize: "0.75rem",
+          color: "white",
+        }
+      };
+    }
+    // Default styling for non-busy events
+    return {
+      style: {
+        backgroundColor: "var(--salt-pepper-dark)",
+        borderRadius: "4px",
+        border: "none",
+        fontSize: "0.75rem",
+      }
+    };
+  };
+
   return (
     <Box 
       className="calendar-container"
@@ -155,6 +186,7 @@ const CalendarView = ({ events = [], onSelectSlot, onSelectEvent }) => {
         defaultView="week"
         min={hourRange.min}
         max={hourRange.max}
+        eventPropGetter={eventStyleGetter}
         components={{
           week: {
             header: CustomDateHeader,

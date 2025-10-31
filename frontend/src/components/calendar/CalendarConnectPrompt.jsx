@@ -1,6 +1,18 @@
 import React from "react";
-import { Button } from "../common/Button";
-import { Modal } from "../common/Modal";
+import {
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  ModalCloseButton,
+  Button,
+  VStack,
+  Text,
+  Box,
+  HStack
+} from "@chakra-ui/react";
 
 const CalendarConnectPrompt = ({ 
   context, 
@@ -49,41 +61,53 @@ const CalendarConnectPrompt = ({
   const content = getPromptContent(context);
 
   return (
-    <Modal isOpen={isVisible} onClose={onClose}>
-      <div className="calendar-connect-prompt">
-        <div className="prompt-header">
-          <div className="icon">{content.title.split(' ')[0]}</div>
-          <h3>{content.title.split(' ').slice(1).join(' ')}</h3>
-        </div>
+    <Modal isOpen={isVisible} onClose={onClose} isCentered>
+      <ModalOverlay />
+      <ModalContent>
+        <ModalHeader>
+          <HStack spacing={2}>
+            <Text fontSize="2xl">{content.title.split(' ')[0]}</Text>
+            <Text>{content.title.split(' ').slice(1).join(' ')}</Text>
+          </HStack>
+        </ModalHeader>
+        <ModalCloseButton />
         
-        <div className="prompt-content">
-          <p className="description">{content.description}</p>
-          
-          <div className="benefits">
-            {content.benefits.map((benefit, index) => (
-              <div key={index} className="benefit-item">
-                {benefit}
-              </div>
-            ))}
-          </div>
-        </div>
+        <ModalBody>
+          <VStack spacing={4} align="stretch">
+            <Text color="gray.600">{content.description}</Text>
+            
+            <VStack spacing={2} align="stretch">
+              {content.benefits.map((benefit, index) => (
+                <Box 
+                  key={index}
+                  p={2}
+                  bg="gray.50"
+                  borderRadius="md"
+                >
+                  <Text>{benefit}</Text>
+                </Box>
+              ))}
+            </VStack>
+          </VStack>
+        </ModalBody>
         
-        <div className="prompt-actions">
-          <Button 
-            onClick={onConnect} 
-            className="primary"
-            style={{ marginRight: '12px' }}
-          >
-            Connect Google Calendar
-          </Button>
-          <Button 
-            onClick={onSkip} 
-            className="secondary"
-          >
-            Skip for now
-          </Button>
-        </div>
-      </div>
+        <ModalFooter>
+          <HStack spacing={3}>
+            <Button 
+              colorScheme="blue"
+              onClick={onConnect}
+            >
+              Connect Google Calendar
+            </Button>
+            <Button 
+              variant="ghost"
+              onClick={onSkip}
+            >
+              Skip for now
+            </Button>
+          </HStack>
+        </ModalFooter>
+      </ModalContent>
     </Modal>
   );
 };

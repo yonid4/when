@@ -32,10 +32,10 @@ import {
   ModalCloseButton,
   useDisclosure
 } from "@chakra-ui/react";
-import Layout from "../layout";
 import api from "../services/api";
 import { useEnsureProfile } from "../hooks/useEnsureProfile";
 import { supabase } from "../services/supabaseClient";
+import { getMergedBusySlots } from "../services/busySlotsService";
 
 function formatDateRange(start, end) {
   const options = { month: "short", day: "numeric" };
@@ -81,6 +81,24 @@ const Dashboard = () => {
         setParticipatingEvents(participating);
         
         console.log('Fetched events:', { coordinating, participating });
+        
+        // Preload busy slots for ongoing events (optional performance optimization)
+        const now = new Date();
+        const ongoingEvents = events.filter(event => {
+          const latestDate = new Date(event.latest_date);
+          return latestDate >= now; // Event is still ongoing
+        });
+        
+        // Preload in background (don't await, don't block UI)
+        if (ongoingEvents.length > 0) {
+          Promise.allSettled(
+            ongoingEvents.map(event => 
+              getMergedBusySlots(event.uid || event.id)
+                .then(() => console.log(`Preloaded busy slots for event ${event.uid}`))
+                .catch(err => console.warn(`Failed to preload busy slots for event ${event.uid}:`, err))
+            )
+          );
+        }
       } catch (err) {
         console.error('Error fetching events:', err);
         setError('Failed to load events. Please try again.');
@@ -151,51 +169,46 @@ const Dashboard = () => {
 
   if (profileError) {
     return (
-      <Layout>
-        <Center h="100vh">
-          <Alert status="error">
-            <AlertIcon />
-            Error loading profile: {profileError}
-          </Alert>
-        </Center>
-      </Layout>
+      <Center h="100vh">
+        <Alert status="error">
+          <AlertIcon />
+          Error loading profile: {profileError}
+        </Alert>
+      </Center>
     );
   }
 
   if (loading) {
     return (
-      <Layout>
-        <Center h="100vh">
-          <VStack spacing={4}>
-            <Spinner size="xl" />
-            <Text fontSize="xl">Loading your events...</Text>
-          </VStack>
-        </Center>
-      </Layout>
+      <Center h="100vh">
+        <VStack spacing={4}>
+          <Spinner size="xl" />
+          <Text fontSize="xl">Loading your events...</Text>
+        </VStack>
+      </Center>
     );
   }
 
   return (
-    <Layout>
-      <Box p={8} maxW="1200px" mx="auto">
-        {/* Header */}
-        <Flex mb={8} align="center" justify="space-between">
-          <Heading size="lg">Your Events</Heading>
-          <HStack spacing={4}>
-            <Button colorScheme="blue" onClick={onOpen}>
-              Create Event
-            </Button>
-          </HStack>
-        </Flex>
+    <Box p={8} maxW="1200px" mx="auto">
+      {/* Header */}
+      <Flex mb={8} align="center" justify="space-between">
+        <Heading size="lg">Your Events</Heading>
+        <HStack spacing={4}>
+          <Button colorScheme="blue" onClick={onOpen}>
+            Create Event
+          </Button>
+        </HStack>
+      </Flex>
 
-        {error && (
-          <Alert status="error" mb={6}>
-            <AlertIcon />
-            {error}
-          </Alert>
-        )}
+      {error && (
+        <Alert status="error" mb={6}>
+          <AlertIcon />
+          {error}
+        </Alert>
+      )}
 
-        <VStack spacing={8} align="stretch">
+      <VStack spacing={8} align="stretch">
           {/* Coordinating Events */}
           <Box>
             <Heading size="md" mb={4}>Events You're Coordinating</Heading>
@@ -292,115 +305,114 @@ const Dashboard = () => {
             )}
           </Box>
 
-        </VStack>
+      </VStack>
 
-        {/* Create Event Modal */}
-        <Modal isOpen={isOpen} onClose={onClose} size="xl">
-          <ModalOverlay />
-          <ModalContent>
-            <ModalHeader>Create New Event</ModalHeader>
-            <ModalCloseButton />
-            <form onSubmit={handleSubmit}>
-              <ModalBody>
-                <VStack spacing={4} align="stretch">
+      {/* Create Event Modal */}
+      <Modal isOpen={isOpen} onClose={onClose} size="xl">
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Create New Event</ModalHeader>
+          <ModalCloseButton />
+          <form onSubmit={handleSubmit}>
+            <ModalBody>
+              <VStack spacing={4} align="stretch">
+                <FormControl isRequired>
+                  <FormLabel>Event Name</FormLabel>
+                  <Input
+                    name="name"
+                    value={form.name}
+                    onChange={handleInputChange}
+                    placeholder="Enter event name"
+                  />
+                </FormControl>
+
+                <FormControl>
+                  <FormLabel>Description</FormLabel>
+                  <Textarea
+                    name="description"
+                    value={form.description}
+                    onChange={handleInputChange}
+                    placeholder="Enter event description"
+                    rows={3}
+                  />
+                </FormControl>
+
+                <Grid templateColumns="repeat(auto-fit, minmax(200px, 1fr))" gap={4}>
                   <FormControl isRequired>
-                    <FormLabel>Event Name</FormLabel>
+                    <FormLabel>Start Date</FormLabel>
                     <Input
-                      name="name"
-                      value={form.name}
+                      type="date"
+                      name="start_date"
+                      value={form.start_date}
                       onChange={handleInputChange}
-                      placeholder="Enter event name"
                     />
                   </FormControl>
-
-                  <FormControl>
-                    <FormLabel>Description</FormLabel>
-                    <Textarea
-                      name="description"
-                      value={form.description}
-                      onChange={handleInputChange}
-                      placeholder="Enter event description"
-                      rows={3}
-                    />
-                  </FormControl>
-
-                  <Grid templateColumns="repeat(auto-fit, minmax(200px, 1fr))" gap={4}>
-                    <FormControl isRequired>
-                      <FormLabel>Start Date</FormLabel>
-                      <Input
-                        type="date"
-                        name="start_date"
-                        value={form.start_date}
-                        onChange={handleInputChange}
-                      />
-                    </FormControl>
-
-                    <FormControl isRequired>
-                      <FormLabel>End Date</FormLabel>
-                      <Input
-                        type="date"
-                        name="end_date"
-                        value={form.end_date}
-                        onChange={handleInputChange}
-                      />
-                    </FormControl>
-                  </Grid>
-
-                  <Grid templateColumns="repeat(auto-fit, minmax(200px, 1fr))" gap={4}>
-                    <FormControl isRequired>
-                      <FormLabel>Earliest Start Time</FormLabel>
-                      <Input
-                        type="time"
-                        name="earliest_daily_start_time"
-                        value={form.earliest_daily_start_time}
-                        onChange={handleInputChange}
-                      />
-                    </FormControl>
-
-                    <FormControl isRequired>
-                      <FormLabel>Latest End Time</FormLabel>
-                      <Input
-                        type="time"
-                        name="latest_daily_end_time"
-                        value={form.latest_daily_end_time}
-                        onChange={handleInputChange}
-                      />
-                    </FormControl>
-                  </Grid>
 
                   <FormControl isRequired>
-                    <FormLabel>Duration (minutes)</FormLabel>
+                    <FormLabel>End Date</FormLabel>
                     <Input
-                      type="number"
-                      name="duration_minutes"
-                      value={form.duration_minutes}
+                      type="date"
+                      name="end_date"
+                      value={form.end_date}
                       onChange={handleInputChange}
-                      min="15"
-                      step="15"
-                      placeholder="60"
                     />
                   </FormControl>
-                </VStack>
-              </ModalBody>
+                </Grid>
 
-              <ModalFooter>
-                <Button variant="ghost" mr={3} onClick={onClose}>
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  colorScheme="blue"
-                  isLoading={isCreating}
-                  loadingText="Creating..."
-                >
-                  Create Event
-                </Button>
-              </ModalFooter>
-            </form>
-          </ModalContent>
-        </Modal>
-      </Box>
-    </Layout>
+                <Grid templateColumns="repeat(auto-fit, minmax(200px, 1fr))" gap={4}>
+                  <FormControl isRequired>
+                    <FormLabel>Earliest Start Time</FormLabel>
+                    <Input
+                      type="time"
+                      name="earliest_daily_start_time"
+                      value={form.earliest_daily_start_time}
+                      onChange={handleInputChange}
+                    />
+                  </FormControl>
+
+                  <FormControl isRequired>
+                    <FormLabel>Latest End Time</FormLabel>
+                    <Input
+                      type="time"
+                      name="latest_daily_end_time"
+                      value={form.latest_daily_end_time}
+                      onChange={handleInputChange}
+                    />
+                  </FormControl>
+                </Grid>
+
+                <FormControl isRequired>
+                  <FormLabel>Duration (minutes)</FormLabel>
+                  <Input
+                    type="number"
+                    name="duration_minutes"
+                    value={form.duration_minutes}
+                    onChange={handleInputChange}
+                    min="15"
+                    step="15"
+                    placeholder="60"
+                  />
+                </FormControl>
+              </VStack>
+            </ModalBody>
+
+            <ModalFooter>
+              <Button variant="ghost" mr={3} onClick={onClose}>
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                colorScheme="blue"
+                isLoading={isCreating}
+                loadingText="Creating..."
+              >
+                Create Event
+              </Button>
+            </ModalFooter>
+          </form>
+        </ModalContent>
+      </Modal>
+    </Box>
   );
 };
 
