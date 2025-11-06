@@ -40,13 +40,15 @@ const Layout = ({ children }) => {
 
   // Don't show logout button on login page
   const showLogoutButton = isAuthenticated && location.pathname !== "/login";
+  // Show sign in button when not authenticated and not on login page
+  const showSignInButton = !isAuthenticated && location.pathname !== "/login";
 
   return (
     <div style={{ minHeight: "100vh", background: "#f7f9fb" }}>
       <header style={{
         display: "flex",
         alignItems: "center",
-        justifyContent: showLogoutButton ? "space-between" : "flex-start",
+        justifyContent: (showLogoutButton || showSignInButton) ? "space-between" : "flex-start",
         height: "64px",
         background: "var(--primary-color)",
         boxShadow: "0 2px 4px rgba(0,0,0,0.04)",
@@ -98,6 +100,32 @@ const Layout = ({ children }) => {
             }}
           >
             Logout
+          </button>
+        )}
+        {showSignInButton && (
+          <button
+            onClick={() => navigate("/login")}
+            style={{
+              background: "none",
+              border: "1px solid var(--secondary-color)",
+              color: "var(--secondary-color)",
+              padding: "0.5rem 1rem",
+              borderRadius: "4px",
+              cursor: "pointer",
+              fontSize: "0.9rem",
+              fontWeight: 500,
+              transition: "all 0.2s"
+            }}
+            onMouseOver={e => {
+              e.currentTarget.style.background = "var(--secondary-color)";
+              e.currentTarget.style.color = "white";
+            }}
+            onMouseOut={e => {
+              e.currentTarget.style.background = "none";
+              e.currentTarget.style.color = "var(--secondary-color)";
+            }}
+          >
+            Sign In
           </button>
         )}
       </header>

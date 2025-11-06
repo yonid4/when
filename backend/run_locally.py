@@ -1,14 +1,16 @@
 """
-Run script for the Flask application (Docker/Production).
-For local development with .env file, use run_manually.py instead.
+Run script for the Flask application.
 """
 
 import os
+from dotenv import load_dotenv
 from app import create_app
 
+# Load environment variables
+load_dotenv()
+
 # Create app instance
-# Environment variables are provided by Docker Compose or system environment
-app = create_app(os.getenv("FLASK_ENV", "production"))
+app = create_app(os.getenv("FLASK_ENV", "development"))
 
 if __name__ == "__main__":
     app.run(
@@ -16,4 +18,3 @@ if __name__ == "__main__":
         port=int(os.getenv("FLASK_PORT", 5000)),
         debug=os.getenv("FLASK_ENV") == "development"
     )
-

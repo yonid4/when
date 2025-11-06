@@ -4,21 +4,15 @@ Initialize the Flask application.
 
 import os
 import logging
+import sys
 from dotenv import load_dotenv
 from flask import Flask
 from flask_cors import CORS
 
-# Load environment variables from .env file
-load_dotenv()
-
-# Verify required environment variables
-required_vars = ["SUPABASE_URL", "SUPABASE_ANON_KEY"]
-missing_vars = [var for var in required_vars if not os.getenv(var)]
-if missing_vars:
-    raise ValueError(
-        f"Missing required environment variables: {', '.join(missing_vars)}. "
-        "Please set them in your .env file."
-    )
+# Load environment variables from .env file only in development
+# Docker Compose provides env vars directly, so we skip load_dotenv() when running via Gunicorn
+if 'gunicorn' not in sys.argv[0] and not os.getenv("RUNNING_IN_DOCKER"):
+    load_dotenv()
 
 from .config import config
 from .routes.users import user_bp
@@ -40,6 +34,15 @@ def create_app(config_name="development"):
     Returns:
         Flask: The configured Flask application
     """
+    # Verify required environment variables (moved here from module level)
+    required_vars = ["SUPABASE_URL", "SUPABASE_ANON_KEY"]
+    missing_vars = [var for var in required_vars if not os.getenv(var)]
+    if missing_vars:
+        raise ValueError(
+            f"Missing required environment variables: {', '.join(missing_vars)}. "
+            "Please set them in your .env file or environment."
+        )
+    
     app = Flask(__name__)
     
     # Suppress noisy HTTP client debug logs
@@ -51,9 +54,22 @@ def create_app(config_name="development"):
     app.config.from_object(config[config_name])
     
     # Initialize CORS to allow frontend origins and auth headers
+    # CORS(
+    #     app,
+    #     resources={r"/api/*": {"origins": ["http://localhost:3000", "http://127.0.0.1:3000"]}},
+    #     supports_credentials=True,
+    #     allow_headers="*",
+    #     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    #     expose_headers=["Content-Type", "Authorization"]
+    # )
     CORS(
         app,
-        resources={r"/api/*": {"origins": ["http://localhost:3000", "http://127.0.0.1:3000"]}},
+        resources={r"/api/*": {"origins": [
+            "http://localhost:3000",      # Development
+            "http://127.0.0.1:3000",      # Development
+            "http://localhost",            # Docker frontend
+            "http://localhost:80"          # Docker frontend explicit
+        ]}},
         supports_credentials=True,
         allow_headers="*",
         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
