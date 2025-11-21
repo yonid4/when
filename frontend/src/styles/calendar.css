@@ -364,3 +364,73 @@
   color: #2b2b2b;
   text-decoration: none;
 }
+
+/* ============================================
+   PREFERRED SLOTS & EVENT TYPES
+   ============================================ */
+
+/* Preferred slots - purple density shades (like busy slots) */
+.calendar-container .preferred-slot-density-1 {
+  background-color: rgba(168, 85, 247, 0.2) !important; /* Very light purple - 1 person */
+  border: 1px solid rgba(168, 85, 247, 0.4) !important;
+  cursor: pointer;
+}
+
+.calendar-container .preferred-slot-density-2 {
+  background-color: rgba(168, 85, 247, 0.35) !important; /* Light purple - 2 people */
+  border: 1px solid rgba(168, 85, 247, 0.5) !important;
+  cursor: pointer;
+}
+
+.calendar-container .preferred-slot-density-3 {
+  background-color: rgba(168, 85, 247, 0.5) !important; /* Medium purple - 3 people */
+  border: 1px solid rgba(168, 85, 247, 0.6) !important;
+  cursor: pointer;
+}
+
+.calendar-container .preferred-slot-density-4 {
+  background-color: rgba(168, 85, 247, 0.65) !important; /* Dark purple - 4 people */
+  border: 1px solid rgba(168, 85, 247, 0.7) !important;
+  cursor: pointer;
+}
+
+.calendar-container .preferred-slot-density-5-plus {
+  background-color: rgba(168, 85, 247, 0.8) !important; /* Darkest purple - 5+ people */
+  border: 1px solid rgba(168, 85, 247, 0.9) !important;
+  cursor: pointer;
+}
+
+/* Hover effect for all density levels */
+.calendar-container .preferred-slot-density-1:hover,
+.calendar-container .preferred-slot-density-2:hover,
+.calendar-container .preferred-slot-density-3:hover,
+.calendar-container .preferred-slot-density-4:hover,
+.calendar-container .preferred-slot-density-5-plus:hover {
+  transform: scale(1.02);
+  transition: all 0.2s;
+}
+
+/* Finalized event slot (Task 3) */
+.calendar-container .finalized-event {
+  background-color: #10B981 !important; /* solid green */
+  border: 3px solid #059669 !important;
+  opacity: 1;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+/* Busy time slots */
+.calendar-container .busy-time-event {
+  background-color: #2b2b2b !important;
+  opacity: 0.6;
+  border: none;
+  cursor: default;
+}
+
+/* Selection styling for dragging */
+.calendar-container .rbc-slot-selection {
+  background-color: #60A5FA;
+  opacity: 0.5;
+  border: 2px dashed #3B82F6;
+}

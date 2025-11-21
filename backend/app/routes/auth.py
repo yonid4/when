@@ -274,7 +274,7 @@ def google_callback():
             # Don't fail the entire flow if profile update fails
         
         # Redirect to frontend with success
-        frontend_url = request.headers.get("Origin", "http://localhost:3000")
+        frontend_url = current_app.config.get("FRONTEND_URL", "http://localhost")
         # return redirect(f"{frontend_url}/events")
         return redirect(f"{frontend_url}{return_url}")
         

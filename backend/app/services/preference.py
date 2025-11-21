@@ -1,5 +1,7 @@
 from typing import Optional, Dict, Any, List
 from ..utils.supabase_client import get_supabase
+from supabase import create_client
+import os
 
 
 class PreferencesService():
@@ -12,6 +14,16 @@ class PreferencesService():
 
     def __init__(self):
         self.supabase = get_supabase()
+        
+        # Service role client for operations that bypass RLS
+        supabase_url = os.getenv('SUPABASE_URL')
+        supabase_service_key = os.getenv('SUPABASE_SERVICE_ROLE_KEY')
+        
+        if supabase_url and supabase_service_key:
+            self.service_role_client = create_client(supabase_url, supabase_service_key)
+        else:
+            # Fallback to regular client if service role key not available
+            self.service_role_client = self.supabase
 
     def validate_preference_data(self, data: Dict[str, Any]) -> bool:
         """Basic validation for preference payload."""

@@ -20,7 +20,7 @@ const localizer = dateFnsLocalizer({
   locales,
 });
 
-const CalendarView = ({ events = [], onSelectSlot, onSelectEvent }) => {
+const CalendarView = ({ events = [], onSelectSlot, onSelectEvent, selectable = true }) => {
   // Calculate hour range based on events with reasonable defaults
   const hourRange = useMemo(() => {
     let minHour = 9; // Start at 7 AM
@@ -181,7 +181,7 @@ const CalendarView = ({ events = [], onSelectSlot, onSelectEvent }) => {
         style={{ height: "100%" }}
         onSelectSlot={onSelectSlot}
         onSelectEvent={onSelectEvent}
-        selectable
+        selectable={selectable}
         views={["month", "week", "day"]}
         defaultView="week"
         min={hourRange.min}

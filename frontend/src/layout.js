@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "./services/supabaseClient";
+import NotificationBell from "./components/notifications/NotificationBell";
 // import whenLogo from "frontend/public/when-logo.png";
 
 // client provided by services/supabaseClient
@@ -9,12 +10,14 @@ const Layout = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState(null);
 
   useEffect(() => {
     // Check authentication status
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setIsAuthenticated(!!session);
+      setCurrentUserId(session?.user?.id || null);
     };
 
     checkAuth();
@@ -22,6 +25,7 @@ const Layout = ({ children }) => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setIsAuthenticated(!!session);
+      setCurrentUserId(session?.user?.id || null);
     });
 
     return () => {
@@ -48,7 +52,7 @@ const Layout = ({ children }) => {
       <header style={{
         display: "flex",
         alignItems: "center",
-        justifyContent: (showLogoutButton || showSignInButton) ? "space-between" : "flex-start",
+        justifyContent: "space-between",
         height: "64px",
         background: "var(--primary-color)",
         boxShadow: "0 2px 4px rgba(0,0,0,0.04)",
@@ -76,58 +80,66 @@ const Layout = ({ children }) => {
             style={{ height: "40px", width: "auto" }}
           />  
         </button>
-        {showLogoutButton && (
-          <button
-            onClick={handleLogout}
-            style={{
-              background: "none",
-              border: "1px solid var(--secondary-color)",
-              color: "var(--secondary-color)",
-              padding: "0.5rem 1rem",
-              borderRadius: "4px",
-              cursor: "pointer",
-              fontSize: "0.9rem",
-              fontWeight: 500,
-              transition: "all 0.2s"
-            }}
-            onMouseOver={e => {
-              e.currentTarget.style.background = "var(--secondary-color)";
-              e.currentTarget.style.color = "white";
-            }}
-            onMouseOut={e => {
-              e.currentTarget.style.background = "none";
-              e.currentTarget.style.color = "var(--secondary-color)";
-            }}
-          >
-            Logout
-          </button>
-        )}
-        {showSignInButton && (
-          <button
-            onClick={() => navigate("/login")}
-            style={{
-              background: "none",
-              border: "1px solid var(--secondary-color)",
-              color: "var(--secondary-color)",
-              padding: "0.5rem 1rem",
-              borderRadius: "4px",
-              cursor: "pointer",
-              fontSize: "0.9rem",
-              fontWeight: 500,
-              transition: "all 0.2s"
-            }}
-            onMouseOver={e => {
-              e.currentTarget.style.background = "var(--secondary-color)";
-              e.currentTarget.style.color = "white";
-            }}
-            onMouseOut={e => {
-              e.currentTarget.style.background = "none";
-              e.currentTarget.style.color = "var(--secondary-color)";
-            }}
-          >
-            Sign In
-          </button>
-        )}
+        
+        {/* Right side container */}
+        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+          {/* Notification Bell - Always visible */}
+          <NotificationBell currentUserId={currentUserId} isAuthenticated={isAuthenticated} />
+          
+          {/* Logout/Sign In Button */}
+          {showLogoutButton && (
+            <button
+              onClick={handleLogout}
+              style={{
+                background: "none",
+                border: "1px solid var(--secondary-color)",
+                color: "var(--secondary-color)",
+                padding: "0.5rem 1rem",
+                borderRadius: "4px",
+                cursor: "pointer",
+                fontSize: "0.9rem",
+                fontWeight: 500,
+                transition: "all 0.2s"
+              }}
+              onMouseOver={e => {
+                e.currentTarget.style.background = "var(--secondary-color)";
+                e.currentTarget.style.color = "white";
+              }}
+              onMouseOut={e => {
+                e.currentTarget.style.background = "none";
+                e.currentTarget.style.color = "var(--secondary-color)";
+              }}
+            >
+              Logout
+            </button>
+          )}
+          {showSignInButton && (
+            <button
+              onClick={() => navigate("/login")}
+              style={{
+                background: "none",
+                border: "1px solid var(--secondary-color)",
+                color: "var(--secondary-color)",
+                padding: "0.5rem 1rem",
+                borderRadius: "4px",
+                cursor: "pointer",
+                fontSize: "0.9rem",
+                fontWeight: 500,
+                transition: "all 0.2s"
+              }}
+              onMouseOver={e => {
+                e.currentTarget.style.background = "var(--secondary-color)";
+                e.currentTarget.style.color = "white";
+              }}
+              onMouseOut={e => {
+                e.currentTarget.style.background = "none";
+                e.currentTarget.style.color = "var(--secondary-color)";
+              }}
+            >
+              Sign In
+            </button>
+          )}
+        </div>
       </header>
       <main style={{ paddingTop: "0.5rem" }}>{children}</main>
     </div>

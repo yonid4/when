@@ -2,13 +2,36 @@
 Event routes for managing events and event participants.
 """
 
+import os
 from flask import Blueprint, request, jsonify
 from ..utils.decorators import require_auth
 from datetime import datetime
 import logging
+from supabase import create_client
 from ..services.events import EventsService
 
 event_bp = Blueprint("events", __name__, url_prefix="/api/events")
+
+# Create service role client for operations that need to bypass RLS (like event creation)
+# This client bypasses Row Level Security policies
+def get_service_role_client():
+    """Get or create the service role client for bypassing RLS."""
+    supabase_url = os.getenv('SUPABASE_URL')
+    supabase_service_key = os.getenv('SUPABASE_SERVICE_ROLE_KEY')
+    
+    if not supabase_url or not supabase_service_key:
+        raise ValueError(
+            "SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set in environment variables"
+        )
+    
+    return create_client(supabase_url, supabase_service_key)
+
+# Initialize service role client at module level
+try:
+    service_role_client = get_service_role_client()
+except ValueError as e:
+    logging.warning(f"[EVENT] Service role client initialization failed: {e}")
+    service_role_client = None
 
 @event_bp.route('/', methods=['POST'])
 @require_auth
@@ -78,20 +101,58 @@ def create_event():
             "latest_date": end_date.isoformat() if end_date else None,
             "earliest_hour": earliest_hour.isoformat() if earliest_hour else None,
             "latest_hour": latest_hour.isoformat() if latest_hour else None,
-            "duration_minutes": int(data.get("duration_minutes")),  # Convert to integer
+            "duration_minutes": int(data.get("duration_minutes")),
             "status": "planning"  # Default status
         }
         
         logging.info(f"[EVENT] Inserting event data: {event_data}")
         
-        # Pass the access token to ensure RLS compliance
+        # Validate event data using EventsService
+        events_service = EventsService()
+        if not events_service.validate_event_data(event_data):
+            logging.error("[EVENT] Event data validation failed")
+            return jsonify({
+                'error': 'Validation error',
+                'message': 'Invalid event data'
+            }), 400
+        
+        # Check if service role client is available
+        if service_role_client is None:
+            logging.error("[EVENT] Service role client not available")
+            return jsonify({
+                'error': 'Server configuration error',
+                'message': 'Service role client not initialized. Check SUPABASE_SERVICE_ROLE_KEY environment variable.'
+            }), 500
+        
+        # Use service role client to insert event (bypasses RLS)
+        try:
+            logging.info("[EVENT] Inserting event using service role client...")
+            result = service_role_client.table('events').insert(event_data).execute()
+            
+            if not result.data or len(result.data) == 0:
+                logging.error("[EVENT] No data returned from event creation")
+                return jsonify({
+                    'error': 'Failed to create event',
+                    'message': 'Event creation returned no data'
+                }), 500
+            
+            event = result.data[0]
+            logging.info(f"[EVENT] Successfully created event {event['id']} using service role client")
+        except Exception as e:
+            logging.error(f"[EVENT] Error creating event: {str(e)}")
+            return jsonify({
+                'error': 'Failed to create event',
+                'message': str(e)
+            }), 500
+
+        # Add creator as participant using regular client (with RLS)
         access_token = getattr(request, "access_token", None)
-        events_service = EventsService(access_token)
-
-        event = events_service.create_event(event_data)
-
-        # Add creator as participant
-        events_service.add_participant(event['id'], user_id)
+        events_service_with_auth = EventsService(access_token)
+        try:
+            events_service_with_auth.add_participant(event['id'], user_id)
+        except Exception as e:
+            logging.warning(f"[EVENT] Failed to add creator as participant: {str(e)}")
+            # Don't fail the event creation if participant addition fails
 
         logging.info(f"[EVENT] Successfully created event {event['id']}")
         return jsonify(event), 201
@@ -188,6 +249,7 @@ def update_event(event_id):
 def delete_event(event_id):
     """
     Delete an event.
+    Notifies all participants and deletes from Google Calendar if finalized.
     Requires authentication.
     """
     try:
@@ -209,18 +271,70 @@ def delete_event(event_id):
                 'message': 'Only the event coordinator can delete the event'
             }), 403
         
+        # Get all participants before deletion (for notifications)
+        # Note: get_event_participants expects UID, but we have ID - need to get event first to get UID
+        # Or we can query participants directly using the event ID we already have
+        event_uid = event.get('uid') or event_id
+        participants = events_service.get_event_participants(event_uid)
+        
+        # Get coordinator profile for notification message
+        from ..utils.supabase_client import get_supabase
+        supabase = get_supabase()
+        coordinator_response = supabase.table("profiles")\
+            .select("*")\
+            .eq("id", user_id)\
+            .execute()
+        coordinator_name = "The coordinator"
+        if coordinator_response.data and len(coordinator_response.data) > 0:
+            coordinator = coordinator_response.data[0]
+            coordinator_name = coordinator.get("full_name") or coordinator.get("email_address", "The coordinator")
+        
+        # Delete from Google Calendar if finalized
+        if event.get("is_finalized") and event.get("google_calendar_event_id"):
+            try:
+                from ..services.google_calendar import GoogleCalendarService
+                google_service = GoogleCalendarService(access_token)
+                google_service.delete_event(event["google_calendar_event_id"])
+                print(f"[DELETE] Deleted Google Calendar event: {event['google_calendar_event_id']}")
+            except Exception as e:
+                # Log but don't fail - continue with deletion
+                print(f"Warning: Failed to delete Google Calendar event: {e}")
+        
+        # Delete event from database (cascade will handle related records)
         success = events_service.delete_event(event_id)
         if not success:
             return jsonify({
                 'error': 'Failed to delete event',
                 'message': 'Event could not be deleted'
             }), 400
+        
+        # Create notifications for all participants (except coordinator)
+        from ..services.notifications import NotificationsService
+        notifications_service = NotificationsService()
+        
+        # Get event title with fallback (events table uses 'name' not 'title')
+        event_title = event.get("name") or event.get("title") or "Untitled Event"
+        
+        for participant in participants:
+            if participant["id"] != user_id:
+                try:
+                    notifications_service.create_event_deleted_notification(
+                        user_id=participant["id"],
+                        event_id=event_id,
+                        event_title=event_title,
+                        deleted_by_name=coordinator_name,
+                        deleted_by_id=user_id
+                    )
+                except Exception as e:
+                    print(f"Warning: Failed to create notification for {participant['id']}: {e}")
             
         return jsonify({
+            'success': True,
             'message': 'Event deleted successfully'
         }), 200
 
     except Exception as e:
+        print(f"Error deleting event: {e}")
         return jsonify({
             'error': 'Failed to delete event',
             'message': str(e)

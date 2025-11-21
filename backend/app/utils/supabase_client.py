@@ -38,13 +38,14 @@ def init_supabase(config_name="development"):
 def get_supabase(access_token=None) -> Client:
     """
     Get the Supabase client instance.
+    This returns a client with the ANON key for user-authenticated operations.
+    For admin operations that bypass RLS, use service_role_client separately.
     """
     url = os.environ.get("SUPABASE_URL")
-    # key = os.environ.get("SUPABASE_ANON_KEY")
-    key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+    key = os.environ.get("SUPABASE_ANON_KEY")
     
     if not url or not key:
-        raise ValueError("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set")
+        raise ValueError("SUPABASE_URL and SUPABASE_ANON_KEY must be set")
 
     client = create_client(url, key)
     if access_token:

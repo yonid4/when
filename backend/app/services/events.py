@@ -1,6 +1,8 @@
+import os
 from ..models.event import Event
 from ..models.event_participant import EventParticipant
 from ..utils.supabase_client import get_supabase
+from supabase import create_client
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any, Tuple
 
@@ -12,9 +14,29 @@ class EventsService():
       per `check_user_permission` default policy.
     - `duration_minutes` must be a positive integer (<= 1440) and dates must be ordered.
     - `get_user_events` returns a union of events where the user is coordinator or participant.
+    - Event SELECT queries use service role client to bypass RLS recursion issues.
     """
     def __init__(self, access_token: Optional[str] = None):
         self.supabase = get_supabase(access_token)
+        # Create service role client for event SELECT queries (bypasses RLS)
+        supabase_url = os.getenv('SUPABASE_URL')
+        supabase_service_key = os.getenv('SUPABASE_SERVICE_ROLE_KEY')
+        
+        print(f"[DEBUG] EventsService init: URL={supabase_url}, Key present={bool(supabase_service_key)}")
+        
+        if supabase_url and supabase_service_key:
+            print(f"[DEBUG] Initializing service_role_client with provided key (starts with {supabase_service_key[:5]}...)")
+            
+            # Check if service key is same as anon key
+            anon_key = os.getenv('SUPABASE_ANON_KEY')
+            if anon_key and supabase_service_key == anon_key:
+                print("[CRITICAL WARNING] SUPABASE_SERVICE_ROLE_KEY matches SUPABASE_ANON_KEY! RLS bypass will NOT work.")
+            
+            self.service_role_client = create_client(supabase_url, supabase_service_key)
+        else:
+            print("[DEBUG] Fallback to regular client (service role key missing)")
+            # Fallback to regular client if service role key not available
+            self.service_role_client = self.supabase
     
     def create_event(self, event_data: dict) -> Optional[dict]:
         """Create an event"""
@@ -65,7 +87,7 @@ class EventsService():
                 from datetime import datetime
                 earliest = datetime.fromisoformat(event_data['earliest_date'])
                 latest = datetime.fromisoformat(event_data['latest_date'])
-                if earliest >= latest:
+                if earliest > latest:
                     print("Invalid date range: earliest_date must be before latest_date")
                     return False
             except ValueError:
@@ -82,9 +104,9 @@ class EventsService():
     def get_user_events(self, user_id: str) -> List[dict]:
         """Get all events for a user with role information"""
         try:
-            # Get events where user is coordinator
+            # Get events where user is coordinator (use service role to bypass RLS)
             coordinator_result = (
-                self.supabase.table("events")
+                self.service_role_client.table("events")
                 .select("*")
                 .eq("coordinator_id", user_id)
                 .execute()
@@ -92,7 +114,7 @@ class EventsService():
             
             # Get events where user is participant
             participant_result = (
-                self.supabase.table("event_participants")
+                self.service_role_client.table("event_participants")
                 .select("event_id")
                 .eq("user_id", user_id)
                 .execute()
@@ -106,8 +128,9 @@ class EventsService():
 
             if participant_result.data:
                 event_ids = [p["event_id"] for p in participant_result.data]
+                # Use service role to bypass RLS for event queries
                 participant_events_result = (
-                    self.supabase.table("events")
+                    self.service_role_client.table("events")
                     .select("*")
                     .in_("id", event_ids)
                     .execute()
@@ -135,7 +158,7 @@ class EventsService():
             print(f"Failed to get user events: {str(e)}")
             return []
 
-    def add_participant(self, event_id: str, user_id: str) -> Optional[dict]:
+    def add_participant(self, event_id: str, user_id: str, status: str = "pending") -> Optional[dict]:
         """Add a participant to an event"""
         try:
             print(f"[DEBUG] Adding participant: event_id={event_id}, user_id={user_id}")
@@ -155,7 +178,7 @@ class EventsService():
 
             # Check if user is already a participant
             existing = (
-                self.supabase.table("event_participants")
+                self.service_role_client.table("event_participants")
                 .select("*")
                 .eq("event_id", event_id)
                 .eq("user_id", user_id)
@@ -168,10 +191,10 @@ class EventsService():
                 print("User is already a participant")
                 return existing.data[0]  # Return existing participant
 
-            print(f"[DEBUG] Inserting new participant...")
+            print(f"[DEBUG] Inserting new participant with status={status}...")
             result = (
-                self.supabase.table("event_participants")
-                .insert({"event_id": event_id, "user_id": user_id, "status": "pending"})
+                self.service_role_client.table("event_participants")
+                .insert({"event_id": event_id, "user_id": user_id, "status": status})
                 .execute()
             )
 
@@ -195,7 +218,7 @@ class EventsService():
                 return None
             
             result = (
-                self.supabase.table("event_participants")
+                self.service_role_client.table("event_participants")
                 .update({"status": status})
                 .eq("event_id", event_id)
                 .eq("user_id", user_id)
@@ -212,10 +235,10 @@ class EventsService():
             return None
 
     def get_event(self, event_id: str) -> Optional[dict]:
-        """Get an event by its ID"""
+        """Get an event by its ID - uses service role to bypass RLS"""
         try:
             result = (
-                self.supabase.table("events")
+                self.service_role_client.table("events")
                 .select("*")
                 .eq("id", event_id)
                 .execute()
@@ -231,10 +254,10 @@ class EventsService():
             return None
 
     def get_event_by_uid(self, event_uid: str) -> Optional[dict]:
-        """Get an event by UID"""
+        """Get an event by UID - uses service role to bypass RLS"""
         try:
             result = (
-                self.supabase.table("events")
+                self.service_role_client.table("events")
                 .select("*")
                 .eq("uid", event_uid)
                 .execute()
@@ -258,7 +281,7 @@ class EventsService():
             
             # Get participants first
             participants_result = (
-                self.supabase.table("event_participants")
+                self.service_role_client.table("event_participants")
                 .select("*")
                 .eq("event_id", event["id"])
                 .execute()
@@ -272,9 +295,9 @@ class EventsService():
             # Get user IDs
             user_ids = [p["user_id"] for p in participants_result.data]
             
-            # Get profiles for these users
+            # Get profiles for these users (use service_role_client for cross-user query)
             profiles_result = (
-                self.supabase.table("profiles")
+                self.service_role_client.table("profiles")
                 .select("*")
                 .in_("id", user_ids)
                 .execute()
@@ -334,7 +357,7 @@ class EventsService():
                 return False
 
             result = (
-                self.supabase.table("event_participants")
+                self.service_role_client.table("event_participants")
                 .delete()
                 .eq("event_id", event_id)
                 .eq("user_id", user_id)
@@ -352,10 +375,10 @@ class EventsService():
     def cleanup_participant_data(self, event_id: str, user_id: str) -> bool:
         """Clean up availability and preferences when participant is removed"""
         try:
-            # Remove availability slots
-            self.supabase.table("availability").delete().eq("event_id", event_id).eq("user_id", user_id).execute()
-            # Remove preferences  
-            self.supabase.table("preferences").delete().eq("event_id", event_id).eq("user_id", user_id).execute()
+            # Remove availability slots (use service_role_client for admin cleanup)
+            self.service_role_client.table("availability").delete().eq("event_id", event_id).eq("user_id", user_id).execute()
+            # Remove preferences (use service_role_client for admin cleanup)
+            self.service_role_client.table("preferences").delete().eq("event_id", event_id).eq("user_id", user_id).execute()
 
             return True
         except Exception as e:
@@ -438,7 +461,7 @@ class EventsService():
         """Check if user is a participant in the event"""
         try:
             result = (
-                self.supabase.table("event_participants")
+                self.service_role_client.table("event_participants")
                 .select("id")
                 .eq("event_id", event_id)
                 .eq("user_id", user_id)
@@ -455,7 +478,7 @@ class EventsService():
         """Get the number of participants in an event"""
         try:
             result = (
-                self.supabase.table("event_participants")
+                self.service_role_client.table("event_participants")
                 .select("id", count="exact")
                 .eq("event_id", event_id)
                 .execute()
@@ -468,10 +491,10 @@ class EventsService():
             return 0
 
     def get_events_by_status(self, status: str) -> List[dict]:
-        """Get all events with a specific status."""
+        """Get all events with a specific status - uses service role to bypass RLS"""
         try:
             result = (
-                self.supabase.table("events")
+                self.service_role_client.table("events")
                 .select("*")
                 .eq("status", status)
                 .execute()

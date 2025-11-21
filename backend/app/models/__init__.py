@@ -6,6 +6,8 @@ from .event import Event
 from .event_participant import EventParticipant
 from .busy_slot import BusySlot
 from .preference import UserEventPreference
+from .preferred_slot import PreferredSlot
+from .notification import Notification
 
 # Optional: You can define __all__ to control what 'from app.models import *' imports
 __all__ = [
@@ -13,5 +15,7 @@ __all__ = [
     'Event',
     'EventParticipant',
     'BusySlot',
-    'UserEventPreference'
+    'UserEventPreference',
+    'PreferredSlot',
+    'Notification'
 ]

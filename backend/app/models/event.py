@@ -19,9 +19,17 @@ class Event(BaseModel):
     earliest_hour: Optional[time] = Field(default=None)  # Storing as time without timezone
     latest_hour: Optional[time] = Field(default=None)    # Storing as time without timezone
     duration_minutes: Optional[int] = Field(default=None)
-    status: Optional[str] = Field(default=None)  # e.g., 'planning', 'confirmed', 'cancelled'
+    status: Optional[str] = Field(default="planning")  # 'planning', 'finalized', 'cancelled'
     selected_start_time_utc: Optional[datetime] = Field(default=None)
     selected_end_time_utc: Optional[datetime] = Field(default=None)
+    
+    # Finalization fields (added for Task 3)
+    finalized_start_time_utc: Optional[datetime] = Field(default=None)
+    finalized_end_time_utc: Optional[datetime] = Field(default=None)
+    google_calendar_event_id: Optional[str] = Field(default=None)
+    google_calendar_html_link: Optional[str] = Field(default=None)
+    finalized_at: Optional[datetime] = Field(default=None)
+    
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -49,6 +57,11 @@ class Event(BaseModel):
             "status": self.status,
             "selected_start_time_utc": self.selected_start_time_utc.isoformat() if self.selected_start_time_utc else None,
             "selected_end_time_utc": self.selected_end_time_utc.isoformat() if self.selected_end_time_utc else None,
+            "finalized_start_time_utc": self.finalized_start_time_utc.isoformat() if self.finalized_start_time_utc else None,
+            "finalized_end_time_utc": self.finalized_end_time_utc.isoformat() if self.finalized_end_time_utc else None,
+            "google_calendar_event_id": self.google_calendar_event_id,
+            "google_calendar_html_link": self.google_calendar_html_link,
+            "finalized_at": self.finalized_at.isoformat() if self.finalized_at else None,
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat(),
         }

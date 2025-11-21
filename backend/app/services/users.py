@@ -1,5 +1,7 @@
 from ..utils.supabase_client import get_supabase
 from typing import Optional, Dict, Any, List
+from supabase import create_client
+import os
 
 
 class UsersService():
@@ -9,11 +11,22 @@ class UsersService():
     - Profile rows live in `profiles` and are keyed by Supabase Auth user `id`.
     - Google OAuth credentials are stored verbatim in `google_auth_token` (handled by calendar service).
     - Prefer `ensure_profile` to lazily create a profile with defaults when needed.
+    - Uses service role client for profile creation to bypass RLS during signup.
     """
 
     def __init__(self, access_token: Optional[str] = None):
         # Use a user-authenticated client so RLS allows inserts/reads
         self.supabase = get_supabase(access_token)
+        
+        # Create service role client for operations that bypass RLS (like profile creation)
+        supabase_url = os.getenv('SUPABASE_URL')
+        supabase_service_key = os.getenv('SUPABASE_SERVICE_ROLE_KEY')
+        
+        if supabase_url and supabase_service_key:
+            self.service_role_client = create_client(supabase_url, supabase_service_key)
+        else:
+            # Fallback to regular client if service role key not available
+            self.service_role_client = self.supabase
 
     # -----------------------------
     # Profile CRUD
@@ -21,6 +34,7 @@ class UsersService():
     def create_profile(self, user_id: str, profile_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """
         Create a profile row for a given authenticated user id.
+        Uses service role client to bypass RLS during signup.
 
         Expected keys in profile_data (optional unless enforced via DB constraints):
         - email_address, full_name, avatar_url, google_auth_token, google_calendar_id, timezone
@@ -29,8 +43,9 @@ class UsersService():
             payload = {"id": user_id}
             payload.update(profile_data or {})
 
+            # Use service role client to bypass RLS for profile creation
             result = (
-                self.supabase.table("profiles")
+                self.service_role_client.table("profiles")
                 .insert(payload)
                 .execute()
             )

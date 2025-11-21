@@ -9,6 +9,8 @@ Key behaviors:
 
 from ..models.busy_slot import BusySlot
 from ..utils.supabase_client import get_supabase
+from supabase import create_client
+import os
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any, Tuple
 
@@ -22,6 +24,16 @@ class BusySlotService():
     """
     def __init__(self):
         self.supabase = get_supabase()
+        
+        # Initialize service role client for admin operations (bypassing RLS)
+        supabase_url = os.getenv("SUPABASE_URL")
+        service_role_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+        
+        if supabase_url and service_role_key:
+            self.service_role_client = create_client(supabase_url, service_role_key)
+        else:
+            print("[WARNING] SUPABASE_SERVICE_ROLE_KEY not found, falling back to anon client")
+            self.service_role_client = self.supabase
 
     def get_user_busy_slots(self, user_id: str, start_date: datetime, end_date: datetime) -> List[dict]:
         """Get busy slots for a user within a date range."""
@@ -70,7 +82,7 @@ class BusySlotService():
         """Store a single busy slot in the database."""
         try:
             result = (
-                self.supabase.table("busy_slots")
+                self.service_role_client.table("busy_slots")
                 .insert(busy_slot.to_dict())
                 .execute()
             )
@@ -85,7 +97,7 @@ class BusySlotService():
             # Try to find existing slot with same google_event_id and user_id
             if busy_slot.google_event_id:
                 existing = (
-                    self.supabase.table("busy_slots")
+                    self.service_role_client.table("busy_slots")
                     .select("*")
                     .eq("user_id", busy_slot.user_id)
                     .eq("google_event_id", busy_slot.google_event_id)
@@ -96,7 +108,7 @@ class BusySlotService():
                     # Update existing slot
                     busy_slot.updated_at = datetime.utcnow()
                     result = (
-                        self.supabase.table("busy_slots")
+                        self.service_role_client.table("busy_slots")
                         .update(busy_slot.to_dict())
                         .eq("id", existing.data[0]["id"])
                         .execute()
@@ -114,7 +126,7 @@ class BusySlotService():
         """Delete all busy slots for a user within a date range."""
         try:
             (
-                self.supabase.table("busy_slots")
+                self.service_role_client.table("busy_slots")
                 .delete()
                 .eq("user_id", user_id)
                 .gte("start_time_utc", start_date.isoformat())
@@ -164,7 +176,7 @@ class BusySlotService():
         try:
             # First get all participants for the event
             participants_result = (
-                self.supabase.table("event_participants")
+                self.service_role_client.table("event_participants")
                 .select("user_id")
                 .eq("event_id", event_id)
                 .execute()
@@ -187,7 +199,7 @@ class BusySlotService():
         try:
             slots_data = [slot.to_dict() for slot in busy_slots]
             result = (
-                self.supabase.table("busy_slots")
+                self.service_role_client.table("busy_slots")
                 .insert(slots_data)
                 .execute()
             )
@@ -197,7 +209,14 @@ class BusySlotService():
             return []
 
     def sync_user_google_calendar(self, user_id: str, start_date: datetime, end_date: datetime) -> bool:
-        """Sync busy slots from user's Google Calendar."""
+        """
+        Sync busy slots from user's Google Calendar using differential logic.
+        
+        Actions:
+        1. Add new events that are in Google Calendar but not in DB.
+        2. Delete events from DB that are not in Google Calendar anymore.
+        3. If an event is in both, do nothing (preserve existing).
+        """
         try:
             from . import google_calendar
             get_stored_credentials = google_calendar.get_stored_credentials
@@ -221,21 +240,64 @@ class BusySlotService():
                 orderBy='startTime'
             ).execute()
             
-            events = events_result.get('items', [])
+            google_events = events_result.get('items', [])
             
-            # Convert Google events to BusySlot objects
-            busy_slots = []
-            for event in events:
+            # 1. Map Google Events by ID
+            google_event_map = {}
+            for event in google_events:
+                event_id = event.get('id')
+                if event_id:
+                    google_event_map[event_id] = event
+            
+            # 2. Fetch existing DB slots for this user in this range
+            # We use service_role_client to ensure we see everything
+            db_slots_result = (
+                self.service_role_client.table("busy_slots")
+                .select("id, google_event_id")
+                .eq("user_id", user_id)
+                .gte("start_time_utc", start_date.isoformat())
+                .lte("end_time_utc", end_date.isoformat())
+                .not_.is_("google_event_id", "null")
+                .execute()
+            )
+            db_slots = db_slots_result.data if db_slots_result.data else []
+            db_event_ids = {slot["google_event_id"] for slot in db_slots}
+            
+            # 3. Calculate Diff
+            google_ids = set(google_event_map.keys())
+            
+            ids_to_add = google_ids - db_event_ids
+            ids_to_delete = db_event_ids - google_ids
+            # ids_to_ignore = google_ids & db_event_ids (Intersection)
+            
+            print(f"[SYNC] User {user_id}: Adding {len(ids_to_add)}, Deleting {len(ids_to_delete)}, Ignoring {len(google_ids & db_event_ids)}")
+            
+            # 4. Execute Deletes
+            if ids_to_delete:
+                (
+                    self.service_role_client.table("busy_slots")
+                    .delete()
+                    .eq("user_id", user_id)
+                    .in_("google_event_id", list(ids_to_delete))
+                    .execute()
+                )
+            
+            # 5. Execute Adds
+            slots_to_add = []
+            for event_id in ids_to_add:
+                event = google_event_map[event_id]
                 try:
                     busy_slot = BusySlot.from_google_event(user_id, event)
-                    busy_slots.append(busy_slot)
+                    slots_to_add.append(busy_slot.to_dict())
                 except ValueError:
-                    # Skip all-day events or invalid events
-                    continue
+                    continue  # Skip invalid/all-day events
             
-            # Store the busy slots using upsert to handle duplicates
-            for slot in busy_slots:
-                self.upsert_busy_slot(slot)
+            if slots_to_add:
+                (
+                    self.service_role_client.table("busy_slots")
+                    .insert(slots_to_add)
+                    .execute()
+                )
             
             return True
             
@@ -247,7 +309,7 @@ class BusySlotService():
         """Delete all Google Calendar synced events for a user."""
         try:
             (
-                self.supabase.table("busy_slots")
+                self.service_role_client.table("busy_slots")
                 .delete()
                 .eq("user_id", user_id)
                 .not_.is_("google_event_id", "null")
@@ -273,7 +335,9 @@ class BusySlotService():
             Format: [{"start_time": "ISO_string", "end_time": "ISO_string", "busy_participants_count": int}]
         """
         try:
-            result = self.supabase.rpc(
+            # Use service_role_client to bypass RLS policies that might cause recursion
+            # (e.g. checking event participants while querying event participants)
+            result = self.service_role_client.rpc(
                 'get_merged_busy_slots_for_event',
                 {
                     'event_uuid': event_id,
@@ -306,7 +370,7 @@ class BusySlotService():
         try:
             # Get event participants
             participants_result = (
-                self.supabase.table("event_participants")
+                self.service_role_client.table("event_participants")
                 .select("user_id")
                 .eq("event_id", event_id)
                 .execute()
@@ -318,8 +382,9 @@ class BusySlotService():
             participant_ids = [p["user_id"] for p in participants_result.data]
             
             # Get busy slots for all participants
+            # Use service_role_client to ensure we can see all slots
             busy_slots_result = (
-                self.supabase.table("busy_slots")
+                self.service_role_client.table("busy_slots")
                 .select("start_time_utc, end_time_utc, user_id")
                 .in_("user_id", participant_ids)
                 .gte("start_time_utc", start_date.isoformat())
@@ -477,7 +542,7 @@ class BusySlotService():
         try:
             # Get participant event IDs first
             participant_events = (
-                supabase.table("event_participants")
+                self.service_role_client.table("event_participants")
                 .select("event_id")
                 .eq("user_id", user_id)
                 .execute()

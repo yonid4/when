@@ -99,15 +99,26 @@ def get_credentials_from_code(code: str) -> Credentials:
 def store_credentials(user_id: str, credentials: Credentials) -> None:
     """
     Store user's Google credentials securely.
+    Uses service role client to bypass RLS.
     
     Args:
         user_id (str): User's ID
         credentials (Credentials): Google API credentials
     """
     from ..utils.supabase_client import get_supabase
+    from supabase import create_client
     import logging
+    import os
     
-    supabase = get_supabase()
+    # Use service role client to bypass RLS
+    supabase_url = os.getenv('SUPABASE_URL')
+    supabase_service_key = os.getenv('SUPABASE_SERVICE_ROLE_KEY')
+    
+    if supabase_url and supabase_service_key:
+        supabase = create_client(supabase_url, supabase_service_key)
+    else:
+        # Fallback to regular client
+        supabase = get_supabase()
     
     if isinstance(credentials, dict):
         # Already a dict
@@ -134,10 +145,6 @@ def store_credentials(user_id: str, credentials: Credentials) -> None:
         logging.error(f"[ERROR] No profile found for user {user_id}")
         return
     
-    # # Update user profile with credentials
-    # response = supabase.table("profiles").update({
-    #     "google_auth_token": creds_dict
-    # }).eq("id", user_id).execute()
     # Update user profile with credentials
     try:
         response = supabase.table("profiles").update({
@@ -156,6 +163,7 @@ def store_credentials(user_id: str, credentials: Credentials) -> None:
 def get_stored_credentials(user_id: str) -> Optional[Credentials]:
     """
     Retrieve stored Google credentials for a user.
+    Uses service role client to bypass RLS.
     
     Args:
         user_id (str): User's ID
@@ -164,8 +172,18 @@ def get_stored_credentials(user_id: str) -> Optional[Credentials]:
         Optional[Credentials]: Stored credentials if found, None otherwise
     """
     from ..utils.supabase_client import get_supabase
+    from supabase import create_client
+    import os
     
-    supabase = get_supabase()
+    # Use service role client to bypass RLS
+    supabase_url = os.getenv('SUPABASE_URL')
+    supabase_service_key = os.getenv('SUPABASE_SERVICE_ROLE_KEY')
+    
+    if supabase_url and supabase_service_key:
+        supabase = create_client(supabase_url, supabase_service_key)
+    else:
+        # Fallback to regular client
+        supabase = get_supabase()
     
     # Get user profile with stored credentials
     response = (

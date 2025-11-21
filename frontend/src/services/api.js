@@ -21,9 +21,13 @@ api.interceptors.request.use(async (config) => {
   }
 
   const token = await getAccessToken();
+  console.log(`DEBUG api interceptor: Method=${config.method}, URL=${config.url}, Token present=${!!token}`);
   if (token) {
     config.headers = config.headers || {};
     config.headers.Authorization = `Bearer ${token}`;
+    console.log(`DEBUG api interceptor: Authorization header added (token length=${token.length})`);
+  } else {
+    console.warn(`DEBUG api interceptor: No token available for ${config.method} ${config.url}`);
   }
   return config;
 });

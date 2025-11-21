@@ -8,6 +8,7 @@ import sys
 from dotenv import load_dotenv
 from flask import Flask
 from flask_cors import CORS
+from flask_jwt_extended import JWTManager
 
 # Load environment variables from .env file only in development
 # Docker Compose provides env vars directly, so we skip load_dotenv() when running via Gunicorn
@@ -22,6 +23,10 @@ from .routes.availability import availability_bp
 from .routes.preferences import preferences_bp
 from .routes.google_calendar import calendar_bp
 from .routes.busy_slots import busy_slots_bp
+from .routes.preferred_slots import preferred_slots_bp
+from .routes.event_finalization import event_finalization_bp
+from .routes.notifications import notifications_bp
+from .routes.invitations import invitations_bp
 from .utils.supabase_client import init_supabase
 
 def create_app(config_name="development"):
@@ -52,6 +57,9 @@ def create_app(config_name="development"):
     
     # Load configuration
     app.config.from_object(config[config_name])
+    
+    # Initialize JWT
+    jwt = JWTManager(app)
     
     # Initialize CORS to allow frontend origins and auth headers
     # CORS(
@@ -87,6 +95,10 @@ def create_app(config_name="development"):
     app.register_blueprint(preferences_bp)
     app.register_blueprint(calendar_bp)
     app.register_blueprint(busy_slots_bp)
+    app.register_blueprint(preferred_slots_bp)
+    app.register_blueprint(event_finalization_bp)
+    app.register_blueprint(notifications_bp)
+    app.register_blueprint(invitations_bp)
 
     # Initialize background jobs
     from .background_jobs import init_background_jobs

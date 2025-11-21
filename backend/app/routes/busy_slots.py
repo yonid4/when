@@ -240,12 +240,16 @@ def get_merged_busy_slots_for_event(event_id):
         access_token = getattr(request, "access_token", None)
         events_service = EventsService(access_token)
         
-        # Use get_event_by_uid since frontend sends UID
+        # Use get_event_by_uid since frontend usually sends UID, but fallback to UUID check
         event = events_service.get_event_by_uid(event_id)
+        if not event:
+            # Try looking up by UUID if UID lookup failed
+            event = events_service.get_event(event_id)
+            
         if not event:
             return jsonify({
                 'error': 'Event not found',
-                'message': f'No event found with uid {event_id}'
+                'message': f'No event found with uid or id {event_id}'
             }), 404
             
         start_date = datetime.fromisoformat(event["earliest_date"])

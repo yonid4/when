@@ -49,7 +49,8 @@ def get_busy_times(event_id):
     
     try:
         from ..utils.supabase_client import get_supabase
-        supabase = get_supabase()
+        access_token = getattr(request, "access_token", None)
+        supabase = get_supabase(access_token)
         
         # Get busy slots from database
         response = supabase.table('busy_slots') \
@@ -72,10 +73,10 @@ def get_busy_times(event_id):
         }), 400
     
 
-@calendar_bp.route('/sync/<string:event_id>', methods=['POST'])
+@calendar_bp.route('/sync', methods=['POST'])
 @require_auth
-def sync_calendar(event_id):
-    """Sync user's Google Calendar and store busy times in database."""
+def sync_calendar():
+    """Sync user's Google Calendar for the next 90 days."""
     user_id = request.user.id
 
     try:
@@ -87,68 +88,82 @@ def sync_calendar(event_id):
                 'message': 'Please connect your Google Calendar first'
             }), 400
 
-        # Get event details
-        access_token = getattr(request, "access_token", None)
-        events_service = EventsService(access_token)
-        event = events_service.get_event(event_id)
-        if not event:
+        # Use BusySlotService to sync calendar
+        from ..services.busy_slots import BusySlotService
+        from ..services.events import EventsService
+        
+        busy_slot_service = BusySlotService()
+        events_service = EventsService(access_token=getattr(request, "access_token", None))
+        
+        # Get all user events to determine sync window
+        user_events = events_service.get_user_events(user_id)
+        
+        # Filter for active events (not cancelled)
+        active_events = [e for e in user_events if e.get('status') != 'cancelled']
+        
+        if not active_events:
+            # Fallback to default 90-day window if no active events
+            start_date = datetime.now(timezone.utc)
+            end_date = start_date + timedelta(days=90)
+            print(f"[SYNC] No active events for user {user_id}. Using default 90-day window: {start_date} to {end_date}")
+        else:
+            # Determine window from active events
+            # Start date: Earliest of all earliest_dates
+            # End date: Max of (Start + 90 days, Latest of all latest_dates)
+            
+            # Helper to parse date/datetime to datetime
+            def to_datetime(d):
+                if isinstance(d, str):
+                    return datetime.fromisoformat(d).replace(tzinfo=timezone.utc)
+                if isinstance(d, datetime):
+                    return d.replace(tzinfo=timezone.utc) if d.tzinfo is None else d
+                # If it's a date object, convert to datetime at midnight
+                return datetime.combine(d, datetime.min.time()).replace(tzinfo=timezone.utc)
+
+            earliest_dates = []
+            latest_dates = []
+            
+            for e in active_events:
+                if e.get('earliest_date'):
+                    earliest_dates.append(to_datetime(e['earliest_date']))
+                if e.get('latest_date'):
+                    latest_dates.append(to_datetime(e['latest_date']))
+            
+            if earliest_dates:
+                start_date = min(earliest_dates)
+            else:
+                start_date = datetime.now(timezone.utc)
+                
+            # Calculate minimum end date (start + 90 days)
+            min_end_date = start_date + timedelta(days=90)
+            
+            if latest_dates:
+                max_event_date = max(latest_dates)
+                end_date = max(min_end_date, max_event_date)
+            else:
+                end_date = min_end_date
+                
+            print(f"[SYNC] Dynamic sync window for user {user_id}: {start_date} to {end_date} (based on {len(active_events)} active events)")
+
+        success = busy_slot_service.sync_user_google_calendar(
+            user_id,
+            start_date,
+            end_date
+        )
+        
+        if success:
             return jsonify({
-                'error': 'Event not found',
-                'message': f'No event found with id {event_id}'
-            }), 404
-
-        # Check if user is participant in this event
-        if not events_service.is_user_participant(event_id, user_id):
+                'message': 'Calendar synced successfully'
+            }), 200
+        else:
             return jsonify({
-                'error': 'Access denied',
-                'message': 'You are not a participant in this event'
-            }), 403
+                'error': 'Sync failed',
+                'message': 'Failed to sync Google Calendar'
+            }), 500
 
-        # Get user's busy times for this event
-        busy_times = get_user_busy_times(user_id, event)
-
-        # Store busy times in database
-        from ..utils.supabase_client import get_supabase
-        supabase = get_supabase()
-        
-        # # Delete old busy slots for this user and event time range
-        # supabase.table('busy_slots').delete().eq('user_id', user_id).execute()
-
-        # Delete old busy slots for this user within the event date range
-        start_date = datetime.fromisoformat(event["earliest_date"].replace('Z', '+00:00'))
-        end_date = datetime.fromisoformat(event["latest_date"].replace('Z', '+00:00'))
-
-        supabase.table('busy_slots') \
-            .delete() \
-            .eq('user_id', user_id) \
-            .gte('start_time_utc', start_date.isoformat()) \
-            .lte('end_time_utc', end_date.isoformat()) \
-            .execute()
-        
-        # Insert new busy slots
-        busy_slots_data = []
-        for busy_time in busy_times:
-            busy_slots_data.append({
-                'user_id': user_id,
-                'start_time_utc': busy_time['start'].isoformat(),  # Access dict keys
-                'end_time_utc': busy_time['end'].isoformat(),
-                'google_event_id': busy_time.get('google_event_id'),
-                'google_calendar_id': 'primary',
-                'event_title': busy_time.get('title'),
-                'event_description': busy_time.get('description'),
-                'last_synced_at': datetime.now(timezone.utc).isoformat()
-            })
-        
-        if busy_slots_data:
-            supabase.table('busy_slots').insert(busy_slots_data).execute()
-        
-        return jsonify({
-            'message': 'Calendar synced successfully',
-            'busy_slots_count': len(busy_slots_data)
-        }), 200
     except Exception as e:
         return jsonify({
-            'error': 'Failed to get busy times',
+            'error': 'Failed to sync calendar',
             'message': str(e)
         }), 400
 
@@ -164,9 +179,46 @@ def get_user_busy_times(user_id, event):
         # Create Google Calendar service
         service = get_calendar_service(credentials, user_id)
         
-        # Parse event date range
-        start_date = datetime.fromisoformat(event["earliest_date"].replace('Z', '+00:00'))
-        end_date = datetime.fromisoformat(event["latest_date"].replace('Z', '+00:00'))
+        # Determine sync window dynamically based on active events
+        from ..services.events import EventsService
+        # Note: request context might not be available if this is called from background job
+        # But get_user_busy_times seems to be used in context where we might not have access_token easily
+        # However, EventsService uses service_role_client for reading events, so access_token is optional
+        events_service = EventsService() 
+        
+        user_events = events_service.get_user_events(user_id)
+        active_events = [e for e in user_events if e.get('status') != 'cancelled']
+        
+        if not active_events:
+            start_date = datetime.now(timezone.utc)
+            end_date = start_date + timedelta(days=90)
+        else:
+            def to_datetime(d):
+                if isinstance(d, str):
+                    return datetime.fromisoformat(d).replace(tzinfo=timezone.utc)
+                if isinstance(d, datetime):
+                    return d.replace(tzinfo=timezone.utc) if d.tzinfo is None else d
+                return datetime.combine(d, datetime.min.time()).replace(tzinfo=timezone.utc)
+
+            earliest_dates = []
+            latest_dates = []
+            for e in active_events:
+                if e.get('earliest_date'):
+                    earliest_dates.append(to_datetime(e['earliest_date']))
+                if e.get('latest_date'):
+                    latest_dates.append(to_datetime(e['latest_date']))
+            
+            if earliest_dates:
+                start_date = min(earliest_dates)
+            else:
+                start_date = datetime.now(timezone.utc)
+                
+            min_end_date = start_date + timedelta(days=90)
+            if latest_dates:
+                max_event_date = max(latest_dates)
+                end_date = max(min_end_date, max_event_date)
+            else:
+                end_date = min_end_date
         
         # Format times for Google Calendar API (RFC3339 format)
         time_min_str = start_date.isoformat()
