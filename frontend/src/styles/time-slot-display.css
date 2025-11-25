@@ -1,0 +1,111 @@
+/* TimeSlotDisplay Component Styles */
+
+.time-slot-display {
+  /* Base container styles already handled by Chakra UI Box */
+}
+
+/* Smooth transition for slot blocks */
+.time-slot-block {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, box-shadow;
+}
+
+.time-slot-block:hover {
+  transform: scale(1.02) translateY(-1px);
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Color scheme classes for density */
+.density-1-2 {
+  background-color: #efbbff;
+  color: #2b2b2b;
+}
+
+.density-3-4 {
+  background-color: #d896ff;
+  color: #2b2b2b;
+}
+
+.density-5-6 {
+  background-color: #be29ec;
+  color: white;
+}
+
+.density-7-9 {
+  background-color: #800080;
+  color: white;
+}
+
+.density-10-plus {
+  background-color: #660066;
+  color: white;
+}
+
+/* Hour marker styles */
+.hour-marker {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--salt-pepper-medium-gray, #6b7280);
+  user-select: none;
+}
+
+/* Grid line styles */
+.timeline-grid-line {
+  background-color: var(--salt-pepper-light-gray, #e5e7eb);
+  pointer-events: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .time-slot-display {
+    height: 500px;
+  }
+  
+  .hour-marker {
+    font-size: 0.625rem;
+  }
+}
+
+/* Animation for real-time updates */
+@keyframes slot-appear {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.time-slot-block.new {
+  animation: slot-appear 0.3s ease-out;
+}
+
+/* Loading state */
+.time-slot-display-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  color: var(--salt-pepper-medium-gray);
+}
+
+/* Empty state */
+.time-slot-display-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  padding: 2rem;
+  text-align: center;
+  color: var(--salt-pepper-medium-gray);
+}
+
+.time-slot-display-empty-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}

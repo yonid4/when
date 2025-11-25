@@ -25,12 +25,12 @@ const CalendarView = ({ events = [], onSelectSlot, onSelectEvent, selectable = t
   const hourRange = useMemo(() => {
     let minHour = 9; // Start at 7 AM
     let maxHour = 17; // End at 9 PM
-    
+
     if (events && events.length > 0) {
       events.forEach(event => {
         const startHour = new Date(event.start).getHours();
         const endHour = new Date(event.end).getHours();
-        
+
         if (startHour < minHour) {
           minHour = Math.max(minHour, Math.floor(startHour)); // Don't go earlier than 6 AM
         }
@@ -39,15 +39,15 @@ const CalendarView = ({ events = [], onSelectSlot, onSelectEvent, selectable = t
         }
       });
     }
-    
+
     return { min: new Date(0, 0, 0, minHour, 0, 0), max: new Date(0, 0, 0, maxHour, 0, 0) };
   }, [events]);
 
   // Custom date header component with Chakra UI styling - plain text only
   const CustomDateHeader = ({ date, label }) => {
     return (
-      <Box 
-        as="div" 
+      <Box
+        as="div"
         className="rbc-date-header-text"
         fontWeight="medium"
         fontSize="sm"
@@ -72,18 +72,50 @@ const CalendarView = ({ events = [], onSelectSlot, onSelectEvent, selectable = t
   //   const navigate = (action) => {
   //     onNavigate(action);
   //   };
-  //   // ... implementation ...
   // };
 
-  // Custom event style getter for busy slots
+  // Custom event style getter with purple gradient for preferred slots
   const eventStyleGetter = (event) => {
+    // Preferred slots - use purple gradient based on participant count
+    if (event.type === "preferred-slot") {
+      const density = event.resource?.density || 1;
+
+      // Purple gradient color scheme matching timeline view
+      let backgroundColor;
+      if (density <= 2) {
+        backgroundColor = '#efbbff'; // 1-2 people
+      } else if (density <= 4) {
+        backgroundColor = '#d896ff'; // 3-4 people
+      } else if (density <= 6) {
+        backgroundColor = '#be29ec'; // 5-6 people
+      } else if (density <= 9) {
+        backgroundColor = '#800080'; // 7-9 people
+      } else {
+        backgroundColor = '#660066'; // 10+ people
+      }
+
+      const textColor = density >= 7 ? 'white' : '#2b2b2b';
+
+      return {
+        style: {
+          backgroundColor: backgroundColor,
+          borderRadius: "4px",
+          border: "none",
+          fontSize: "0.75rem",
+          color: textColor,
+          fontWeight: "500",
+        }
+      };
+    }
+
+    // Busy slots - keep existing dark style with opacity
     if (event.type === "busy") {
       const participantCount = event.participantCount || 1;
       // Adjust opacity based on number of busy participants (more busy = darker)
       const baseOpacity = 0.3;
       const opacityIncrement = 0.15;
       const opacity = Math.min(baseOpacity + (participantCount * opacityIncrement), 0.9);
-      
+
       return {
         style: {
           backgroundColor: "var(--salt-pepper-dark)",
@@ -95,7 +127,22 @@ const CalendarView = ({ events = [], onSelectSlot, onSelectEvent, selectable = t
         }
       };
     }
-    // Default styling for non-busy events
+
+    // Finalized events - distinct styling
+    if (event.type === "finalized") {
+      return {
+        style: {
+          backgroundColor: "#10b981", // Green for finalized
+          borderRadius: "4px",
+          border: "2px solid #059669",
+          fontSize: "0.75rem",
+          color: "white",
+          fontWeight: "bold",
+        }
+      };
+    }
+
+    // Default styling for other event types
     return {
       style: {
         backgroundColor: "var(--salt-pepper-dark)",
@@ -107,9 +154,9 @@ const CalendarView = ({ events = [], onSelectSlot, onSelectEvent, selectable = t
   };
 
   return (
-    <Box 
+    <Box
       className="calendar-container"
-      h="full" 
+      h="full"
       w="full"
       sx={{
         // Modernize calendar styling with Chakra UI overrides

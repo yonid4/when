@@ -21,8 +21,10 @@ import DeleteEventModal from "../components/event/DeleteEventModal";
 import { useEnsureProfile } from "../hooks/useEnsureProfile";
 import { useCalendarConnection } from "../hooks/useCalendarConnection";
 import { supabase } from "../services/supabaseClient";
+import TimeSlotDisplayExample from "../components/events/TimeSlotDisplayExample";
 import "../styles/event-page.css";
 import "../styles/calendar.css";
+import "../styles/time-slot-display.css";
 
 const EventPage = () => {
   const { eventUid } = useParams();
@@ -803,11 +805,18 @@ const EventPage = () => {
             <div className="text-lg">Loading calendar...</div>
           </div>
         ) : (
-          <CalendarView
-            events={calendarEvents}
-            onSelectSlot={!isFinalized ? handleSelectSlot : null}
+          // <CalendarView
+          //   events={calendarEvents}
+          //   onSelectSlot={!isFinalized ? handleSelectSlot : null}
+          //   onSelectEvent={handleSelectEvent}
+          //   selectable={!isFinalized}
+          <TimeSlotDisplayExample
+            preferredSlots={preferredSlots}
+            eventData={eventData}
+            calendarEvents={calendarEvents}
+            onSelectSlot={handleSelectSlot}
             onSelectEvent={handleSelectEvent}
-            selectable={!isFinalized}
+            isFinalized={isFinalized}
           />
         )}
       </div>

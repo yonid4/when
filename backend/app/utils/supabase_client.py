@@ -38,17 +38,29 @@ def init_supabase(config_name="development"):
 def get_supabase(access_token=None) -> Client:
     """
     Get the Supabase client instance.
-    This returns a client with the ANON key for user-authenticated operations.
-    For admin operations that bypass RLS, use service_role_client separately.
+    
+    CRITICAL: For backend operations, this tries to use the SERVICE ROLE KEY
+    to bypass RLS policies. This is a trusted backend environment.
+    
+    If access_token is provided, it can be used for RLS-context operations if needed,
+    but the primary pattern is to use Service Role Key + Python-level Auth.
     """
     url = os.environ.get("SUPABASE_URL")
-    key = os.environ.get("SUPABASE_ANON_KEY")
+    
+    # Try to get service role key first (Backend Mode)
+    key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+    
+    # Fallback to anon key if service key missing (should not happen in proper backend setup)
+    if not key:
+        print("[WARNING] SUPABASE_SERVICE_ROLE_KEY not found, falling back to ANON KEY")
+        key = os.environ.get("SUPABASE_ANON_KEY")
     
     if not url or not key:
-        raise ValueError("SUPABASE_URL and SUPABASE_ANON_KEY must be set")
+        raise ValueError("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (or ANON_KEY) must be set")
 
     client = create_client(url, key)
-    if access_token:
-        client.postgrest.auth(access_token)
+    
+    # Note: We generally DON'T want to set auth(access_token) when using Service Role Key
+    # because we want to bypass RLS. We validate the token separately in decorators.
     
     return client

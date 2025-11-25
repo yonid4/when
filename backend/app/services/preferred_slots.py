@@ -22,18 +22,10 @@ class PreferredSlotService:
     - Overlap handling merges overlapping slots automatically on insert.
     """
     def __init__(self, access_token: Optional[str] = None):
-        # Use a user-authenticated client so RLS allows inserts/reads
+        # Initialize with unified client (uses Service Role Key by default)
         self.supabase = get_supabase(access_token)
-        
-        # Initialize service role client for admin operations (bypassing RLS)
-        supabase_url = os.getenv("SUPABASE_URL")
-        service_role_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-        
-        if supabase_url and service_role_key:
-            self.service_role_client = create_client(supabase_url, service_role_key)
-        else:
-            print("[WARNING] SUPABASE_SERVICE_ROLE_KEY not found, falling back to anon client")
-            self.service_role_client = self.supabase
+        # Alias for backward compatibility, but they are now the same powerful client
+        self.service_role_client = self.supabase
 
     def get_slots_for_event(self, event_id: str) -> List[dict]:
         """
@@ -152,6 +144,11 @@ class PreferredSlotService:
             dict or None: The inserted slot data or None if failed
         """
         try:
+            # Authorization Check: Ensure user is a participant
+            if not self.is_user_event_participant(user_id, event_id):
+                print(f"Authorization failed: User {user_id} is not a participant in event {event_id}")
+                return None
+
             # Parse the input times
             start_dt = datetime.fromisoformat(start_time.replace("Z", "+00:00"))
             end_dt = datetime.fromisoformat(end_time.replace("Z", "+00:00"))
@@ -163,8 +160,9 @@ class PreferredSlotService:
                 end_time_utc=end_dt
             )
             
+            # Use service_role_client (bypasses RLS)
             result = (
-                self.supabase.table("preferred_slots")
+                self.service_role_client.table("preferred_slots")
                 .insert(slot.to_dict())
                 .execute()
             )
