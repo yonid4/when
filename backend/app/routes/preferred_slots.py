@@ -12,7 +12,7 @@ preferred_slots_bp = Blueprint("preferred_slots", __name__, url_prefix="/api/eve
 
 @preferred_slots_bp.route("/<string:event_id>/preferred-slots", methods=["POST"])
 @require_auth
-def add_preferred_slot(event_id):
+def add_preferred_slot(event_id, user_id):
     """
     Add a preferred time slot for an event.
     Handles overlap with existing slots intelligently by merging them.
@@ -100,7 +100,7 @@ def add_preferred_slot(event_id):
 
 @preferred_slots_bp.route("/<string:event_id>/preferred-slots", methods=["GET"])
 @require_auth
-def get_preferred_slots(event_id):
+def get_preferred_slots(event_id, user_id):
     """
     Get all preferred slots for an event.
     Includes user information for each slot.
@@ -149,7 +149,7 @@ def get_preferred_slots(event_id):
 
 @preferred_slots_bp.route("/<string:event_id>/preferred-slots/<string:slot_id>", methods=["DELETE"])
 @require_auth
-def delete_preferred_slot(event_id, slot_id):
+def delete_preferred_slot(event_id, slot_id, user_id):
     """
     Delete a specific preferred slot.
     Users can only delete their own slots.

@@ -14,7 +14,6 @@ from ..utils.supabase_client import get_supabase
 
 invitations_bp = Blueprint("invitations", __name__)
 invitations_service = InvitationsService()
-# notifications_service will be created per-request with proper access token
 supabase = get_supabase()
 
 # Create service role client for event queries (bypasses RLS)
@@ -31,7 +30,7 @@ service_role_client = get_service_role_client()
 
 @invitations_bp.route("/api/events/<event_uid>/invite", methods=["POST"])
 @require_auth
-def send_invitations(event_uid: str):
+def send_invitations(event_uid: str, user_id):
     """
     Send invitations to multiple users for an event.
     
@@ -238,7 +237,7 @@ def send_invitations(event_uid: str):
 
 @invitations_bp.route("/api/events/<event_uid>/invitations", methods=["GET"])
 @require_auth
-def get_event_invitations(event_uid: str):
+def get_event_invitations(event_uid: str, user_id):
     """
     Get all invitations for an event (coordinator only).
     """

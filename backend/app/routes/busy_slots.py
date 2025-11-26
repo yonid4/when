@@ -17,7 +17,7 @@ busy_slots_service = BusySlotService()
 
 @busy_slots_bp.route('/<string:event_id>', methods=['POST'])
 @require_auth
-def add_busy_slots(event_id):
+def add_busy_slots(event_id, user_id):
     """
     Add busy slots for an event.
     Requires authentication.
@@ -51,7 +51,7 @@ def add_busy_slots(event_id):
 
 @busy_slots_bp.route('/<string:event_id>', methods=['GET'])
 @require_auth
-def get_busy_slots(event_id):
+def get_busy_slots(event_id, user_id):
     """
     Get all busy slots for an event.
     Requires authentication.
@@ -80,9 +80,9 @@ def get_busy_slots(event_id):
             'message': str(e)
         }), 400
 
-@busy_slots_bp.route('/user/<string:user_id>', methods=['GET'])
+@busy_slots_bp.route('/user/<string:target_user_id>', methods=['GET'])
 @require_auth
-def get_user_busy_slots(user_id):
+def get_user_busy_slots(target_user_id, user_id):
     """
     Get a specific user's busy slots for an event.
     Requires authentication.
@@ -109,7 +109,7 @@ def get_user_busy_slots(user_id):
         start_date = datetime.fromisoformat(event["earliest_date"])
         latest_date = datetime.fromisoformat(event["latest_date"])
 
-        slots = busy_slots_service.get_user_busy_slots(user_id, start_date, latest_date)
+        slots = busy_slots_service.get_user_busy_slots(target_user_id, start_date, latest_date)
 
         return jsonify(slots), 200
 
@@ -119,9 +119,9 @@ def get_user_busy_slots(user_id):
             'message': str(e)
         }), 400
 
-@busy_slots_bp.route('/<string:event_id>/<string:user_id>', methods=['DELETE'])
+@busy_slots_bp.route('/<string:event_id>/<string:target_user_id>', methods=['DELETE'])
 @require_auth
-def delete_user_busy_slots(event_id, user_id):
+def delete_user_busy_slots(event_id, target_user_id, user_id):
     """
     Delete all busy slots for a user in an event.
     Requires authentication.
@@ -140,7 +140,7 @@ def delete_user_busy_slots(event_id, user_id):
         start_date = datetime.fromisoformat(event["earliest_date"])
         latest_date = datetime.fromisoformat(event["latest_date"])
 
-        busy_slots_service.delete_user_busy_slots_in_range(user_id, start_date, latest_date)
+        busy_slots_service.delete_user_busy_slots_in_range(target_user_id, start_date, latest_date)
 
         return jsonify({
             'message': 'Busy slots deleted successfully'
@@ -152,9 +152,9 @@ def delete_user_busy_slots(event_id, user_id):
             'message': str(e)
         }), 400
 
-@busy_slots_bp.route('/sync/<string:user_id>', methods=['POST'])
+@busy_slots_bp.route('/sync/<string:target_user_id>', methods=['POST'])
 @require_auth
-def sync_user_google_calendar(user_id):
+def sync_user_google_calendar(target_user_id, user_id):
     """
     Sync busy slots from user's Google Calendar.
     Requires authentication.
@@ -173,7 +173,7 @@ def sync_user_google_calendar(user_id):
         start_date = datetime.fromisoformat(start_date_str)
         end_date = datetime.fromisoformat(end_date_str)
         
-        success = busy_slots_service.sync_user_google_calendar(user_id, start_date, end_date)
+        success = busy_slots_service.sync_user_google_calendar(target_user_id, start_date, end_date)
         
         if success:
             return jsonify({
@@ -193,7 +193,7 @@ def sync_user_google_calendar(user_id):
 
 @busy_slots_bp.route('/event/<string:event_id>/participants', methods=['GET'])
 @require_auth
-def get_event_participants_busy_slots(event_id):
+def get_event_participants_busy_slots(event_id, user_id):
     """
     Get busy slots for all participants of an event.
     Requires authentication.
@@ -229,7 +229,7 @@ def get_event_participants_busy_slots(event_id):
 
 @busy_slots_bp.route('/event/<string:event_id>/merged', methods=['GET'])
 @require_auth
-def get_merged_busy_slots_for_event(event_id):
+def get_merged_busy_slots_for_event(event_id, user_id):
     """
     Get merged busy time slots for all participants of an event.
     This endpoint uses PostgreSQL RPC for complex SQL merging logic.

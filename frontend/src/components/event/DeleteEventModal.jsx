@@ -185,3 +185,5 @@ const DeleteEventModal = ({ isOpen, onClose, event }) => {
 export default DeleteEventModal;
 
 
+
+

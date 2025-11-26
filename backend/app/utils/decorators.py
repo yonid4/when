@@ -67,7 +67,7 @@ def require_auth(f):
             logging.getLogger(__name__).info(
                 f"Authenticated user id: {getattr(request.user, 'id', 'unknown')}"
             )
-            return f(*args, **kwargs)
+            return f(*args, user_id=user.user.id, **kwargs)
             
         except IndexError as e:
             logging.getLogger(__name__).error(

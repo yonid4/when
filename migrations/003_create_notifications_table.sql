@@ -70,3 +70,5 @@ COMMENT ON COLUMN notifications.action_type IS 'User action: accept, decline, or
 COMMENT ON COLUMN notifications.metadata IS 'Additional context (coordinator_id, google_calendar_link, etc.)';
 
 
+
+

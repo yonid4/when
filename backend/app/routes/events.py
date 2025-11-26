@@ -342,7 +342,7 @@ def delete_event(event_id):
 
 @event_bp.route('/<string:event_uid>/participants', methods=['GET'])
 @require_auth
-def get_event_participants(event_uid):
+def get_event_participants(event_uid, user_id):
     """
     Get participants of an event by UID.
     Requires authentication.

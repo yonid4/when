@@ -3,15 +3,15 @@ Routes for event finalization with Google Calendar integration.
 """
 
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from ..utils.decorators import require_auth
 from ..services.event_finalization import EventFinalizationService
 
 event_finalization_bp = Blueprint("event_finalization", __name__)
 
 
 @event_finalization_bp.route("/api/events/<event_uid>/finalize", methods=["POST"])
-@jwt_required()
-def finalize_event(event_uid):
+@require_auth
+def finalize_event(event_uid, user_id):
     """
     Finalize an event and create Google Calendar event with invitations.
     
@@ -31,19 +31,36 @@ def finalize_event(event_uid):
         "meet_link": "https://meet.google.com/..."
     }
     """
-    user_id = get_jwt_identity()
+    import sys
+    print("🔥🔥🔥 FINALIZE FUNCTION CALLED 🔥🔥🔥", file=sys.stderr, flush=True)
+    print(f"Event UID: {event_uid}, User ID: {user_id}", file=sys.stderr, flush=True)
+
+    import traceback
+
     data = request.get_json()
+    
+    print(f"[DEBUG] Finalization request received for event: {event_uid}")
+    print(f"[DEBUG] User ID: {user_id}")
+    
+    # Debug logging
+    print(f"[DEBUG] Finalization request received for event: {event_uid}")
+    print(f"[DEBUG] User ID: {user_id}")
+    print(f"[DEBUG] Request data: {data}")
     
     # Validate request data
     required_fields = ["start_time_utc", "end_time_utc", "participant_ids"]
     for field in required_fields:
         if field not in data:
+            error_msg = f"Field '{field}' is required"
+            print(f"[ERROR] Missing field: {field}")
+            print(f"[ERROR] Available fields: {list(data.keys())}")
             return jsonify({
                 "error": "Missing required field",
-                "message": f"Field '{field}' is required"
+                "message": error_msg
             }), 400
     
     if not data["participant_ids"] or len(data["participant_ids"]) == 0:
+        print(f"[ERROR] No participants provided")
         return jsonify({
             "error": "Invalid participants",
             "message": "At least one participant is required"
@@ -61,6 +78,7 @@ def finalize_event(event_uid):
                 "message": "End time must be after start time"
             }), 400
     except (ValueError, AttributeError) as e:
+        print(f"[ERROR] Invalid datetime format: {str(e)}")
         return jsonify({
             "error": "Invalid datetime format",
             "message": "Times must be in ISO format (e.g., '2025-11-10T22:00:00Z')"
@@ -72,12 +90,14 @@ def finalize_event(event_uid):
     event = events_service.get_event_by_uid(event_uid)
     
     if not event:
+        print(f"[ERROR] Event not found: {event_uid}")
         return jsonify({
             "error": "Event not found",
             "message": f"Event with UID '{event_uid}' not found"
         }), 404
     
     db_event_id = event["id"]
+    print(f"[DEBUG] Found event ID: {db_event_id}")
     
     # Finalize the event
     finalization_service = EventFinalizationService()
@@ -92,10 +112,13 @@ def finalize_event(event_uid):
             include_google_meet=data.get("include_google_meet", False)
         )
         
+        print(f"[DEBUG] Finalization successful")
         return jsonify(result), 200
     
     except Exception as e:
         error_message = str(e)
+        print(f"[ERROR] Finalization exception: {error_message}")
+        print(f"[ERROR] Traceback: {traceback.format_exc()}")
         
         # Return user-friendly error messages
         if "not found" in error_message.lower():
@@ -125,13 +148,14 @@ def finalize_event(event_uid):
         # Generic error
         return jsonify({
             "error": "Finalization failed",
-            "message": error_message
+            "message": error_message,
+            "traceback": traceback.format_exc() if __debug__ else None
         }), 500
 
 
 @event_finalization_bp.route("/api/events/<event_uid>/finalize/status", methods=["GET"])
-@jwt_required()
-def get_finalization_status(event_uid):
+@require_auth
+def get_finalization_status(event_uid, user_id):
     """
     Get finalization status of an event.
     
@@ -166,3 +190,8 @@ def get_finalization_status(event_uid):
     }), 200
 
 
+@event_finalization_bp.route("/api/events/test-finalize", methods=["GET", "POST"])
+def test_finalize():
+    """Test route to verify blueprint is registered"""
+    print("🔥🔥🔥 TEST FINALIZE ROUTE HIT 🔥🔥🔥")
+    return jsonify({"message": "Test route works!"}), 200

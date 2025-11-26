@@ -8,6 +8,7 @@ import sys
 from dotenv import load_dotenv
 from flask import Flask
 from flask_cors import CORS
+from flask_jwt_extended import JWTManager
 
 # Load environment variables from .env file only in development
 # Docker Compose provides env vars directly, so we skip load_dotenv() when running via Gunicorn
@@ -57,6 +58,9 @@ def create_app(config_name="development"):
     # Load configuration
     app.config.from_object(config[config_name])
     
+    # Initialize JWT
+    jw
+    
     # Initialize CORS to allow frontend origins and auth headers
     # CORS(
     #     app,
@@ -99,17 +103,5 @@ def create_app(config_name="development"):
     # Initialize background jobs
     from .background_jobs import init_background_jobs
     init_background_jobs(app)
-
-
-    print("\n" + "="*80)
-    print("REGISTERED ROUTES:")
-    print("="*80)
-    for rule in app.url_map.iter_rules():
-        if 'finalize' in rule.rule:
-            print(f"Rule: {rule.rule}")
-            print(f"Endpoint: {rule.endpoint}")
-            print(f"Methods: {rule.methods}")
-            print("-" * 40)
-    print("="*80 + "\n")
 
     return app

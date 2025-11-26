@@ -25,17 +25,20 @@ import { format, differenceInMinutes } from "date-fns";
  * Modal for finalizing an event with participant selection
  * Coordinator selects which participants to invite and whether to include Google Meet
  */
-const FinalizationModal = ({ 
-  isOpen, 
-  onClose, 
-  event, 
-  selectedSlot, 
-  participants, 
+const FinalizationModal = ({
+  isOpen,
+  onClose,
+  event,
+  selectedSlot,
+  participants,
   onFinalize,
-  isLoading 
+  isLoading
 }) => {
+  console.log('🔴 Participants:', participants);
+  console.log('🔴 First participant keys:', Object.keys(participants[0]));
+
   const [selectedParticipants, setSelectedParticipants] = useState(
-    participants.map(p => p.user_id) // All selected by default
+    participants.map(p => p.user_id || p.id) // All selected by default, prefer user_id
   );
   const [includeGoogleMeet, setIncludeGoogleMeet] = useState(true);
   const [error, setError] = useState(null);
@@ -113,23 +116,23 @@ const FinalizationModal = ({
             <VStack align="stretch" spacing={2} maxH="300px" overflowY="auto">
               {participants.map(participant => (
                 <Box
-                  key={participant.user_id}
+                  key={participant.user_id || participant.id}
                   p={2}
                   borderWidth="1px"
                   borderRadius="md"
-                  borderColor={selectedParticipants.includes(participant.user_id) ? "blue.300" : "gray.200"}
-                  bg={selectedParticipants.includes(participant.user_id) ? "blue.50" : "white"}
+                  borderColor={selectedParticipants.includes(participant.user_id || participant.id) ? "blue.300" : "gray.200"}
+                  bg={selectedParticipants.includes(participant.user_id || participant.id) ? "blue.50" : "white"}
                   transition="all 0.2s"
                 >
                   <Checkbox
-                    isChecked={selectedParticipants.includes(participant.user_id)}
-                    onChange={(e) => handleParticipantToggle(participant.user_id, e.target.checked)}
+                    isChecked={selectedParticipants.includes(participant.user_id || participant.id)}
+                    onChange={(e) => handleParticipantToggle(participant.user_id || participant.id, e.target.checked)}
                     width="100%"
                   >
                     <HStack spacing={3}>
-                      <Avatar 
-                        size="sm" 
-                        name={participant.name || participant.email} 
+                      <Avatar
+                        size="sm"
+                        name={participant.name || participant.email}
                       />
                       <Box>
                         <Text fontWeight="medium">
@@ -174,7 +177,7 @@ const FinalizationModal = ({
             <Box flex="1">
               <AlertTitle fontSize="sm">This action cannot be undone</AlertTitle>
               <AlertDescription fontSize="xs">
-                The event will be finalized and calendar invitations will be sent immediately. 
+                The event will be finalized and calendar invitations will be sent immediately.
                 No further changes can be made to preferred times.
               </AlertDescription>
             </Box>
@@ -203,5 +206,7 @@ const FinalizationModal = ({
 };
 
 export default FinalizationModal;
+
+
 
 

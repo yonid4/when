@@ -372,10 +372,27 @@ const EventPage = () => {
 
   // Handle finalization submission
   const handleFinalize = async (finalizationData) => {
+    console.log('🔴🔴🔴 FINALIZE FUNCTION CALLED 🔴🔴🔴');
+    console.log('Received data:', finalizationData);
+    debugger;
+
+    console.log('[DEBUG] finalizationData received:', finalizationData);
+    console.log('[DEBUG] finalizationData type:', typeof finalizationData);
+    console.log('[DEBUG] finalizationData keys:', Object.keys(finalizationData || {}));
+    console.log('[DEBUG] finalizationData JSON:', JSON.stringify(finalizationData, null, 2));
+
     setIsFinalizingEvent(true);
 
     try {
+      console.log('[DEBUG] Sending finalization request:', {
+        eventUid,
+        url: `/api/events/${eventUid}/finalize`,
+        data: finalizationData
+      });
+
       const response = await api.post(`/api/events/${eventUid}/finalize`, finalizationData);
+
+      console.log('[DEBUG] Finalization success:', response.data);
 
       // Success!
       setFinalizationResult(response.data);
@@ -392,7 +409,16 @@ const EventPage = () => {
         }
       }, 1000);
     } catch (error) {
-      console.error("Finalization error:", error);
+      console.error('[ERROR] Finalization failed:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.message,
+        requestData: finalizationData
+      });
+      console.error("[ERROR] Detailed error data:", 
+        JSON.stringify(error.response.data, null, 2)
+      );
 
       const errorMessage = error.response?.data?.message || error.message || "Failed to finalize event";
 

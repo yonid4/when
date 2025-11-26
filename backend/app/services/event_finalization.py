@@ -88,7 +88,7 @@ class EventFinalizationService:
         if not participants:
             raise Exception("No valid participants found")
         
-        attendee_emails = [p["email"] for p in participants if p.get("email")]
+        attendee_emails = [p["email_address"] for p in participants if p.get("email_address")]
         if not attendee_emails:
             raise Exception("No participant emails found")
         
@@ -183,7 +183,7 @@ class EventFinalizationService:
         try:
             response = (
                 self.service_role_client.table("profiles")
-                .select("id, email, name")
+                .select("id, email_address, full_name")
                 .in_("id", participant_ids)
                 .execute()
             )

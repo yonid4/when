@@ -1,0 +1,373 @@
+# AI Rules for Event Coordination App
+# Configuration for Google's Gemini AI assistant
+# This file defines coding standards, architectural patterns, and best practices
+
+project_overview:
+  name: "Event Coordination Application"
+  description: |
+    A web application for scheduling events and finding optimal meeting times
+    across multiple participants. Features include calendar integration, 
+    availability tracking, and real-time collaboration.
+  
+  tech_stack:
+    backend:
+      - "Python Flask (REST API)"
+      - "Supabase (PostgreSQL database with real-time subscriptions)"
+      - "Google Calendar API integration"
+      - "JWT-based authentication"
+    
+    frontend:
+      - "React (functional components with hooks)"
+      - "Node.js"
+      - "Supabase JavaScript client"
+      - "Real-time UI updates via Supabase subscriptions"
+    
+    architecture:
+      - "Backend handles all authorization logic"
+      - "Service role key used for all backend database operations"
+      - "RLS policies exist but are bypassed by backend"
+      - "Frontend uses anon key + user JWT tokens for direct queries"
+
+backend_architecture:
+  authorization_pattern: |
+    CRITICAL: Backend uses SERVICE ROLE KEY for all database operations.
+    
+    Authorization flow:
+    1. User sends JWT token in Authorization header
+    2. Backend validates JWT token (@require_auth decorator)
+    3. Backend extracts user_id from validated token
+    4. Backend implements authorization logic in Python code
+    5. Backend uses service role client (bypasses RLS) for database operations
+  
+  supabase_client_initialization: |
+    Always initialize Supabase with service role key in backend:
+```python
+    from supabase import create_client
+    import os
+    
+    # Backend initialization - uses SERVICE ROLE KEY
+    SUPABASE_URL = os.getenv("SUPABASE_URL")
+    SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+    
+    supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+```
+    
+    NEVER use SUPABASE_ANON_KEY in backend.
+  
+  authorization_examples:
+    check_event_participant: |
+```python
+      def check_user_is_participant(user_id: str, event_id: str) -> bool:
+          """Verify user is a participant in the event"""
+          result = supabase.table('event_participants')\
+              .select('user_id')\
+              .eq('event_id', event_id)\
+              .eq('user_id', user_id)\
+              .execute()
+          
+          return len(result.data) > 0
+```
+    
+    check_event_coordinator: |
+```python
+      def check_user_is_coordinator(user_id: str, event_id: str) -> bool:
+          """Verify user is the event coordinator"""
+          result = supabase.table('events')\
+              .select('coordinator_id')\
+              .eq('id', event_id)\
+              .execute()
+          
+          return result.data and result.data[0]['coordinator_id'] == user_id
+```
+
+code_style:
+  general_rules:
+    - "Use double quotes for all strings in JavaScript and Python"
+    - "Use meaningful, descriptive variable and function names"
+    - "Keep line length under 100 characters"
+    - "JavaScript/React: 2 spaces for indentation"
+    - "Python: 4 spaces for indentation (PEP 8)"
+    - "Add blank lines between logical sections"
+    - "Comment complex logic, but prefer self-documenting code"
+  
+  python_conventions:
+    - "snake_case for variables and functions"
+    - "PascalCase for class names"
+    - "UPPER_CASE for constants"
+    - "Type hints for function parameters and return values"
+    - "Docstrings for public functions and classes"
+  
+  javascript_react_conventions:
+    - "Functional components only (no class components)"
+    - "const for immutable values, let for mutable"
+    - "Arrow functions for callbacks and inline functions"
+    - "Destructure props and state"
+    - "Template literals for string interpolation: `${variable}`"
+
+import_organization:
+  order:
+    - "1. Local/relative imports from current project"
+    - "2. External library imports"
+    - "3. Separate groups with blank line"
+  
+  python_example: |
+    # Local imports first
+    from app.models.user import User
+    from app.services.events import EventsService
+    from app.utils.decorators import require_auth
+    
+    # External libraries second
+    import os
+    from flask import Flask, request, jsonify
+    from datetime import datetime, timedelta
+    from supabase import create_client
+  
+  javascript_example: |
+    // Local imports first
+    import { useAuth } from "../hooks/useAuth";
+    import { EventCard } from "../components/EventCard";
+    
+    // External libraries second
+    import React, { useState, useEffect } from "react";
+    import axios from "axios";
+
+database_patterns:
+  supabase_backend:
+    - "ALWAYS use service role client in backend (bypasses RLS)"
+    - "Implement authorization in Python code, not RLS policies"
+    - "Validate user permissions before database operations"
+    - "Use selective try-catch only for critical operations"
+    - "Structure queries to minimize data transfer"
+    - "Use .select('*') sparingly - specify needed columns"
+  
+  supabase_frontend:
+    - "Use anon key + user JWT token for frontend Supabase client"
+    - "RLS policies protect frontend direct access"
+    - "Prefer API calls to backend for complex operations"
+    - "Use real-time subscriptions for live updates"
+  
+  error_handling_philosophy: |
+    Don't wrap every operation in try-catch. Use try-catch for:
+    ✅ External API calls (Google Calendar, third-party services)
+    ✅ File I/O operations
+    ✅ Network requests
+    ✅ User input parsing
+    
+    Don't use try-catch for:
+    ❌ Simple variable assignments
+    ❌ Basic calculations
+    ❌ Routine database queries (handle errors at API level)
+
+api_design:
+  rest_conventions:
+    - "GET: Retrieve resources"
+    - "POST: Create new resources"
+    - "PUT/PATCH: Update existing resources"
+    - "DELETE: Remove resources"
+  
+  response_format: |
+    Consistent JSON response structure:
+    
+    Success:
+    {
+      "success": true,
+      "data": { ... },
+      "message": "Operation successful"
+    }
+    
+    Error:
+    {
+      "success": false,
+      "error": "Error description",
+      "code": "ERROR_CODE"
+    }
+  
+  http_status_codes:
+    - "200: Success (GET, PUT, DELETE)"
+    - "201: Created (POST)"
+    - "400: Bad Request (validation errors)"
+    - "401: Unauthorized (missing/invalid token)"
+    - "403: Forbidden (insufficient permissions)"
+    - "404: Not Found"
+    - "500: Internal Server Error"
+  
+  authentication_pattern: |
+```python
+    from functools import wraps
+    from flask import request, jsonify
+    
+    def require_auth(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            auth_header = request.headers.get('Authorization')
+            if not auth_header:
+                return jsonify({"error": "Missing authorization"}), 401
+            
+            # Validate JWT token with Supabase
+            token = auth_header.replace('Bearer ', '')
+            user = validate_token(token)
+            
+            if not user:
+                return jsonify({"error": "Invalid token"}), 401
+            
+            # Pass user_id to route handler
+            return f(user_id=user['id'], *args, **kwargs)
+        
+        return decorated_function
+```
+
+security_rules:
+  critical_reminders:
+    - "⚠️ NEVER hardcode API keys, secrets, or credentials"
+    - "⚠️ Use environment variables for ALL sensitive configuration"
+    - "⚠️ Service role key must NEVER be exposed to frontend"
+    - "⚠️ Anon key is safe for frontend, service role key is backend-only"
+    - "⚠️ Always validate JWT tokens before processing requests"
+    - "⚠️ Implement authorization checks in backend code"
+  
+  environment_variables_required:
+    - "SUPABASE_URL"
+    - "SUPABASE_SERVICE_ROLE_KEY (backend only)"
+    - "SUPABASE_ANON_KEY (frontend only)"
+    - "GOOGLE_CLIENT_ID"
+    - "GOOGLE_CLIENT_SECRET"
+    - "JWT_SECRET"
+    - "FLASK_SECRET_KEY"
+
+google_calendar_integration:
+  best_practices:
+    - "Handle rate limits gracefully (exponential backoff)"
+    - "Cache calendar data when appropriate"
+    - "Use incremental sync for large calendars"
+    - "Store all times in UTC, convert to user timezone for display"
+    - "Implement proper OAuth2 flow"
+    - "Handle token refresh automatically"
+  
+  error_scenarios:
+    - "Rate limit exceeded: retry with backoff"
+    - "Authentication failure: prompt user to re-authenticate"
+    - "Network errors: provide fallback behavior"
+    - "Calendar not found: handle gracefully with user message"
+
+real_time_features:
+  supabase_subscriptions:
+    - "Subscribe to table changes for live updates"
+    - "Clean up subscriptions in useEffect cleanup"
+    - "Handle disconnections and reconnection"
+    - "Batch updates to avoid UI thrashing"
+    - "Use optimistic updates for better UX"
+  
+  example_subscription: |
+```javascript
+    useEffect(() => {
+      const subscription = supabase
+        .channel('preferred_slots_changes')
+        .on('postgres_changes', 
+          { event: '*', schema: 'public', table: 'preferred_slots' },
+          (payload) => {
+            // Handle real-time update
+            updateLocalState(payload.new);
+          }
+        )
+        .subscribe();
+      
+      return () => {
+        subscription.unsubscribe();
+      };
+    }, []);
+```
+
+timezone_handling:
+  critical_rules:
+    - "ALWAYS store times in UTC in database"
+    - "Convert to user timezone ONLY for display"
+    - "Use date-fns or luxon for timezone operations"
+    - "Handle daylight saving time transitions"
+    - "Include timezone info in API responses"
+  
+  example_pattern: |
+```python
+    from datetime import datetime, timezone
+    
+    # Store in database (UTC)
+    utc_time = datetime.now(timezone.utc)
+    
+    # Convert for display (user timezone)
+    user_tz = pytz.timezone(user.timezone)
+    local_time = utc_time.astimezone(user_tz)
+```
+
+performance_optimization:
+  backend:
+    - "Use database indexes on frequently queried columns"
+    - "Implement caching for expensive calculations"
+    - "Use background jobs for heavy processing"
+    - "Optimize queries to avoid N+1 problems"
+    - "Use connection pooling for database"
+  
+  frontend:
+    - "Use React.memo for expensive components"
+    - "Debounce user input (search, filtering)"
+    - "Implement virtual scrolling for long lists"
+    - "Lazy load components with React.lazy"
+    - "Optimize calendar rendering"
+
+common_pitfalls:
+  avoid_these:
+    - "❌ Using anon key in backend code"
+    - "❌ Hardcoding credentials or API keys"
+    - "❌ Storing sensitive data in localStorage"
+    - "❌ Not validating user input"
+    - "❌ Mixing UTC and local times"
+    - "❌ Creating N+1 query problems"
+    - "❌ Not handling loading and error states in UI"
+    - "❌ Exposing service role key to frontend"
+
+file_naming_conventions:
+  react_components: "PascalCase (EventCard.jsx, UserProfile.jsx)"
+  hooks: "camelCase with 'use' prefix (useAuth.js, useEvents.js)"
+  utilities: "camelCase (dateUtils.js, apiUtils.js)"
+  services: "camelCase with 'Service' suffix (eventService.js)"
+  python_files: "snake_case (google_calendar.py, event_service.py)"
+  python_classes: "PascalCase (EventsService, GoogleCalendarAPI)"
+
+testing_priorities:
+  critical_areas:
+    - "Authentication and authorization flows"
+    - "Availability calculation algorithms"
+    - "Google Calendar integration"
+    - "Timezone conversions"
+    - "Real-time subscription handling"
+  
+  testing_approach:
+    - "Mock external API calls in tests"
+    - "Test error handling paths"
+    - "Test edge cases (DST transitions, leap years)"
+    - "Integration tests for critical workflows"
+
+code_review_checklist:
+  before_committing:
+    - "✓ No hardcoded secrets or API keys"
+    - "✓ Backend uses service role key consistently"
+    - "✓ Authorization checks implemented in backend code"
+    - "✓ Proper error handling for external APIs"
+    - "✓ Timezone handling is correct"
+    - "✓ Real-time features work as expected"
+    - "✓ Mobile responsive design"
+    - "✓ Loading and error states in UI"
+
+ai_assistant_notes:
+  context: |
+    When helping with this project:
+    - Always consider the backend uses SERVICE ROLE KEY
+    - Authorization is implemented in Python backend code, not RLS
+    - Frontend uses anon key + user JWT
+    - This is a TRUSTED BACKEND pattern
+    - Never suggest hardcoding credentials
+    - Always validate user permissions in backend before database operations
+  
+  common_tasks:
+    - "Adding new API endpoints: Include @require_auth decorator and authorization checks"
+    - "Database queries: Use service role client in backend, implement auth in code"
+    - "Frontend features: Use anon key client, call backend APIs for protected operations"
+    - "Google Calendar: Handle rate limits and auth failures gracefully"

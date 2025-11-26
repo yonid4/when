@@ -13,7 +13,7 @@ preferences_service = PreferencesService()
 
 @preferences_bp.route('/<string:event_id>', methods=['POST'])
 @require_auth
-def add_preference(event_id):
+def add_preference(event_id, user_id):
     """
     Add a preference for an event.
     Requires authentication.
@@ -49,7 +49,7 @@ def add_preference(event_id):
 
 @preferences_bp.route('/<string:event_id>', methods=['GET'])
 @require_auth
-def get_preferences(event_id):
+def get_preferences(event_id, user_id):
     """
     Get all preferences for an event.
     Requires authentication.
@@ -64,15 +64,15 @@ def get_preferences(event_id):
             'message': str(e)
         }), 400
 
-@preferences_bp.route('/<string:event_id>/<string:user_id>', methods=['GET'])
+@preferences_bp.route('/<string:event_id>/<string:target_user_id>', methods=['GET'])
 @require_auth
-def get_user_preferences(event_id, user_id):
+def get_user_preferences(event_id, target_user_id, user_id):
     """
     Get a specific user's preferences for an event.
     Requires authentication.
     """
     try:
-        prefs = preferences_service.get_user_preferences(event_id, user_id)
+        prefs = preferences_service.get_user_preferences(event_id, target_user_id)
         return jsonify(prefs), 200
 
     except Exception as e:
@@ -83,7 +83,7 @@ def get_user_preferences(event_id, user_id):
 
 @preferences_bp.route('/<string:preference_id>', methods=['DELETE'])
 @require_auth
-def delete_user_preferences(preference_id):
+def delete_user_preferences(preference_id, user_id):
     """
     Delete all preferences for a user in an event.
     Requires authentication.

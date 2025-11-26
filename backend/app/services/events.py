@@ -314,6 +314,7 @@ class EventsService():
                 profile = profiles_map.get(participant["user_id"], {})
                 participants.append({
                     "id": participant["user_id"],
+                    "user_id": participant["user_id"],
                     "event_id": participant["event_id"],
                     "status": participant["status"],
                     "name": profile.get("full_name", ""),

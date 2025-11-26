@@ -12,7 +12,7 @@ user_bp = Blueprint("users", __name__, url_prefix="/api/users")
 
 @user_bp.route('/', methods=['POST'])
 @require_auth
-def create_user():
+def create_user(user_id):
     """
     Create a new user profile.
     The user must be authenticated with Supabase Auth first.
@@ -47,38 +47,38 @@ def create_user():
             'message': str(e)
         }), 400
     
-@user_bp.route('/<string:user_id>', methods=['GET'])
+@user_bp.route('/<string:target_user_id>', methods=['GET'])
 @require_auth
-def get_user(user_id):
+def get_user(target_user_id, user_id):
     """
     Get user profile from profiles table.
     """
     users_service = UsersService(getattr(request, "access_token", None))
-    profile = users_service.get_profile(user_id)
+    profile = users_service.get_profile(target_user_id)
     if not profile:
-        logging.info(f"[USER] Profile not found for user {user_id}")
+        logging.info(f"[USER] Profile not found for user {target_user_id}")
         return jsonify({
             'error': 'User not found',
-            'message': f'No profile found for user {user_id}'
+            'message': f'No profile found for user {target_user_id}'
         }), 404
-    logging.info(f"[USER] Fetched profile for user {user_id}")
+    logging.info(f"[USER] Fetched profile for user {target_user_id}")
     return jsonify(profile), 200
     
-@user_bp.route('/<string:user_id>', methods=['PUT'])
+@user_bp.route('/<string:target_user_id>', methods=['PUT'])
 @require_auth
-def update_user(user_id):
+def update_user(target_user_id, user_id):
     """
     Update a user's profile. Only the user themselves can update their profile.
     """
     auth_user_id = request.user.id
-    if auth_user_id != user_id:
+    if auth_user_id != target_user_id:
         return jsonify({
             'error': 'Unauthorized',
             'message': 'You can only update your own profile'
         }), 403
     data = request.get_json() or {}
     users_service = UsersService(getattr(request, "access_token", None))
-    updated = users_service.update_profile(user_id, data)
+    updated = users_service.update_profile(target_user_id, data)
     if not updated:
         return jsonify({
             'error': 'Failed to update profile',
@@ -86,20 +86,20 @@ def update_user(user_id):
         }), 400
     return jsonify(updated), 200
 
-@user_bp.route('/<string:user_id>', methods=['DELETE'])
+@user_bp.route('/<string:target_user_id>', methods=['DELETE'])
 @require_auth
-def delete_user(user_id):
+def delete_user(target_user_id, user_id):
     """
     Delete a user's profile. Only the user themselves can delete.
     """
     auth_user_id = request.user.id
-    if auth_user_id != user_id:
+    if auth_user_id != target_user_id:
         return jsonify({
             'error': 'Unauthorized',
             'message': 'You can only delete your own profile'
         }), 403
     users_service = UsersService(getattr(request, "access_token", None))
-    ok = users_service.delete_profile(user_id)
+    ok = users_service.delete_profile(target_user_id)
     if not ok:
         return jsonify({
             'error': 'Failed to delete profile',

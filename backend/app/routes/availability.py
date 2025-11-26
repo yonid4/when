@@ -18,7 +18,7 @@ availability_bp = Blueprint("availability", __name__, url_prefix="/api/availabil
 
 @availability_bp.route('/<string:event_id>', methods=['POST'])
 @require_auth
-def add_availability(event_id):
+def add_availability(event_id, user_id):
     """
     Add availability slots for an event.
     Requires authentication.
@@ -57,7 +57,7 @@ def add_availability(event_id):
 
 @availability_bp.route('/<string:event_id>', methods=['GET'])
 @require_auth
-def get_availability(event_id):
+def get_availability(event_id, user_id):
     """
     Get all availability slots for an event.
     Requires authentication.
@@ -84,7 +84,7 @@ def get_availability(event_id):
 
 @availability_bp.route('/<string:availability_id>', methods=['GET'])
 @require_auth
-def get_user_availability(availability_id):
+def get_user_availability(availability_id, user_id):
     """
     Get a specific user's availability slots for an event.
     Requires authentication.
@@ -109,9 +109,9 @@ def get_user_availability(availability_id):
             'message': str(e)
         }), 400
 
-@availability_bp.route('/<string:event_id>/<string:user_id>', methods=['DELETE'])
+@availability_bp.route('/<string:event_id>/<string:target_user_id>', methods=['DELETE'])
 @require_auth
-def delete_user_availability(event_id, user_id):
+def delete_user_availability(event_id, target_user_id, user_id):
     """
     Delete all availability slots for a user in an event.
     Requires authentication.
@@ -121,7 +121,7 @@ def delete_user_availability(event_id, user_id):
         supabase = get_supabase()
         
         # Delete user's availability slots
-        supabase.table("availability_slots").delete().eq("event_id", event_id).eq("user_id", user_id).execute()
+        supabase.table("availability_slots").delete().eq("event_id", event_id).eq("user_id", target_user_id).execute()
 
         return jsonify({
             'message': 'Availability slots deleted successfully'

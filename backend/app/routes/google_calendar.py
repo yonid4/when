@@ -15,7 +15,7 @@ users_service = UsersService()
 
 @calendar_bp.route('/connection-status', methods=['GET'])
 @require_auth
-def get_connection_status():
+def get_connection_status(user_id):
     """Check if user has connected their Google Calendar."""
     user_id = request.user.id
 
@@ -43,7 +43,7 @@ def get_connection_status():
 
 @calendar_bp.route('/busy-times/<string:event_id>', methods=['GET'])
 @require_auth  
-def get_busy_times(event_id):
+def get_busy_times(event_id, user_id):
     """Get busy time slots from current user's Google Calendar for a specific event."""
     user_id = request.user.id
     
@@ -75,7 +75,7 @@ def get_busy_times(event_id):
 
 @calendar_bp.route('/sync', methods=['POST'])
 @require_auth
-def sync_calendar():
+def sync_calendar(user_id):
     """Sync user's Google Calendar for the next 90 days."""
     user_id = request.user.id
 

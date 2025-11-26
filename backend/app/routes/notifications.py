@@ -26,7 +26,7 @@ service_role_client = get_service_role_client()
 
 @notifications_bp.route("/api/notifications", methods=["GET"])
 @require_auth
-def get_notifications():
+def get_notifications(user_id):
     """
     Get user's notifications.
     
@@ -63,7 +63,7 @@ def get_notifications():
 
 @notifications_bp.route("/api/notifications/unread-count", methods=["GET"])
 @require_auth
-def get_unread_count():
+def get_unread_count(user_id):
     """Get count of unread notifications."""
     user_id = request.user.id
     
@@ -75,7 +75,7 @@ def get_unread_count():
 
 @notifications_bp.route("/api/notifications/<notification_id>/read", methods=["POST"])
 @require_auth
-def mark_as_read(notification_id):
+def mark_as_read(notification_id, user_id):
     """Mark a notification as read."""
     user_id = request.user.id
     
@@ -98,7 +98,7 @@ def mark_as_read(notification_id):
 
 @notifications_bp.route("/api/notifications/read-all", methods=["POST"])
 @require_auth
-def mark_all_as_read():
+def mark_all_as_read(user_id):
     """Mark all notifications as read for the current user."""
     user_id = request.user.id
     
@@ -113,7 +113,7 @@ def mark_all_as_read():
 
 @notifications_bp.route("/api/notifications/<notification_id>/action", methods=["POST"])
 @require_auth
-def handle_notification_action(notification_id):
+def handle_notification_action(notification_id, user_id):
     """
     Handle user action on a notification (accept/decline invitation).
     
@@ -278,7 +278,7 @@ def handle_notification_action(notification_id):
 
 @notifications_bp.route("/api/notifications/<notification_id>", methods=["DELETE"])
 @require_auth
-def delete_notification(notification_id):
+def delete_notification(notification_id, user_id):
     """Delete a notification."""
     user_id = request.user.id
     
