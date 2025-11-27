@@ -17,7 +17,7 @@ users_service = UsersService()
 @require_auth
 def get_connection_status(user_id):
     """Check if user has connected their Google Calendar."""
-    user_id = request.user.id
+
 
     try:
         from ..services.google_calendar import get_stored_credentials
@@ -45,7 +45,7 @@ def get_connection_status(user_id):
 @require_auth  
 def get_busy_times(event_id, user_id):
     """Get busy time slots from current user's Google Calendar for a specific event."""
-    user_id = request.user.id
+
     
     try:
         from ..utils.supabase_client import get_supabase
@@ -77,7 +77,7 @@ def get_busy_times(event_id, user_id):
 @require_auth
 def sync_calendar(user_id):
     """Sync user's Google Calendar for the next 90 days."""
-    user_id = request.user.id
+
 
     try:
         # Check if user has Google credentials first

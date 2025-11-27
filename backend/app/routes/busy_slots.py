@@ -22,7 +22,7 @@ def add_busy_slots(event_id, user_id):
     Add busy slots for an event.
     Requires authentication.
     """
-    user_id = request.user.id
+
     data = request.get_json()
     slots = data.get("slots", [])
 

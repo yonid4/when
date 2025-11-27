@@ -17,7 +17,7 @@ def create_user(user_id):
     Create a new user profile.
     The user must be authenticated with Supabase Auth first.
     """
-    user_id = request.user.id
+
     data = request.get_json() or {}
     try:
         users_service = UsersService(getattr(request, "access_token", None))
@@ -70,7 +70,7 @@ def update_user(target_user_id, user_id):
     """
     Update a user's profile. Only the user themselves can update their profile.
     """
-    auth_user_id = request.user.id
+    auth_user_id = user_id
     if auth_user_id != target_user_id:
         return jsonify({
             'error': 'Unauthorized',
@@ -92,7 +92,7 @@ def delete_user(target_user_id, user_id):
     """
     Delete a user's profile. Only the user themselves can delete.
     """
-    auth_user_id = request.user.id
+    auth_user_id = user_id
     if auth_user_id != target_user_id:
         return jsonify({
             'error': 'Unauthorized',

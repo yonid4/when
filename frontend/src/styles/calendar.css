@@ -174,7 +174,7 @@
    DAY COLUMNS (Calendar Grid)
    ============================================ */
 
-.calendar-container .rbc-time-content > .rbc-time-column {
+.calendar-container .rbc-time-content>.rbc-time-column {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -340,6 +340,9 @@
 
 .calendar-container .rbc-month-row {
   border-top: 1px solid #e2e8f0;
+  display: flex !important;
+  flex-direction: column !important;
+  position: relative !important;
 }
 
 .calendar-container .rbc-day-bg {
@@ -366,36 +369,153 @@
 }
 
 /* ============================================
+   MONTH VIEW - AGGRESSIVE POSITIONING FIXES
+   ============================================ */
+
+/* Override ALL absolute positioning in month view rows */
+.calendar-container .rbc-month-view .rbc-row {
+  position: relative !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* Force flex column on row background */
+.calendar-container .rbc-month-view .rbc-row-bg {
+  position: relative !important;
+  display: flex !important;
+}
+
+/* Critical: Force row content to use flex column layout */
+.calendar-container .rbc-month-view .rbc-row-content {
+  position: relative !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 3px !important;
+  padding: 4px !important;
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+/* Force row content to be non-absolute */
+.calendar-container .rbc-month-view .rbc-month-row .rbc-row-content {
+  position: static !important;
+}
+
+/* Override segment positioning completely */
+.calendar-container .rbc-month-view .rbc-row-segment {
+  position: static !important;
+  display: block !important;
+  width: 100% !important;
+  top: auto !important;
+  left: 0 !important;
+  right: auto !important;
+  height: auto !important;
+  padding: 0 !important;
+  margin-bottom: 3px !important;
+}
+
+/* Critical: Override event positioning */
+.calendar-container .rbc-month-view .rbc-event {
+  position: static !important;
+  display: block !important;
+  width: 100% !important;
+  top: auto !important;
+  left: 0 !important;
+  right: auto !important;
+  bottom: auto !important;
+  height: auto !important;
+  margin: 0 !important;
+  padding: 2px 4px !important;
+  box-sizing: border-box !important;
+}
+
+/* Ensure event content doesn't have absolute positioning */
+.calendar-container .rbc-month-view .rbc-event-content {
+  position: static !important;
+  display: block !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* Hide event labels that might interfere */
+.calendar-container .rbc-month-view .rbc-event-label {
+  display: none !important;
+}
+
+/* Make sure event overlays don't interfere */
+.calendar-container .rbc-month-view .rbc-addons-dnd-resize-anchor {
+  display: none !important;
+}
+
+/* Force continuesPrior and continuesAfter events to be normal */
+.calendar-container .rbc-month-view .rbc-event.rbc-event-continues-prior,
+.calendar-container .rbc-month-view .rbc-event.rbc-event-continues-after {
+  position: static !important;
+  display: block !important;
+}
+
+/* Specific styling for busy events in month view */
+.calendar-container .rbc-month-view .month-busy-event {
+  background-color: var(--salt-pepper-dark) !important;
+  border: none !important;
+  color: white !important;
+  order: 1 !important;
+}
+
+/* Specific styling for preferred events in month view */
+.calendar-container .rbc-month-view .month-preferred-event {
+  background-color: #be29ec !important;
+  border: none !important;
+  color: white !important;
+  order: 2 !important;
+}
+
+/* Ensure proper stacking context */
+.calendar-container .rbc-month-view .rbc-day-slot {
+  position: relative !important;
+}
+
+/* ============================================
    PREFERRED SLOTS & EVENT TYPES
    ============================================ */
 
 /* Preferred slots - purple density shades (like busy slots) */
 .calendar-container .preferred-slot-density-1 {
-  background-color: rgba(168, 85, 247, 0.2) !important; /* Very light purple - 1 person */
+  background-color: rgba(168, 85, 247, 0.2) !important;
+  /* Very light purple - 1 person */
   border: 1px solid rgba(168, 85, 247, 0.4) !important;
   cursor: pointer;
 }
 
 .calendar-container .preferred-slot-density-2 {
-  background-color: rgba(168, 85, 247, 0.35) !important; /* Light purple - 2 people */
+  background-color: rgba(168, 85, 247, 0.35) !important;
+  /* Light purple - 2 people */
   border: 1px solid rgba(168, 85, 247, 0.5) !important;
   cursor: pointer;
 }
 
 .calendar-container .preferred-slot-density-3 {
-  background-color: rgba(168, 85, 247, 0.5) !important; /* Medium purple - 3 people */
+  background-color: rgba(168, 85, 247, 0.5) !important;
+  /* Medium purple - 3 people */
   border: 1px solid rgba(168, 85, 247, 0.6) !important;
   cursor: pointer;
 }
 
 .calendar-container .preferred-slot-density-4 {
-  background-color: rgba(168, 85, 247, 0.65) !important; /* Dark purple - 4 people */
+  background-color: rgba(168, 85, 247, 0.65) !important;
+  /* Dark purple - 4 people */
   border: 1px solid rgba(168, 85, 247, 0.7) !important;
   cursor: pointer;
 }
 
 .calendar-container .preferred-slot-density-5-plus {
-  background-color: rgba(168, 85, 247, 0.8) !important; /* Darkest purple - 5+ people */
+  background-color: rgba(168, 85, 247, 0.8) !important;
+  /* Darkest purple - 5+ people */
   border: 1px solid rgba(168, 85, 247, 0.9) !important;
   cursor: pointer;
 }
@@ -412,7 +532,8 @@
 
 /* Finalized event slot (Task 3) */
 .calendar-container .finalized-event {
-  background-color: #10B981 !important; /* solid green */
+  background-color: #10B981 !important;
+  /* solid green */
   border: 3px solid #059669 !important;
   opacity: 1;
   font-weight: bold;

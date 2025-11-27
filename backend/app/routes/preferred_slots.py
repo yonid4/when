@@ -24,7 +24,7 @@ def add_preferred_slot(event_id, user_id):
         "end_time_utc": "2025-11-10T23:30:00Z"
     }
     """
-    user_id = request.user.id
+
     access_token = getattr(request, "access_token", None)
     data = request.get_json()
 
@@ -106,7 +106,7 @@ def get_preferred_slots(event_id, user_id):
     Includes user information for each slot.
     Requires authentication.
     """
-    user_id = request.user.id
+
     access_token = getattr(request, "access_token", None)
 
     try:
@@ -155,7 +155,7 @@ def delete_preferred_slot(event_id, slot_id, user_id):
     Users can only delete their own slots.
     Requires authentication.
     """
-    user_id = request.user.id
+
     access_token = getattr(request, "access_token", None)
 
     try:

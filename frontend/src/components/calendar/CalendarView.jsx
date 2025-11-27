@@ -1,10 +1,13 @@
 import React, { useMemo } from "react";
 import { Calendar, dateFnsLocalizer } from "react-big-calendar";
-import { Box, Button, ButtonGroup } from "@chakra-ui/react";
+import { Box, Button, ButtonGroup, Text, VStack } from "@chakra-ui/react";
 import format from "date-fns/format";
 import parse from "date-fns/parse";
 import startOfWeek from "date-fns/startOfWeek";
 import getDay from "date-fns/getDay";
+import startOfDay from "date-fns/startOfDay";
+import endOfDay from "date-fns/endOfDay";
+import isSameDay from "date-fns/isSameDay";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "../../styles/calendar.css";
 
@@ -21,6 +24,140 @@ const localizer = dateFnsLocalizer({
 });
 
 const CalendarView = ({ events = [], onSelectSlot, onSelectEvent, selectable = true }) => {
+  const [view, setView] = React.useState("week");
+
+  // Custom Month Date Header - shows just the date number, small and non-interactive
+  const MonthDateHeader = ({ date, label }) => {
+    return (
+      <Box
+        fontSize="xs"
+        fontWeight="semibold"
+        color="gray.600"
+        p={1}
+        textAlign="right"
+      >
+        {format(date, 'd')}
+      </Box>
+    );
+  };
+
+  // Custom Month Event - shows aggregated slot counts
+  const MonthEvent = ({ event }) => {
+    if (event.type === 'month-busy') {
+      return (
+        <Box
+          bg="var(--salt-pepper-dark)"
+          color="white"
+          px={1.5}
+          py={0.5}
+          borderRadius="sm"
+          fontWeight="medium"
+          fontSize="10px"
+          lineHeight="1.2"
+          w="full"
+        >
+          {event.busyCount} busy slot{event.busyCount !== 1 ? 's' : ''}
+        </Box>
+      );
+    }
+
+    if (event.type === 'month-preferred') {
+      return (
+        <Box
+          bg="#be29ec"
+          color="white"
+          px={1.5}
+          py={0.5}
+          borderRadius="sm"
+          fontWeight="medium"
+          fontSize="10px"
+          lineHeight="1.2"
+          w="full"
+        >
+          {event.preferredCount} preferred slot{event.preferredCount !== 1 ? 's' : ''}
+        </Box>
+      );
+    }
+
+    return <span>{event.title}</span>;
+  };
+
+  // Process events for month view - aggregate by day
+  const processedEvents = useMemo(() => {
+    if (view !== 'month') {
+      return events;
+    }
+
+    // Group events by day
+    const eventsByDay = new Map();
+
+    events.forEach(event => {
+      const dayKey = startOfDay(event.start).getTime();
+
+      if (!eventsByDay.has(dayKey)) {
+        eventsByDay.set(dayKey, {
+          date: startOfDay(event.start),
+          busyCount: 0,
+          preferredCount: 0,
+          busyEvents: [],
+          preferredEvents: []
+        });
+      }
+
+      const dayData = eventsByDay.get(dayKey);
+
+      if (event.type === 'busy') {
+        dayData.busyCount++;
+        dayData.busyEvents.push(event);
+      } else if (event.type === 'preferred-slot') {
+        dayData.preferredCount++;
+        dayData.preferredEvents.push(event);
+      }
+    });
+
+    // Create separate events for busy and preferred slots
+    const aggregated = [];
+    eventsByDay.forEach((dayData, dayKey) => {
+      // Create busy event if there are busy slots (add first for proper ordering)
+      if (dayData.busyCount > 0) {
+        aggregated.push({
+          id: `month-busy-${dayKey}`,
+          title: `${dayData.busyCount} busy slot${dayData.busyCount !== 1 ? 's' : ''}`,
+          start: dayData.date,
+          end: endOfDay(dayData.date),
+          allDay: true,
+          type: 'month-busy',
+          className: 'month-busy-event',
+          sortOrder: 1, // Render first
+          busyCount: dayData.busyCount,
+          resource: {
+            busyEvents: dayData.busyEvents
+          }
+        });
+      }
+
+      // Create preferred event if there are preferred slots (add second)
+      if (dayData.preferredCount > 0) {
+        aggregated.push({
+          id: `month-preferred-${dayKey}`,
+          title: `${dayData.preferredCount} preferred slot${dayData.preferredCount !== 1 ? 's' : ''}`,
+          start: dayData.date,
+          end: endOfDay(dayData.date),
+          allDay: true,
+          type: 'month-preferred',
+          className: 'month-preferred-event',
+          sortOrder: 2, // Render second
+          preferredCount: dayData.preferredCount,
+          resource: {
+            preferredEvents: dayData.preferredEvents
+          }
+        });
+      }
+    });
+
+    return aggregated;
+  }, [events, view]);
+
   // Calculate hour range based on events with reasonable defaults
   const hourRange = useMemo(() => {
     let minHour = 9; // Start at 7 AM
@@ -201,8 +338,8 @@ const CalendarView = ({ events = [], onSelectSlot, onSelectEvent, selectable = t
         '.rbc-event': {
           backgroundColor: 'var(--salt-pepper-dark)',
           borderRadius: '4px',
-          border: 'none',
-          fontSize: '0.75rem',
+          border: "none",
+          fontSize: "0.75rem",
         },
         // Selected event styling
         '.rbc-event.rbc-selected': {
@@ -222,13 +359,15 @@ const CalendarView = ({ events = [], onSelectSlot, onSelectEvent, selectable = t
     >
       <Calendar
         localizer={localizer}
-        events={events}
+        events={processedEvents}
         startAccessor="start"
         endAccessor="end"
         style={{ height: "100%" }}
-        onSelectSlot={onSelectSlot}
-        onSelectEvent={onSelectEvent}
-        selectable={selectable}
+        onSelectSlot={view === "month" ? null : onSelectSlot}
+        onSelectEvent={view === "month" ? null : onSelectEvent}
+        selectable={view === "month" ? false : selectable}
+        view={view}
+        onView={setView}
         views={["month", "week", "day"]}
         defaultView="week"
         min={hourRange.min}
@@ -242,7 +381,9 @@ const CalendarView = ({ events = [], onSelectSlot, onSelectEvent, selectable = t
             header: CustomDateHeader,
           },
           month: {
-            header: CustomDateHeader,
+            header: MonthDateHeader,
+            event: MonthEvent,
+            dateHeader: MonthDateHeader,
           },
         }}
       />

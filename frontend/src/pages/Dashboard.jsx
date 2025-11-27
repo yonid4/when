@@ -69,30 +69,30 @@ const Dashboard = () => {
       try {
         setLoading(true);
         setError(null);
-        
+
         const response = await api.get('/api/events/');
         const events = response.data;
-        
+
         // Separate coordinating and participating events
         const coordinating = events.filter(event => event.role === 'coordinator');
         const participating = events.filter(event => event.role === 'participant');
-        
+
         setCoordinatingEvents(coordinating);
         setParticipatingEvents(participating);
-        
+
         console.log('Fetched events:', { coordinating, participating });
-        
+
         // Preload busy slots for ongoing events (optional performance optimization)
         const now = new Date();
         const ongoingEvents = events.filter(event => {
           const latestDate = new Date(event.latest_date);
           return latestDate >= now; // Event is still ongoing
         });
-        
+
         // Preload in background (don't await, don't block UI)
         if (ongoingEvents.length > 0) {
           Promise.allSettled(
-            ongoingEvents.map(event => 
+            ongoingEvents.map(event =>
               getMergedBusySlots(event.uid || event.id)
                 .then(() => console.log(`Preloaded busy slots for event ${event.uid}`))
                 .catch(err => console.warn(`Failed to preload busy slots for event ${event.uid}:`, err))
@@ -135,10 +135,10 @@ const Dashboard = () => {
 
       const response = await api.post('/api/events/', form);
       console.log('Event created:', response.data);
-      
+
       // Reset form
       setForm(initialForm);
-      
+
       // Refresh events list
       const eventsResponse = await api.get('/api/events/');
       const events = eventsResponse.data;
@@ -146,7 +146,7 @@ const Dashboard = () => {
       const participating = events.filter(event => event.role === 'participant');
       setCoordinatingEvents(coordinating);
       setParticipatingEvents(participating);
-      
+
       // Close modal and navigate to the new event
       onClose();
       navigate(`/events/${response.data.uid}`);
@@ -158,14 +158,6 @@ const Dashboard = () => {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      await supabase.auth.signOut();
-      navigate("/login");
-    } catch (error) {
-      console.error("Error logging out:", error);
-    }
-  };
 
   if (profileError) {
     return (
@@ -209,101 +201,101 @@ const Dashboard = () => {
       )}
 
       <VStack spacing={8} align="stretch">
-          {/* Coordinating Events */}
-          <Box>
-            <Heading size="md" mb={4}>Events You're Coordinating</Heading>
-            {coordinatingEvents.length > 0 ? (
-              <Grid templateColumns="repeat(auto-fill, minmax(300px, 1fr))" gap={4}>
-                {coordinatingEvents.map((event) => (
-                  <Card 
-                    key={event.id} 
-                    variant="outline" 
-                    cursor="pointer"
-                    _hover={{ shadow: "md", transform: "translateY(-2px)" }}
-                    transition="all 0.2s"
-                    onClick={() => navigate(`/events/${event.uid}`)}
-                  >
-                    <CardHeader>
-                      <Heading size="sm">{event.name}</Heading>
-                    </CardHeader>
-                    <CardBody pt={0}>
-                      <VStack align="start" spacing={2}>
-                        {event.description && (
-                          <Text fontSize="sm" color="gray.600">
-                            {event.description}
-                          </Text>
-                        )}
-                        {event.earliest_date && event.latest_date && (
-                          <Text fontSize="sm" fontWeight="medium">
-                            {formatDateRange(
-                              new Date(event.earliest_date),
-                              new Date(event.latest_date)
-                            )}
-                          </Text>
-                        )}
-                        <HStack spacing={4}>
-                          <Text fontSize="sm">Duration: {event.duration_minutes} min</Text>
-                          <Badge colorScheme="blue" variant="subtle">
-                            {event.status}
-                          </Badge>
-                        </HStack>
-                      </VStack>
-                    </CardBody>
-                  </Card>
-                ))}
-              </Grid>
-            ) : (
-              <Text color="gray.500">No events you're coordinating yet.</Text>
-            )}
-          </Box>
+        {/* Coordinating Events */}
+        <Box>
+          <Heading size="md" mb={4}>Events You're Coordinating</Heading>
+          {coordinatingEvents.length > 0 ? (
+            <Grid templateColumns="repeat(auto-fill, minmax(300px, 1fr))" gap={4}>
+              {coordinatingEvents.map((event) => (
+                <Card
+                  key={event.id}
+                  variant="outline"
+                  cursor="pointer"
+                  _hover={{ shadow: "md", transform: "translateY(-2px)" }}
+                  transition="all 0.2s"
+                  onClick={() => navigate(`/events/${event.uid}`)}
+                >
+                  <CardHeader>
+                    <Heading size="sm">{event.name}</Heading>
+                  </CardHeader>
+                  <CardBody pt={0}>
+                    <VStack align="start" spacing={2}>
+                      {event.description && (
+                        <Text fontSize="sm" color="gray.600">
+                          {event.description}
+                        </Text>
+                      )}
+                      {event.earliest_date && event.latest_date && (
+                        <Text fontSize="sm" fontWeight="medium">
+                          {formatDateRange(
+                            new Date(event.earliest_date),
+                            new Date(event.latest_date)
+                          )}
+                        </Text>
+                      )}
+                      <HStack spacing={4}>
+                        <Text fontSize="sm">Duration: {event.duration_minutes} min</Text>
+                        <Badge colorScheme="blue" variant="subtle">
+                          {event.status}
+                        </Badge>
+                      </HStack>
+                    </VStack>
+                  </CardBody>
+                </Card>
+              ))}
+            </Grid>
+          ) : (
+            <Text color="gray.500">No events you're coordinating yet.</Text>
+          )}
+        </Box>
 
-          {/* Participating Events */}
-          <Box>
-            <Heading size="md" mb={4}>Events You're Participating In</Heading>
-            {participatingEvents.length > 0 ? (
-              <Grid templateColumns="repeat(auto-fill, minmax(300px, 1fr))" gap={4}>
-                {participatingEvents.map((event) => (
-                  <Card 
-                    key={event.id} 
-                    variant="outline" 
-                    cursor="pointer"
-                    _hover={{ shadow: "md", transform: "translateY(-2px)" }}
-                    transition="all 0.2s"
-                    onClick={() => navigate(`/events/${event.uid}`)}
-                  >
-                    <CardHeader>
-                      <Heading size="sm">{event.name}</Heading>
-                    </CardHeader>
-                    <CardBody pt={0}>
-                      <VStack align="start" spacing={2}>
-                        {event.description && (
-                          <Text fontSize="sm" color="gray.600">
-                            {event.description}
-                          </Text>
-                        )}
-                        {event.earliest_date && event.latest_date && (
-                          <Text fontSize="sm" fontWeight="medium">
-                            {formatDateRange(
-                              new Date(event.earliest_date),
-                              new Date(event.latest_date)
-                            )}
-                          </Text>
-                        )}
-                        <HStack spacing={4}>
-                          <Text fontSize="sm">Duration: {event.duration_minutes} min</Text>
-                          <Badge colorScheme="green" variant="subtle">
-                            {event.status}
-                          </Badge>
-                        </HStack>
-                      </VStack>
-                    </CardBody>
-                  </Card>
-                ))}
-              </Grid>
-            ) : (
-              <Text color="gray.500">No events you're participating in yet.</Text>
-            )}
-          </Box>
+        {/* Participating Events */}
+        <Box>
+          <Heading size="md" mb={4}>Events You're Participating In</Heading>
+          {participatingEvents.length > 0 ? (
+            <Grid templateColumns="repeat(auto-fill, minmax(300px, 1fr))" gap={4}>
+              {participatingEvents.map((event) => (
+                <Card
+                  key={event.id}
+                  variant="outline"
+                  cursor="pointer"
+                  _hover={{ shadow: "md", transform: "translateY(-2px)" }}
+                  transition="all 0.2s"
+                  onClick={() => navigate(`/events/${event.uid}`)}
+                >
+                  <CardHeader>
+                    <Heading size="sm">{event.name}</Heading>
+                  </CardHeader>
+                  <CardBody pt={0}>
+                    <VStack align="start" spacing={2}>
+                      {event.description && (
+                        <Text fontSize="sm" color="gray.600">
+                          {event.description}
+                        </Text>
+                      )}
+                      {event.earliest_date && event.latest_date && (
+                        <Text fontSize="sm" fontWeight="medium">
+                          {formatDateRange(
+                            new Date(event.earliest_date),
+                            new Date(event.latest_date)
+                          )}
+                        </Text>
+                      )}
+                      <HStack spacing={4}>
+                        <Text fontSize="sm">Duration: {event.duration_minutes} min</Text>
+                        <Badge colorScheme="green" variant="subtle">
+                          {event.status}
+                        </Badge>
+                      </HStack>
+                    </VStack>
+                  </CardBody>
+                </Card>
+              ))}
+            </Grid>
+          ) : (
+            <Text color="gray.500">No events you're participating in yet.</Text>
+          )}
+        </Box>
 
       </VStack>
 

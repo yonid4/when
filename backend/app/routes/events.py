@@ -35,13 +35,12 @@ except ValueError as e:
 
 @event_bp.route('/', methods=['POST'])
 @require_auth
-def create_event():
+def create_event(user_id):
     """
     Create a new event.
     Requires authentication.
     """
     data = request.get_json()
-    user_id = request.user.id
     
     # Log the incoming request data
     logging.info(f"[EVENT] Creating event with data: {data}")
@@ -174,13 +173,12 @@ def create_event():
 
 @event_bp.route('/', methods=['GET'])
 @require_auth
-def get_user_events():
+def get_user_events(user_id):
     """
     Get all events for the authenticated user (coordinator and participant).
     Requires authentication.
     """
     try:
-        user_id = request.user.id
         access_token = getattr(request, "access_token", None)
         events_service = EventsService(access_token)
         
@@ -199,7 +197,7 @@ def get_user_events():
 
 @event_bp.route('/<string:event_id>', methods=['GET'])
 @require_auth
-def get_event(event_id):
+def get_event(event_id, user_id):
     """
     Get event details by UID or ID.
     Requires authentication.
@@ -226,13 +224,12 @@ def get_event(event_id):
 
 @event_bp.route('/<string:event_id>', methods=['PUT'])
 @require_auth
-def update_event(event_id):
+def update_event(event_id, user_id):
     """
     Update an event.
     Requires authentication.
     """
     try:
-        user_id = request.user.id
         data = request.get_json()
         access_token = getattr(request, "access_token", None)
         events_service = EventsService(access_token)
@@ -246,14 +243,13 @@ def update_event(event_id):
 
 @event_bp.route('/<string:event_id>', methods=['DELETE'])
 @require_auth
-def delete_event(event_id):
+def delete_event(event_id, user_id):
     """
     Delete an event.
     Notifies all participants and deletes from Google Calendar if finalized.
     Requires authentication.
     """
     try:
-        user_id = request.user.id
         access_token = getattr(request, "access_token", None)
         events_service = EventsService(access_token)
         
@@ -365,12 +361,11 @@ def get_event_participants(event_uid, user_id):
 
 @event_bp.route('/<string:event_id>/participants', methods=['POST'])
 @require_auth
-def add_participant(event_id):
+def add_participant(event_id, user_id):
     """
     Add a participant to an event.
     Requires authentication.
     """
-    user_id = request.user.id
     data = request.get_json()
     participant_id = data.get("user_id")
 
@@ -393,7 +388,7 @@ def add_participant(event_id):
 
 @event_bp.route('/<string:event_id>/participants/<string:participant_id>', methods=['DELETE'])
 @require_auth
-def remove_participant(event_id, participant_id):
+def remove_participant(event_id, participant_id, user_id):
     """
     Remove a participant from an event.
     Requires authentication.

@@ -55,9 +55,9 @@ const TimeSlotDisplayExample = ({
     };
 
     return (
-        <VStack spacing={4} align="stretch" w="full">
+        <VStack spacing={4} align="stretch" w="full" h="full">
             {/* View Toggle */}
-            <HStack spacing={2} justify="space-between">
+            <HStack spacing={2} justify="space-between" flexShrink={0}>
                 <Text fontSize="lg" fontWeight="bold">Calendar</Text>
                 <HStack spacing={2}>
                     <Button
@@ -81,7 +81,7 @@ const TimeSlotDisplayExample = ({
 
             {/* Date Selector (for timeline view only) */}
             {viewMode === 'timeline' && (
-                <HStack spacing={2}>
+                <HStack spacing={2} flexShrink={0}>
                     <Button
                         size="sm"
                         onClick={() => {
@@ -115,7 +115,7 @@ const TimeSlotDisplayExample = ({
 
             {/* Color Legend (for timeline view only) */}
             {viewMode === 'timeline' && (
-                <HStack spacing={4} fontSize="xs" color="gray.600" wrap="wrap">
+                <HStack spacing={4} fontSize="xs" color="gray.600" wrap="wrap" flexShrink={0}>
                     <HStack spacing={1}>
                         <Box w="16px" h="16px" bg="#efbbff" borderRadius="sm" />
                         <Text>1-2 people</Text>
@@ -140,24 +140,26 @@ const TimeSlotDisplayExample = ({
             )}
 
             {/* Display Component */}
-            {viewMode === 'timeline' ? (
-                <TimeSlotDisplay
-                    slots={preferredSlots}
-                    date={selectedDate}
-                    onSlotClick={handleTimelineSlotClick}
-                    onEmptyClick={handleTimelineEmptyClick}
-                    minHour={eventData?.earliest_hour ? parseInt(eventData.earliest_hour.split(':')[0]) : 9}
-                    maxHour={eventData?.latest_hour ? parseInt(eventData.latest_hour.split(':')[0]) : 17}
-                    isFinalized={isFinalized}
-                />
-            ) : (
-                <CalendarView
-                    events={calendarEvents}
-                    onSelectSlot={!isFinalized ? onSelectSlot : null}
-                    onSelectEvent={onSelectEvent}
-                    selectable={!isFinalized}
-                />
-            )}
+            <Box flex={1} minH={0} h="full">
+                {viewMode === 'timeline' ? (
+                    <TimeSlotDisplay
+                        slots={preferredSlots}
+                        date={selectedDate}
+                        onSlotClick={handleTimelineSlotClick}
+                        onEmptyClick={handleTimelineEmptyClick}
+                        minHour={eventData?.earliest_hour ? parseInt(eventData.earliest_hour.split(':')[0]) : 9}
+                        maxHour={eventData?.latest_hour ? parseInt(eventData.latest_hour.split(':')[0]) : 17}
+                        isFinalized={isFinalized}
+                    />
+                ) : (
+                    <CalendarView
+                        events={calendarEvents}
+                        onSelectSlot={!isFinalized ? onSelectSlot : null}
+                        onSelectEvent={onSelectEvent}
+                        selectable={!isFinalized}
+                    />
+                )}
+            </Box>
         </VStack>
     );
 };

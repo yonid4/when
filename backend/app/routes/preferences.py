@@ -18,7 +18,7 @@ def add_preference(event_id, user_id):
     Add a preference for an event.
     Requires authentication.
     """
-    user_id = request.user.id
+
     data = request.get_json()
 
     try:

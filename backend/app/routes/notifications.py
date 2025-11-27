@@ -40,7 +40,7 @@ def get_notifications(user_id):
             "unread_count": 0
         }
     """
-    user_id = request.user.id
+
     
     unread_only = request.args.get("unread_only", "false").lower() == "true"
     limit = int(request.args.get("limit", 50))
@@ -65,7 +65,7 @@ def get_notifications(user_id):
 @require_auth
 def get_unread_count(user_id):
     """Get count of unread notifications."""
-    user_id = request.user.id
+
     
     notifications_service = NotificationsService()
     unread_count = notifications_service.get_unread_count(user_id)
@@ -77,7 +77,7 @@ def get_unread_count(user_id):
 @require_auth
 def mark_as_read(notification_id, user_id):
     """Mark a notification as read."""
-    user_id = request.user.id
+
     
     notifications_service = NotificationsService()
     
@@ -100,7 +100,7 @@ def mark_as_read(notification_id, user_id):
 @require_auth
 def mark_all_as_read(user_id):
     """Mark all notifications as read for the current user."""
-    user_id = request.user.id
+
     
     notifications_service = NotificationsService()
     success = notifications_service.mark_all_as_read(user_id)
@@ -128,7 +128,6 @@ def handle_notification_action(notification_id, user_id):
     print(f"DEBUG: Authorization header: {request.headers.get('Authorization', 'NOT FOUND')}")
     print(f"DEBUG: User ID from request.user: {getattr(request, 'user', None)}")
     
-    user_id = request.user.id
     print(f"DEBUG: User ID extracted: {user_id}")
     
     data = request.get_json()
@@ -280,7 +279,7 @@ def handle_notification_action(notification_id, user_id):
 @require_auth
 def delete_notification(notification_id, user_id):
     """Delete a notification."""
-    user_id = request.user.id
+
     
     notifications_service = NotificationsService()
     

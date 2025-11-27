@@ -45,7 +45,7 @@ def login_route():
 
 @auth_bp.route("/logout", methods=["GET"])
 @require_auth
-def logout_route():
+def logout_route(user_id):
     """
     Log out the current user.
     Requires authentication.
@@ -82,7 +82,7 @@ def refresh_route():
 
 @auth_bp.route("/me", methods=["GET"])
 @require_auth
-def get_me():
+def get_me(user_id):
     """
     Get the current user's information.
     """
@@ -100,7 +100,7 @@ def get_me():
 
 @auth_bp.route("/google", methods=["GET"])
 @require_auth
-def google_auth():
+def google_auth(user_id):
     """
     Initiate Google OAuth flow.
     Redirects to Google's consent screen.
@@ -293,11 +293,10 @@ def google_callback():
 
 @auth_bp.route("/google/connect", methods=["POST"])
 @require_auth
-def connect_google_calendar():
+def connect_google_calendar(user_id):
     """
     Connect a user's Google Calendar.
     """
-    user_id = request.user.id
     users_service = UsersService(getattr(request, "access_token", None))
     profile = users_service.get_profile(user_id)
     return jsonify({
@@ -307,12 +306,11 @@ def connect_google_calendar():
 
 @auth_bp.route("/enrich-profile", methods=["POST"])
 @require_auth
-def enrich_profile():
+def enrich_profile(user_id):
     """
     Enrich an existing profile with Google data.
     This is called after Supabase Auth sign-in to add Google Calendar data.
     """
-    user_id = request.user.id
     
     try:
         # Get user's current profile

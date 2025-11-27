@@ -1,33 +1,33 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import { Box, Flex, Heading } from "@chakra-ui/react";
-// import { useAuth } from "./context/AuthContext";
+import { Box } from "@chakra-ui/react";
 import Layout from "./layout";
-import Login from "./pages/Login";
+import LandingPage from "./pages/LandingPage";
 import Dashboard from "./pages/Dashboard";
 import EventPage from "./pages/EventPage";
-// import Calendar from "./pages/Calendar";
-
-// // ProtectedRoute component
-// const ProtectedRoute = ({ children }) => {
-//   const { user, loading } = useAuth();
-//   if (loading) return null; // or a loading spinner
-//   return user ? children : <Navigate to="/login" replace />;
-// };
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const App = () => (
   <Box minH="100vh" bg="gray.50" w="100%">
-      <Router>
-        <Layout>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/events/:eventUid" element={<EventPage />} />
-            {/* Add more protected routes as needed */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Layout>
-      </Router>
+    <Router>
+      <Layout>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<Navigate to="/" replace />} />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/events/:eventUid" element={<EventPage />} />
+          {/* Add more protected routes as needed */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Layout>
+    </Router>
   </Box>
 );
 

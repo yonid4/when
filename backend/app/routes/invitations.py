@@ -40,7 +40,7 @@ def send_invitations(event_uid: str, user_id):
     Returns:
         Results of invitation attempts with success/failure for each
     """
-    current_user_id = request.user.id
+
     data = request.get_json()
     
     # Get list of emails to invite
@@ -70,13 +70,13 @@ def send_invitations(event_uid: str, user_id):
     event_title = event.get("name") or event.get("title") or "Untitled Event"
     
     # Verify user is coordinator
-    if event["coordinator_id"] != current_user_id:
+    if event["coordinator_id"] != user_id:
         return jsonify({"error": "Only coordinator can send invitations"}), 403
     
     # Get coordinator profile (use service role to bypass RLS)
     coordinator_response = service_role_client.table("profiles")\
         .select("*")\
-        .eq("id", current_user_id)\
+        .eq("id", user_id)\
         .execute()
     
     if not coordinator_response.data:
@@ -164,7 +164,7 @@ def send_invitations(event_uid: str, user_id):
                 try:
                     invitation_data = {
                         "event_id": event["id"],
-                        "inviter_id": current_user_id,
+                        "inviter_id": user_id,
                         "invitee_id": invitee["id"],
                         "invitee_email": email,
                         "status": "pending",
@@ -199,7 +199,7 @@ def send_invitations(event_uid: str, user_id):
                     user_id=invitee["id"],
                     event_id=event["id"],
                     event_title=event_title,
-                    coordinator_id=current_user_id,
+                    coordinator_id=user_id,
                     coordinator_name=coordinator_name,
                     invitation_id=invitation["id"]
                 )
@@ -241,7 +241,7 @@ def get_event_invitations(event_uid: str, user_id):
     """
     Get all invitations for an event (coordinator only).
     """
-    current_user_id = request.user.id
+
     
     # Get event by UID (use service role to bypass RLS)
     if not service_role_client:
@@ -258,7 +258,7 @@ def get_event_invitations(event_uid: str, user_id):
     event = event_response.data[0]
     
     # Verify user is coordinator
-    if event["coordinator_id"] != current_user_id:
+    if event["coordinator_id"] != user_id:
         return jsonify({"error": "Only coordinator can view invitations"}), 403
     
     # Get invitations

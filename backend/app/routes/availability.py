@@ -23,7 +23,7 @@ def add_availability(event_id, user_id):
     Add availability slots for an event.
     Requires authentication.
     """
-    user_id = request.user.id
+
     data = request.get_json()
     slots = data.get("slots", [])
 
