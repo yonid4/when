@@ -89,6 +89,16 @@ def add_preferred_slot(event_id, user_id):
                 "message": "Could not create preferred slot"
             }), 400
 
+        # Mark proposals as stale for background regeneration
+        try:
+            from ..services.time_proposal import TimeProposalService
+            time_proposal_service = TimeProposalService(access_token)
+            time_proposal_service.mark_proposals_stale(db_event_id)
+            print(f"[PREFERRED_SLOTS] Marked proposals as stale for event {db_event_id} after adding preferred slot")
+        except Exception as stale_error:
+            print(f"[PREFERRED_SLOTS] Warning: Failed to mark proposals as stale: {str(stale_error)}")
+            # Don't fail the request if marking as stale fails
+
         return jsonify(slot), 201
 
     except Exception as e:
@@ -206,6 +216,16 @@ def delete_preferred_slot(event_id, slot_id, user_id):
                 "error": "Failed to delete slot",
                 "message": "Could not delete preferred slot"
             }), 400
+
+        # Mark proposals as stale for background regeneration
+        try:
+            from ..services.time_proposal import TimeProposalService
+            time_proposal_service = TimeProposalService(access_token)
+            time_proposal_service.mark_proposals_stale(db_event_id)
+            print(f"[PREFERRED_SLOTS] Marked proposals as stale for event {db_event_id} after deleting preferred slot")
+        except Exception as stale_error:
+            print(f"[PREFERRED_SLOTS] Warning: Failed to mark proposals as stale: {str(stale_error)}")
+            # Don't fail the request if marking as stale fails
 
         return jsonify({"message": "Slot deleted successfully"}), 200
 

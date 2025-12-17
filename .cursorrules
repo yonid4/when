@@ -1,209 +1,406 @@
-# Cursor Rules for Event Coordination App
-# This file defines coding standards, patterns, and best practices for the project
+# README for AI Assistants
 
-project_context: |
-  This is an event coordination application built with:
-  - Backend: Python Flask with Supabase database
-  - Frontend: React with Node.js
-  - External APIs: Google Calendar API
-  - Real-time features: Supabase subscriptions
-  - Background jobs for calendar synchronization
+**Last Updated:** December 13, 2024
+**Purpose:** This document provides critical context and rules for AI assistants working on the When event coordination app.
 
-code_style:
-  general:
-    - "Use double quotes for all strings in JavaScript, Python, and other languages"
-    - "Use meaningful variable and function names that clearly describe their purpose"
-    - "Keep line length under 100 characters when possible"
-    - "Use consistent indentation: 2 spaces for JavaScript/JSX, 4 spaces for Python"
-    - "Add blank lines between logical sections of code for readability"
-  
-  javascript_react:
-    - "Always use functional components with hooks instead of class components"
-    - "Prefer const for variables that don't change, let for variables that do"
-    - "Use arrow functions for inline functions and callbacks"
-    - "Destructure props and state when accessing multiple properties"
-    - "Use template literals with ${} for string interpolation instead of concatenation"
-  
-  python_flask:
-    - "Use snake_case for variable and function names"
-    - "Use PascalCase for class names"
-    - "Use UPPER_CASE for constants"
-    - "Keep functions focused on single responsibilities"
+---
 
-import_organization:
-  order: |
-    1. Local/relative imports first (from current project)
-    2. External library imports second
-    3. Separate groups with blank lines
-  
-  javascript_example: |
-    // Local imports first
-    import { useAuth } from "../hooks/useAuth";
-    import { EventCard } from "../components/events/EventCard";
-    import { API_BASE_URL } from "../utils/constants";
-    
-    // External libraries second
-    import React, { useState, useEffect } from "react";
-    import axios from "axios";
-    import { createClient } from "@supabase/supabase-js";
-  
-  python_example: |
-    # Local imports first
-    from app.models.user import User
-    from app.services.google_calendar import GoogleCalendarService
-    from app.utils.timezone import convert_to_utc
-    
-    # External libraries second
-    import os
-    from flask import Flask, request, jsonify
-    from datetime import datetime, timedelta
+## 🎯 Application Purpose
 
-framework_patterns:
-  react_components:
-    - "Always use functional components with hooks"
-    - "Use useState for local component state"
-    - "Use useEffect for side effects (API calls, subscriptions)"
-    - "Use useContext for sharing state across components"
-    - "Create custom hooks for reusable logic"
-    - "Prefer composition over inheritance"
-    - "Use React.memo() for performance optimization when needed"
-  
-  flask_api:
-    - "Use Flask blueprints to organize routes logically"
-    - "Keep route handlers thin - move business logic to services"
-    - "Always return consistent JSON response formats"
-    - "Use decorators for authentication and validation"
-    - "Separate database operations into model or service classes"
+**When** is an event coordination app that **minimizes user interaction** by intelligently finding optimal meeting times.
 
-database_patterns:
-  supabase:
-    - "Use selective try-catch blocks only where error handling is critical"
-    - "Don't wrap every database operation in try-catch - only operations that need specific error handling"
-    - "Use Supabase real-time subscriptions for live collaboration features"
-    - "Structure queries to minimize data transfer and improve performance"
-    - "Use transactions for operations that must succeed or fail together"
-  
-  error_handling:
-    - "Handle errors gracefully with user-friendly messages"
-    - "Log errors with sufficient context for debugging"
-    - "Use try-catch blocks for: API calls, file operations, external service calls"
-    - "Don't use try-catch for: simple variable assignments, basic calculations, routine database queries"
+### Core User Flow
+1. **Coordinator** creates an event with a date range and invites participants
+2. **System** analyzes all participants' Google Calendars automatically
+3. **AI (Gemini)** suggests optimal meeting times based on availability and preferences
+4. **Coordinator** selects a suggested time or chooses their own
+5. **System** creates Google Calendar event and invites all participants
 
-api_patterns:
-  rest_endpoints:
-    - "Use RESTful conventions: GET for retrieval, POST for creation, PUT for updates, DELETE for removal"
-    - "Return appropriate HTTP status codes (200, 201, 400, 401, 404, 500)"
-    - "Include error messages in response body for 4xx and 5xx responses"
-    - "Use consistent response format: { success: boolean, data: any, message: string }"
-    - "Validate input data before processing"
-  
-  authentication:
-    - "Always verify JWT tokens for protected routes"
-    - "Include user context in request handling when needed"
-    - "Use proper CORS configuration for cross-origin requests"
+### Key Philosophy
+- **Minimize manual coordination** - The app does the heavy lifting
+- **Smart automation** - AI-powered suggestions, automatic calendar sync
+- **Seamless integration** - Works with existing Google Calendar workflows
 
-security_rules:
-  secrets_detection:
-    - "⚠️ NEVER hardcode API keys, secrets, or passwords in source code"
-    - "⚠️ Use environment variables for all sensitive configuration"
-    - "⚠️ Warning: Detected potential hardcoded secret - use process.env.VARIABLE_NAME instead"
-    - "⚠️ Google API keys should come from environment variables, not hardcoded strings"
-    - "⚠️ Database connection strings must use environment variables"
-    - "⚠️ JWT secrets and encryption keys must be in environment variables"
-  
-  data_handling:
-    - "Always validate and sanitize user input"
-    - "Use parameterized queries to prevent SQL injection"
-    - "Don't log sensitive information (passwords, tokens, personal data)"
-    - "Encrypt sensitive data at rest when required"
+---
 
-google_calendar_integration:
-  patterns:
-    - "Always handle Google API rate limits gracefully"
-    - "Cache calendar data when appropriate to reduce API calls"
-    - "Use incremental sync when possible for large calendars"
-    - "Handle timezone conversions properly (store in UTC, display in user timezone)"
-    - "Implement proper OAuth2 flow for Google authentication"
-  
-  error_handling:
-    - "Handle Google API errors: rate limits, authentication failures, network issues"
-    - "Provide fallback behavior when Google Calendar is unavailable"
-    - "Retry failed requests with exponential backoff"
+## 🏗️ Architecture Overview
 
-real_time_features:
-  supabase_subscriptions:
-    - "Set up subscriptions for event updates, participant changes, and availability updates"
-    - "Clean up subscriptions in useEffect cleanup functions"
-    - "Handle connection drops and reconnection gracefully"
-    - "Batch real-time updates when possible to avoid UI thrashing"
+### Stack Summary
+- **Frontend:** React 18 + Chakra UI + React Router
+- **Backend:** Flask 3.1 (Python) with blueprint architecture
+- **Database:** Supabase (PostgreSQL) with real-time subscriptions
+- **AI:** Google Gemini for time proposal generation
+- **External APIs:** Google Calendar API (OAuth2 flow)
+- **Background Jobs:** APScheduler for proposal regeneration and calendar sync
 
-background_jobs:
-  patterns:
-    - "Use background jobs for: calendar synchronization, availability calculations, cleanup tasks"
-    - "Make jobs idempotent (safe to run multiple times)"
-    - "Include proper logging and error handling in background jobs"
-    - "Set appropriate timeouts and retry policies"
+### Project Structure
+```
+when/
+├── backend/
+│   ├── app/
+│   │   ├── models/          # Pydantic models for database entities
+│   │   ├── routes/          # Flask blueprints (thin handlers)
+│   │   ├── services/        # Business logic (MUST be here, not in routes)
+│   │   ├── utils/           # Helpers, decorators, validators
+│   │   └── background_jobs/ # Scheduled tasks (proposal regen, sync)
+│   └── tests/
+├── frontend/
+│   ├── src/
+│   │   ├── components/      # Reusable UI components
+│   │   ├── pages/           # Route-level components
+│   │   ├── hooks/           # Custom React hooks (useApiCall, useAuth, etc.)
+│   │   ├── services/        # API communication layer
+│   │   └── utils/           # Frontend utilities
+└── migrations/              # SQL migration files (001-005)
+```
 
-file_organization:
-  structure: |
-    - Keep related functionality together in logical folders
-    - Use index.js files for clean imports from folders
-    - Separate concerns: components, services, utilities, hooks
-    - Create reusable components in common/ folders
-    - Group related API calls in service files
-  
-  naming_conventions:
-    - "React components: PascalCase (EventCard.jsx)"
-    - "Hooks: camelCase starting with 'use' (useAuth.js)"
-    - "Utilities: camelCase (dateUtils.js)"
-    - "Services: camelCase with 'Service' suffix (authService.js)"
-    - "Python files: snake_case (google_calendar.py)"
-    - "Python classes: PascalCase (GoogleCalendarService)"
+---
 
-testing_reminders:
-  general:
-    - "Consider writing tests for complex business logic"
-    - "Test error handling paths, not just happy paths"
-    - "Mock external API calls in tests"
-    - "Test timezone handling and edge cases"
-  
-  critical_areas:
-    - "Availability calculation logic should be thoroughly tested"
-    - "Authentication and authorization flows need test coverage"
-    - "Google Calendar integration should have integration tests"
-    - "Real-time subscription handling should be tested"
+## 🔑 Critical Database Schema
 
-performance_considerations:
-  frontend:
-    - "Use React.memo for expensive components"
-    - "Debounce user input for search and filtering"
-    - "Implement virtual scrolling for large lists"
-    - "Optimize calendar rendering for large date ranges"
-  
-  backend:
-    - "Use database indexes for frequently queried fields"
-    - "Implement caching for expensive calculations"
-    - "Use background jobs for heavy processing"
-    - "Optimize database queries to avoid N+1 problems"
+### Main Tables
+- **`profiles`** - User profile info
+- **`events`** - Event details with AI proposal tracking fields
+  - `last_proposal_generation` - Timestamp of last AI generation
+  - `proposal_invalidation_reason` - Why proposals were invalidated
+- **`event_participants`** - Many-to-many users ↔ events
+- **`busy_slots`** - User busy times from Google Calendar (cached)
+- **`preferred_slots`** - User-marked preferred times for events
+- **`proposed_times`** - AI-generated time proposals (cached with metadata)
+- **`notifications`** - In-app notifications
+- **`event_invitations`** - Invitation tracking and RSVP status
 
-common_patterns:
-  timezone_handling:
-    - "Always store times in UTC in the database"
-    - "Convert to user timezone only for display"
-    - "Use libraries like date-fns or moment.js for timezone operations"
-    - "Handle daylight saving time transitions properly"
-  
-  availability_calculation:
-    - "Pre-compute availability when users join events"
-    - "Use efficient algorithms for finding overlapping free time"
-    - "Consider performance for events with many participants"
-    - "Update availability incrementally when possible"
+### Important ID Fields
+- **`id`** (UUID) - Internal database primary key
+- **`uid`** (12-char string) - User-facing shareable ID used in URLs
+- Always use **UID** in frontend URLs and API routes where possible
+- Use **UUID** only for internal database operations
 
-code_review_checklist:
-  before_commit:
-    - "Check for hardcoded secrets or API keys"
-    - "Verify proper error handling for external API calls"
-    - "Ensure timezone handling is correct"
-    - "Confirm responsive design works on mobile devices"
-    - "Test real-time features work as expected"
-    - "Validate that database operations are efficient"
+---
+
+## 🚨 CRITICAL RULES - MUST FOLLOW
+
+### 1. Import Organization (STRICTLY ENFORCED)
+```javascript
+// ❌ WRONG - External imports first
+import React from "react";
+import { useAuth } from "../hooks/useAuth";
+
+// ✅ CORRECT - Local imports ALWAYS first
+import { useAuth } from "../hooks/useAuth";
+import { EventCard } from "../components/events/EventCard";
+
+import React, { useState } from "react";
+import axios from "axios";
+```
+
+```python
+# ❌ WRONG - External imports first
+import os
+from flask import Flask
+from app.models.event import Event
+
+# ✅ CORRECT - Local imports ALWAYS first
+from app.models.event import Event
+from app.services.events import EventService
+
+import os
+from flask import Flask, jsonify
+```
+
+### 2. Business Logic Placement
+- **NEVER put business logic in route handlers** - Routes should be thin
+- **ALL business logic goes in `services/`** - Always
+- Routes handle: request parsing, calling services, returning responses
+- Services handle: database operations, calculations, external API calls
+
+```python
+# ❌ WRONG - Logic in route
+@events_bp.route("/events", methods=["POST"])
+def create_event():
+    data = request.json
+    event = supabase.table("events").insert(data).execute()  # ❌ Direct DB call
+    return jsonify(event)
+
+# ✅ CORRECT - Logic in service
+@events_bp.route("/events", methods=["POST"])
+@token_required
+def create_event(user_id):
+    data = request.json
+    event = EventService.create_event(user_id, data)  # ✅ Service handles logic
+    return jsonify(event)
+```
+
+### 3. Error Handling - Use Sparingly
+```python
+# ❌ WRONG - Unnecessary try-catch
+try:
+    user_id = data.get("user_id")  # ❌ Simple assignment doesn't need try-catch
+except Exception as e:
+    return {"error": str(e)}
+
+# ✅ CORRECT - Only for critical operations
+try:
+    response = requests.post(GOOGLE_API_URL, data=payload)  # ✅ External API call
+    response.raise_for_status()
+except requests.RequestException as e:
+    logger.error(f"Google API error: {e}")
+    return {"error": "Failed to sync calendar"}
+```
+
+**Use try-catch ONLY for:**
+- External API calls (Google Calendar, Gemini AI)
+- File operations
+- Database transactions that must succeed/fail together
+- **NOT for:** Simple assignments, basic calculations, routine queries
+
+### 4. Code Style
+- **Strings:** Double quotes everywhere (`"hello"` not `'hello'`)
+- **JavaScript:** 2-space indentation, functional components with hooks
+- **Python:** 4-space indentation, snake_case functions, PascalCase classes
+- **Line length:** Under 100 characters when possible
+
+### 5. Security - NEVER HARDCODE SECRETS
+```python
+# ❌ ABSOLUTELY FORBIDDEN
+GOOGLE_API_KEY = "AIzaSyD..."  # ❌ NEVER!
+DATABASE_URL = "postgresql://..."  # ❌ NEVER!
+
+# ✅ ALWAYS use environment variables
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+```
+
+### 6. Authentication Patterns
+- **Backend:** Use `@token_required` decorator (passes `user_id` to function)
+- **Frontend:** Use `useAuth()` hook for user context
+- All protected routes MUST verify JWT tokens
+- User context should be passed via decorators, not manually extracted
+
+### 7. Timezone Handling (CRITICAL)
+- **ALWAYS store times in UTC** in the database
+- Convert to user timezone **ONLY for display**
+- Use `date-fns` (frontend) or `python-dateutil` (backend)
+- Handle DST transitions properly
+
+```python
+# ✅ CORRECT
+start_time_utc = convert_to_utc(user_time, user_timezone)
+db.insert({"start_time": start_time_utc})  # Store in UTC
+
+# Display
+user_time = convert_from_utc(db_time, user_timezone)  # Convert for display
+```
+
+---
+
+## 🧩 Common Patterns to Follow
+
+### Frontend API Calls
+```javascript
+// ✅ Use apiService.js for all API calls
+import apiService from "../services/apiService";
+
+const { events } = apiService;
+
+// Good - Centralized error handling
+const fetchEvents = async () => {
+  try {
+    const data = await events.getAll();
+    setEvents(data);
+  } catch (error) {
+    console.error("Failed to fetch events:", error);
+  }
+};
+```
+
+### Backend Route Pattern
+```python
+# ✅ Standard route structure
+from app.utils.decorators import token_required
+from app.services.events import EventService
+
+@events_bp.route("/events", methods=["POST"])
+@token_required  # Injects user_id
+def create_event(user_id):
+    data = request.json
+
+    # Validate
+    if not data.get("title"):
+        return jsonify({"error": "Title required"}), 400
+
+    # Call service
+    event = EventService.create_event(user_id, data)
+
+    # Return response
+    return jsonify(event), 201
+```
+
+### AI Time Proposals Pattern
+```python
+# ✅ Always use caching, invalidate when event data changes
+from app.services.time_proposal import TimeProposalService
+
+# Generate proposals (uses cache if available)
+proposals = TimeProposalService.generate_proposals(event_uid, num_suggestions=5)
+
+# Force refresh (coordinator only, expensive operation)
+proposals = TimeProposalService.regenerate_proposals(event_uid)
+```
+
+---
+
+## 🚫 What NOT to Do
+
+### 1. Don't Create Unnecessary Files
+- **NEVER create markdown files** unless explicitly requested
+- **PREFER editing existing files** over creating new ones
+- Don't create documentation files proactively
+
+### 2. Don't Break Existing Patterns
+- If you see a pattern (e.g., all services inherit from `BaseService`), follow it
+- Don't introduce new ways of doing things that already have established patterns
+- Check existing code before implementing something "new"
+
+### 3. Don't Skip Testing Critical Paths
+- **MUST test:** Auth flows, availability calculation, timezone handling
+- **MUST mock:** External API calls (Google Calendar, Gemini)
+- Write tests for complex business logic
+
+### 4. Don't Ignore Performance
+- Use React.memo for expensive components
+- Debounce user input for search/filtering
+- Implement caching for expensive calculations (see AI proposals)
+- Use background jobs for heavy processing
+
+### 5. Don't Forget Real-time Features
+- Clean up Supabase subscriptions in `useEffect` cleanup
+- Handle connection drops gracefully
+- Batch updates to avoid UI thrashing
+
+---
+
+## 📋 Key API Endpoints Reference
+
+### Events
+- `GET /api/events` - List user's events
+- `POST /api/events` - Create event
+- `GET /api/events/<event_uid>` - Get event by UID
+- `PUT /api/events/<event_uid>` - Update event
+- `DELETE /api/events/<event_uid>` - Delete event
+
+### AI Time Proposals (NEW)
+- `POST /api/events/<event_uid>/propose-times` - Get cached or generate proposals
+  - Body: `{"num_suggestions": 5, "force_refresh": false}`
+- `POST /api/events/<event_uid>/propose-times/refresh` - Force regenerate (coordinator only)
+
+### Preferred Slots
+- `POST /api/preferred_slots` - Add user's preferred times
+- `GET /api/preferred_slots/<event_uid>` - Get all preferred slots
+- `DELETE /api/preferred_slots/<slot_id>` - Delete slot
+
+### Event Finalization
+- `POST /api/events/<event_uid>/finalize` - Finalize to specific time (coordinator only)
+- `GET /api/events/<event_uid>/finalization-status` - Get status
+
+### Notifications
+- `GET /api/notifications` - Get user's notifications
+- `PUT /api/notifications/<notification_id>/read` - Mark as read
+- `PUT /api/notifications/read-all` - Mark all as read
+
+### Google Calendar
+- `GET /api/calendar/connection-status` - Check connection
+- `POST /api/calendar/sync` - Sync Google Calendar (differential)
+
+---
+
+## 🔄 Recent Major Changes (Nov 5 - Dec 13, 2024)
+
+### New Features
+- ✅ **AI Time Proposals** - Gemini integration with smart caching
+- ✅ **Preferred Slots** - Users can mark preferred times
+- ✅ **Event Invitations** - RSVP tracking system
+- ✅ **Notifications** - In-app notification system
+- ✅ **Event Finalization** - Coordinator finalizes events
+- ✅ **Redesigned UI** - New landing, dashboard, event creation wizard
+
+### New Files to Be Aware Of
+- Backend: `time_proposal.py`, `proposal_regeneration.py`, `proposed_time.py`
+- Frontend: `ProposedTimesModal.jsx`, `useApiCall.js`, `apiService.js`
+- Frontend: `Landing.jsx`, `DashboardTemp.jsx`, `EventCreate.jsx`, `EventTemp.jsx`
+
+### Technical Improvements
+- Enhanced auth decorators pass `user_id` automatically
+- Differential calendar sync with dynamic time windows
+- Smart proposal caching with background regeneration
+- Comprehensive `apiService.js` consolidates all API calls
+
+---
+
+## 🎨 UI/UX Considerations
+
+### Design System
+- **Colors:** Purple primary, Green secondary, Amber accent
+- **Components:** Chakra UI for consistency
+- **Animations:** Framer Motion for smooth transitions
+- **Responsive:** Mobile-first design
+
+### User Experience Principles
+- **Minimize clicks** - Automate wherever possible
+- **Clear feedback** - Loading states, error messages
+- **Smart defaults** - Pre-fill based on context
+- **Progressive disclosure** - Show complexity only when needed
+
+---
+
+## 🧪 Testing Checklist
+
+When making changes, ensure:
+- [ ] No hardcoded secrets or API keys
+- [ ] Timezone handling is correct (store UTC, display local)
+- [ ] Error handling for external API calls
+- [ ] Real-time features work (Supabase subscriptions)
+- [ ] Responsive design on mobile
+- [ ] Database operations are efficient (no N+1 queries)
+- [ ] Import order follows the rules (local first, external second)
+- [ ] Business logic is in services, not routes
+
+---
+
+## 📞 Questions to Ask Before Implementation
+
+If you're unsure about any of these, ASK the user:
+
+1. **Scope:** Does this require modifying existing features or creating new ones?
+2. **Data flow:** Which tables/models are affected?
+3. **User role:** Is this coordinator-only, participant-only, or both?
+4. **Real-time:** Should changes propagate to other users instantly?
+5. **Performance:** Will this impact users with many events/participants?
+6. **Breaking changes:** Will this affect existing data or APIs?
+
+---
+
+## 💡 Pro Tips
+
+1. **Check existing patterns first** - Don't reinvent the wheel
+2. **Read the .cursorrules file** - Contains critical standards
+3. **Use apiService.js** - Don't create ad-hoc API calls
+4. **Follow the service layer pattern** - Routes are thin, services are thick
+5. **Test with real Google Calendar** - Mock data only goes so far
+6. **Consider caching** - Expensive operations should be cached (see AI proposals)
+7. **Think about edge cases** - Empty states, no participants, no availability
+8. **Mobile users exist** - Test responsive design
+
+---
+
+## 🚀 Getting Started Quickly
+
+1. Read this README fully (you're doing it!)
+2. Review [README.md](README.md) for setup instructions
+3. Check [.cursorrules](.cursorrules) for detailed coding standards
+4. Look at existing code patterns before writing new code
+5. When in doubt, ask the user for clarification
+
+---
+
+**Remember:** This app is about **minimizing user effort**. Every feature should reduce manual coordination and make event scheduling effortless.

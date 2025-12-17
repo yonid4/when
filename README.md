@@ -2,17 +2,57 @@
 
 A full-stack application for coordinating events and managing availability across multiple calendars. Built with React, Flask, and Supabase.
 
+## 🎉 Recent Updates (December 2024)
+
+### Major New Features
+- **🤖 AI-Powered Time Proposals**: Integrated Google Gemini AI to intelligently suggest optimal meeting times based on participant availability, preferences, and constraints
+- **✨ Redesigned UI**: Beautiful new landing page, dashboard, and event creation wizard with smooth animations and modern design
+- **📋 Preferred Time Slots**: Users can now mark their preferred times for events, which AI considers when generating proposals
+- **🔔 Notifications System**: Real-time in-app notifications for event updates, invitations, and finalization
+- **📨 Event Invitations**: Comprehensive invitation system with RSVP tracking and status management
+- **🎯 Event Finalization**: Coordinators can finalize events to specific time slots with participant confirmation
+- **⏱️ Continuous Timeline UI**: New time slot display component for visualizing availability across time ranges
+
+### Technical Improvements
+- **Enhanced Authentication**: Refactored backend decorators to pass user IDs more efficiently
+- **Smart Proposal Caching**: AI proposals are cached and automatically invalidated when event data changes
+- **Background Jobs**: Added proposal regeneration job for keeping suggestions up-to-date
+- **Differential Calendar Sync**: Optimized Google Calendar synchronization with dynamic time windows
+- **Custom Calendar Views**: Implemented custom month view with better participant visualization
+- **Comprehensive API Service**: New `apiService.js` consolidates all API calls with consistent error handling
+- **New React Hooks**: `useApiCall` hook for standardized API call patterns with loading states
+
+### Database Enhancements
+- New `proposed_times` table for AI proposal caching
+- New `preferred_slots` table for user time preferences
+- New `notifications` table for in-app notifications
+- New `event_invitations` table for invitation tracking
+- Added proposal tracking fields to `events` table
+
 ## 🌟 Features
 
+### Core Scheduling
 - **Smart Event Scheduling**: Create events with flexible time ranges and find optimal scheduling slots
-- **Interactive Calendar Views**: Multiple calendar views (month, week, day) with dynamic time ranges
-- **Google Calendar Integration**: OAuth-based authentication and automatic busy time synchronization
-- **Real-time Collaboration**: Live updates for event changes and participant availability
-- **Busy Time Management**: Automatic detection and merging of busy slots from Google Calendar
-- **User Preferences**: Set and manage scheduling preferences for events
+- **AI-Powered Time Proposals**: Gemini AI intelligently suggests optimal meeting times based on participant availability, busy slots, and preferences
+- **Preferred Time Slots**: Participants can mark their preferred times for events, which AI considers when generating proposals
+- **Interactive Calendar Views**: Multiple calendar views (month, week, day) with dynamic time ranges and custom continuous timeline UI
+- **Google Calendar Integration**: OAuth-based authentication and automatic differential busy time synchronization
+- **Event Finalization**: Coordinators can finalize events to a specific time slot with participant confirmation
+
+### Collaboration & Communication
+- **Real-time Collaboration**: Live updates for event changes and participant availability via Supabase subscriptions
+- **Event Invitations System**: Send, track, and manage event invitations with RSVP status
+- **In-App Notifications**: Real-time notifications for event updates, invitations, and finalization
 - **Event Sharing**: Join events via unique 12-character UIDs
+- **Participant Management**: Track attendees, their availability, and preferences
+
+### User Experience
+- **Modern Redesigned UI**: Beautiful new landing page, dashboard, and event creation wizard with smooth animations
+- **Multi-Step Event Creation**: Intuitive wizard-based event creation (Basics → When → Who → Where → Review)
+- **Busy Time Management**: Automatic detection, caching, and merging of busy slots from Google Calendar
 - **Cross-timezone Support**: Handle participants from different time zones with proper conversion
-- **Modern UI/UX**: Responsive design with Chakra UI components and custom styling
+- **User Preferences**: Set and manage scheduling preferences and timezone settings
+- **Responsive Design**: Works seamlessly on desktop, tablet, and mobile devices
 
 ## 🏗️ Tech Stack
 
@@ -31,7 +71,8 @@ A full-stack application for coordinating events and managing availability acros
 - **Flask-JWT-Extended** for JWT token management
 - **Flask-CORS** for cross-origin resource sharing
 - **Google Calendar API** with OAuth2 authentication flow
-- **APScheduler** for background job processing
+- **Google Gemini AI** (`google-generativeai`) for intelligent time proposal generation
+- **APScheduler** for background job processing and proposal cache management
 - **Python-dateutil** for advanced date/time operations
 - **Pydantic** for data validation and serialization
 - **Supabase Python Client** for database operations
@@ -50,6 +91,7 @@ A full-stack application for coordinating events and managing availability acros
 - **Node.js 18+** and npm
 - **Docker and Docker Compose** (recommended for production deployment)
 - **Google Cloud Platform Account** (for Google Calendar API)
+- **Google AI Studio Account** (for Gemini AI time proposals)
 - **Supabase Account** (for database and authentication)
 
 ### Installation
@@ -97,6 +139,11 @@ npm install
    GOOGLE_CLIENT_ID=your_google_oauth_client_id.apps.googleusercontent.com
    GOOGLE_CLIENT_SECRET=your_google_oauth_client_secret
    GOOGLE_REDIRECT_URI=http://localhost:5000/api/auth/google/callback
+   
+   # Google Gemini AI (for time proposals)
+   GEMINI_API_KEY=your_gemini_api_key
+   GEMINI_MODEL=gemini-pro
+   GEMINI_MAX_RETRIES=3
    
    # Security Keys
    SECRET_KEY=your_flask_secret_key
@@ -153,14 +200,22 @@ when/
 │   │   │   ├── event_participant.py
 │   │   │   ├── busy_slot.py
 │   │   │   ├── preference.py
-│   │   │   └── profile.py
+│   │   │   ├── profile.py
+│   │   │   ├── proposed_time.py    # AI-generated time proposals
+│   │   │   ├── preferred_slot.py   # User preferred time slots
+│   │   │   └── notification.py
 │   │   ├── routes/           # API route blueprints
 │   │   │   ├── auth.py       # Authentication endpoints
 │   │   │   ├── events.py     # Event management
 │   │   │   ├── availability.py
 │   │   │   ├── busy_slots.py # Busy time management
 │   │   │   ├── preferences.py # User preferences
+│   │   │   ├── preferred_slots.py # Preferred time slots
 │   │   │   ├── google_calendar.py # Google Calendar integration
+│   │   │   ├── time_proposal.py   # AI time proposals (NEW)
+│   │   │   ├── invitations.py     # Event invitations
+│   │   │   ├── notifications.py   # In-app notifications
+│   │   │   ├── event_finalization.py # Event finalization
 │   │   │   └── users.py
 │   │   ├── services/         # Business logic layer
 │   │   │   ├── auth.py
@@ -168,14 +223,20 @@ when/
 │   │   │   ├── events.py
 │   │   │   ├── google_calendar.py
 │   │   │   ├── preference.py
+│   │   │   ├── preferred_slots.py
+│   │   │   ├── time_proposal.py   # AI proposal generation (NEW)
+│   │   │   ├── invitations.py
+│   │   │   ├── notifications.py
+│   │   │   ├── event_finalization.py
 │   │   │   └── users.py
 │   │   ├── utils/            # Utility functions
 │   │   │   ├── auth.py
-│   │   │   ├── decorators.py
+│   │   │   ├── decorators.py      # Enhanced auth decorators
 │   │   │   ├── supabase_client.py
 │   │   │   ├── timezone.py
 │   │   │   └── validators.py
 │   │   └── background_jobs/  # Scheduled tasks
+│   │       └── proposal_regeneration.py # Auto-refresh AI proposals
 │   ├── tests/                # Test suite
 │   ├── run.py               # Application entry point
 │   └── requirements.txt     # Python dependencies
@@ -184,21 +245,62 @@ when/
 │   │   ├── components/     # Reusable UI components
 │   │   │   ├── auth/       # Authentication components
 │   │   │   ├── calendar/   # Calendar views and interactions
+│   │   │   │   ├── CalendarView.jsx  # Custom month view
+│   │   │   │   ├── FinalizationModal.jsx
+│   │   │   │   ├── CoordinatorSlotPopup.jsx
+│   │   │   │   └── ParticipantSlotPopup.jsx
 │   │   │   ├── events/     # Event management components
+│   │   │   │   ├── TimeSlotDisplay.jsx # Continuous timeline UI
+│   │   │   │   ├── ProposedTimesModal.jsx # AI proposals (NEW)
+│   │   │   │   ├── InviteModal.jsx
+│   │   │   │   └── DeleteEventModal.jsx
+│   │   │   ├── notifications/ # Notification components
+│   │   │   │   ├── NotificationBell.jsx
+│   │   │   │   └── NotificationItem.jsx
 │   │   │   └── common/     # Shared UI components
 │   │   ├── pages/          # Route-level components
 │   │   │   ├── Dashboard.jsx
+│   │   │   ├── DashboardTemp.jsx  # New redesigned dashboard
 │   │   │   ├── EventPage.jsx
-│   │   │   └── Login.jsx
+│   │   │   ├── EventTemp.jsx      # New event details page
+│   │   │   ├── EventCreate.jsx    # Multi-step creation wizard
+│   │   │   ├── Landing.jsx        # New marketing landing page
+│   │   │   └── LandingPage.jsx
 │   │   ├── hooks/          # Custom React hooks
+│   │   │   ├── useApiCall.js      # API call abstraction (NEW)
+│   │   │   ├── useAuth.js
+│   │   │   ├── useCalendar.js
+│   │   │   ├── useAvailability.js
+│   │   │   └── useRealtime.js
 │   │   ├── services/       # API communication layer
+│   │   │   ├── api.js             # Base API client
+│   │   │   ├── apiService.js      # Comprehensive API methods (NEW)
+│   │   │   ├── eventService.js
+│   │   │   ├── calendarService.js
+│   │   │   ├── notificationsService.js
+│   │   │   ├── preferredSlotsService.js
+│   │   │   └── authService.js
 │   │   ├── context/        # React context providers
 │   │   ├── styles/         # CSS and styling
+│   │   │   ├── designSystem.js    # Design tokens (NEW)
+│   │   │   ├── time-slot-display.css
+│   │   │   └── calendar.css
 │   │   └── utils/          # Frontend utilities
+│   │       ├── mockData.js        # Mock data for testing (NEW)
+│   │       ├── dateUtils.js
+│   │       └── timezoneUtils.js
 │   └── package.json        # Node.js dependencies
 ├── shared/                 # Shared type definitions and constants
 │   ├── types/              # TypeScript type definitions
 │   └── constants/          # Shared constants
+├── migrations/             # Database migrations
+│   ├── 001_create_preferred_slots_table.sql
+│   ├── 002_add_event_finalization_columns.sql
+│   ├── 003_create_notifications_table.sql
+│   ├── 004_create_event_invitations_table.sql
+│   ├── 005_create_proposed_times_table.sql  # AI proposals (NEW)
+│   ├── README.md
+│   └── TESTING_GUIDE.md
 ├── docs/                   # Documentation
 │   ├── api.md             # API documentation
 │   ├── deployment.md      # Deployment guide
@@ -209,6 +311,30 @@ when/
 │   └── seed_db.py         # Database seeding
 └── docker-compose.yml      # Container orchestration
 ```
+
+## 🤖 AI-Powered Time Proposals
+
+The application uses **Google Gemini AI** to intelligently suggest optimal meeting times based on:
+- Participant busy slots from Google Calendar
+- User-marked preferred time slots
+- Event constraints (duration, date range, timezone)
+- Participant count and availability overlap
+
+### How It Works
+1. **Smart Caching**: Proposals are cached and automatically invalidated when event data changes
+2. **Background Regeneration**: A background job checks for stale proposals and regenerates them
+3. **Coordinator Controls**: Event coordinators can force refresh proposals at any time
+4. **Detailed Reasoning**: Each proposal includes AI-generated explanation for why it was suggested
+
+### Configuration
+Set the following environment variables:
+```env
+GEMINI_API_KEY=your_gemini_api_key_here
+GEMINI_MODEL=gemini-pro  # Optional, defaults to gemini-pro
+GEMINI_MAX_RETRIES=3     # Optional, defaults to 3
+```
+
+Get your Gemini API key from [Google AI Studio](https://makersuite.google.com/app/apikey).
 
 ## 🔧 Configuration
 
@@ -264,6 +390,11 @@ GOOGLE_CLIENT_ID=your_google_oauth_client_id.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=your_google_oauth_client_secret
 GOOGLE_REDIRECT_URI=http://localhost:5000/api/auth/google/callback
 
+# Google Gemini AI (for time proposals)
+GEMINI_API_KEY=your_gemini_api_key
+GEMINI_MODEL=gemini-pro
+GEMINI_MAX_RETRIES=3
+
 # Security Keys (generate random strings for production)
 SECRET_KEY=your_flask_secret_key_here
 JWT_SECRET_KEY=your_jwt_secret_key_here
@@ -281,10 +412,17 @@ For local development, create separate `.env` files in `backend/` and `frontend/
 
 The application uses Supabase (PostgreSQL) with the following main tables:
 - `profiles` - User profile information
-- `events` - Event details and configuration
+- `events` - Event details and configuration with AI proposal tracking
 - `event_participants` - Many-to-many relationship between users and events
 - `busy_slots` - User busy times from Google Calendar integration
 - `preferences` - User scheduling preferences and event preferences
+- `preferred_slots` - User-marked preferred time slots for events (NEW)
+- `proposed_times` - AI-generated time proposals with caching (NEW)
+- `notifications` - In-app notifications for event updates (NEW)
+- `event_invitations` - Event invitation tracking and RSVP status (NEW)
+
+**Database Migrations:**
+All migrations are located in `/migrations/` with numbered SQL files (001-005)
 
 ## 🧪 Testing
 
@@ -371,6 +509,34 @@ For detailed deployment instructions, see [docs/deployment.md](docs/deployment.m
 - `PUT /api/events/<event_id>` - Update event
 - `DELETE /api/events/<event_id>` - Delete event
 
+#### AI Time Proposals (NEW) 🤖
+- `POST /api/events/<event_uid>/propose-times` - Get AI-generated time proposals (cached or generate)
+  - Body: `{ "num_suggestions": 5, "force_refresh": false }`
+  - Returns cached proposals if available and fresh, otherwise generates new ones
+- `POST /api/events/<event_uid>/propose-times/refresh` - Force regenerate proposals (coordinator only)
+- `GET /api/events/<event_uid>/propose-times/test` - Test endpoint
+
+#### Preferred Slots (NEW)
+- `POST /api/preferred_slots` - Add user's preferred time slots for an event
+- `GET /api/preferred_slots/<event_uid>` - Get all preferred slots for an event
+- `GET /api/preferred_slots/<event_uid>/user` - Get current user's preferred slots
+- `DELETE /api/preferred_slots/<slot_id>` - Delete a preferred slot
+
+#### Event Finalization (NEW)
+- `POST /api/events/<event_uid>/finalize` - Finalize event to a specific time (coordinator only)
+- `GET /api/events/<event_uid>/finalization-status` - Get finalization status
+
+#### Invitations (NEW)
+- `POST /api/invitations/<event_uid>` - Send event invitations
+- `GET /api/invitations/<event_uid>` - Get all invitations for an event
+- `PUT /api/invitations/<invitation_id>/respond` - Respond to invitation (accept/decline/maybe)
+
+#### Notifications (NEW)
+- `GET /api/notifications` - Get user's notifications
+- `PUT /api/notifications/<notification_id>/read` - Mark notification as read
+- `PUT /api/notifications/read-all` - Mark all notifications as read
+- `DELETE /api/notifications/<notification_id>` - Delete notification
+
 #### Availability
 - `POST /api/availability/<event_id>` - Add user availability
 - `GET /api/availability/<event_id>` - Get event availability
@@ -381,7 +547,7 @@ For detailed deployment instructions, see [docs/deployment.md](docs/deployment.m
 - `GET /api/busy_slots/<event_id>` - Get all busy slots for an event
 - `GET /api/busy_slots/user/<user_id>` - Get user's busy slots
 - `DELETE /api/busy_slots/<event_id>/<user_id>` - Delete user's busy slots
-- `POST /api/busy_slots/sync/<user_id>` - Sync Google Calendar busy times
+- `POST /api/busy_slots/sync/<user_id>` - Sync Google Calendar busy times (differential sync)
 - `GET /api/busy_slots/event/<event_id>/participants` - Get all participants' busy slots
 - `GET /api/busy_slots/event/<event_id>/merged` - Get merged busy slots for event
 
@@ -401,6 +567,52 @@ For detailed deployment instructions, see [docs/deployment.md](docs/deployment.m
 - `PUT /api/users/profile` - Update user profile
 
 For detailed API documentation, see `docs/api.md`.
+
+## 🎨 New Redesigned UI
+
+The application includes a **completely redesigned user interface** with modern aesthetics and smooth animations. These new pages are available alongside the existing interface for comparison and testing.
+
+### New Routes
+
+#### Landing Page - `/landing`
+Beautiful marketing page with:
+- Hero section with gradient background
+- Feature showcase with animations
+- Value propositions and social proof
+- Call-to-action sections
+
+#### Dashboard - `/dashboard_temp`
+Modern dashboard featuring:
+- Top navigation with notifications and user menu
+- Quick stats cards with metrics
+- Pending invitations with RSVP actions
+- Upcoming events grid with hover effects
+- Empty states and loading animations
+
+#### Event Details - `/event_temp/:eventId`
+Comprehensive event view with:
+- Hero section with event details
+- RSVP buttons and statistics
+- Time voting section for multiple options
+- Comments and discussion area
+- Sidebar with participants and quick actions
+
+#### Event Creation - `/event/create`
+Multi-step wizard with 5 steps:
+1. **Basics**: Title, type, description
+2. **When**: Single time or find best time with multiple options
+3. **Who**: Guest search and management
+4. **Where**: Virtual or in-person location
+5. **Review**: Summary before sending invitations
+
+### Design System
+- **Centralized tokens** in `src/styles/designSystem.js`
+- **Colors**: Purple primary, Green secondary, Amber accent
+- **Animations**: Framer Motion for smooth transitions
+- **Responsive**: Mobile-first design with breakpoints
+- **Mock Data**: Available in `src/utils/mockData.js` for testing
+
+For complete documentation, see `frontend/NEW_ROUTES_README.md`.
 
 ## 🔧 Development
 
@@ -432,9 +644,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
+- **Google Gemini AI** - For intelligent time proposal generation
 - **Google Calendar API** - For seamless calendar integration
 - **Supabase** - For real-time database and authentication
 - **Chakra UI** - For beautiful and accessible React components
+- **Framer Motion** - For smooth animations and transitions
 - **React Big Calendar** - For interactive calendar views
 - **Flask** - For the robust backend framework
 - **date-fns** - For reliable date/time operations
@@ -480,6 +694,44 @@ docker-compose up -d
 - Backend: Activate virtual environment and install dependencies
 - Frontend: Run `npm install` in frontend directory
 
+### AI Time Proposals Issues
+
+**"Gemini AI library not installed" error:**
+```bash
+cd backend
+pip install google-generativeai==0.3.2
+```
+
+**"Gemini API not configured" error:**
+- Ensure `GEMINI_API_KEY` is set in your `.env` file
+- Get API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
+- Restart backend after adding the key
+
+**No proposals generated / "No available time slots" error:**
+- Ensure event has participants
+- Check that event date range is in the future
+- Verify participants have availability data (busy slots or preferred slots)
+- Try adjusting event constraints (date range, duration)
+
+**Slow proposal generation:**
+- First generation takes 5-15 seconds (AI processing time)
+- Subsequent requests use cached proposals (instant)
+- Proposals auto-regenerate in background when data changes
+
+### Migration Issues
+
+**Database schema errors:**
+```bash
+# Run migrations in order in Supabase SQL Editor
+# Located in /migrations/ directory
+# Execute files 001 through 005 in sequence
+```
+
+**RLS (Row Level Security) errors:**
+- Ensure you're using service role key for admin operations
+- Check that RLS policies are applied from migration files
+- Service role key bypasses RLS for background jobs
+
 ## 📞 Support
 
 For support and questions:
@@ -487,3 +739,44 @@ For support and questions:
 - Check existing documentation in the `docs/` directory
 - Review the API documentation for endpoint details
 - See [DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md) for Docker-specific help
+
+---
+
+## 📋 Documentation Updates
+
+**Last README Update:** December 13, 2024  
+**Previous Update:** November 5, 2024
+
+### What Changed in This Update
+This comprehensive update reflects all changes made between November 5 and December 13, 2024:
+
+#### New Features Documented
+- ✅ AI-Powered Time Proposals with Google Gemini integration
+- ✅ Preferred Time Slots system
+- ✅ Event Invitations and RSVP tracking
+- ✅ In-app Notifications system
+- ✅ Event Finalization workflow
+- ✅ Redesigned UI routes (Landing, Dashboard, Event Creation)
+- ✅ Continuous Timeline UI component
+
+#### New API Endpoints
+- ✅ `/api/events/<event_uid>/propose-times` - AI time proposals
+- ✅ `/api/preferred_slots/*` - Preferred time slots management
+- ✅ `/api/invitations/*` - Invitation management
+- ✅ `/api/notifications/*` - Notification system
+- ✅ `/api/events/<event_uid>/finalize` - Event finalization
+
+#### New Files & Components
+- ✅ Backend: `time_proposal.py`, `proposal_regeneration.py`, `proposed_time.py`
+- ✅ Frontend: `ProposedTimesModal.jsx`, `useApiCall.js`, `apiService.js`
+- ✅ Frontend: New pages (Landing, DashboardTemp, EventCreate, EventTemp)
+- ✅ Database: Migration 005 for proposed_times table
+
+#### Technical Updates
+- ✅ Enhanced authentication decorators
+- ✅ Differential Google Calendar sync
+- ✅ Smart proposal caching with background regeneration
+- ✅ Comprehensive API service consolidation
+- ✅ Design system and mock data utilities
+
+For detailed commit history, run: `git log --since="2024-11-05" --oneline`

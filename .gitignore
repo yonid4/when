@@ -380,3 +380,8 @@ pnpm-lock.yaml.backup
 Icon?
 ehthumbs.db
 Thumbs.db
+
+# Deployment script
+deploy.sh
+when-backend.tar
+when-frontend.tar

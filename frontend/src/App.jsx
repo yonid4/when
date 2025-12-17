@@ -18,7 +18,7 @@ const App = () => (
     <Router>
       <Layout>
         <Routes>
-          <Route path="/" element={<LandingPage />} />
+          <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Navigate to="/" replace />} />
           <Route
             path="/dashboard"
@@ -28,14 +28,29 @@ const App = () => (
               </ProtectedRoute>
             }
           />
-          <Route path="/events/:eventUid" element={<EventPage />} />
-          
+          {/* <Route path="/events/:eventUid" element={<EventPage />} /> */}
+
           {/* New redesigned routes */}
-          <Route path="/landing" element={<Landing />} />
-          <Route path="/dashboard_temp" element={<DashboardTemp />} />
-          <Route path="/event_temp/:eventId" element={<EventTemp />} />
-          <Route path="/event/create" element={<EventCreate />} />
-          
+          {/* <Route path="/landing" element={<Landing />} /> */}
+          <Route
+            path="/dashboard_temp"
+            element={
+              <ProtectedRoute>
+                <DashboardTemp />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/event/:eventUid" element={<EventPage />} /> // old event page
+          <Route path="/events/:eventUid" element={<EventTemp />} /> // new event page
+          <Route
+            path="/event/create"
+            element={
+              <ProtectedRoute>
+                <EventCreate />
+              </ProtectedRoute>
+            }
+          />
+
           {/* Add more protected routes as needed */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

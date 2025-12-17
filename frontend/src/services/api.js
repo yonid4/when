@@ -3,7 +3,8 @@ import { getAccessToken } from "./supabaseClient";
 
 // Normalize baseURL: strip trailing slash
 // const RAW_BASE = (process.env.REACT_APP_API_BASE_URL || "http://localhost:5000").replace(/\/$/, "");
-const RAW_BASE = (process.env.REACT_APP_API_BASE_URL || "/api").replace(/\/$/, "");
+// const RAW_BASE = (process.env.REACT_APP_API_BASE_URL || 'https://when-now.com/api').replace(/\/$/, "");
+const RAW_BASE = 'https://when-now.com/api'
 
 const api = axios.create({
   baseURL: RAW_BASE,
@@ -21,7 +22,7 @@ api.interceptors.request.use(async (config) => {
   }
 
   const token = await getAccessToken();
-  console.log(`DEBUG api interceptor: Method=${config.method}, URL=${config.url}, Token present=${!!token}`);
+  console.log(`DEBUG api interceptor: Method=${config.method}, baseURL=${config.baseURL}, URL=${config.url}, Token present=${!!token}`);
   if (token) {
     config.headers = config.headers || {};
     config.headers.Authorization = `Bearer ${token}`;

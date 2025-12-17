@@ -139,10 +139,11 @@ def finalize_event(event_uid, user_id):
                 "message": error_message
             }), 400
         
-        if "not connected" in error_message.lower() or "authentication" in error_message.lower():
+        if "not connected" in error_message.lower() or "authentication" in error_message.lower() or "invalid_grant" in error_message.lower() or "refresh" in error_message.lower():
             return jsonify({
                 "error": "Calendar not connected",
-                "message": error_message
+                "message": "Your Google Calendar connection has expired. Please log out and log back in to reconnect your calendar.",
+                "needs_reconnect": True
             }), 401
         
         # Generic error

@@ -1,3 +1,5 @@
+import { eventsAPI } from "../../services/apiService";
+
 import React, { useState } from "react";
 import {
   Modal,
@@ -50,19 +52,8 @@ const DeleteEventModal = ({ isOpen, onClose, event }) => {
     setIsDeleting(true);
 
     try {
-      const accessToken = localStorage.getItem("access_token");
-      
-      const response = await fetch(`http://localhost:5001/api/events/${event.id}`, {
-        method: "DELETE",
-        headers: {
-          "Authorization": `Bearer ${accessToken}`
-        }
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to delete event");
-      }
+      // Use centralized API service (automatically includes auth token and uses correct base URL)
+      await eventsAPI.delete(event.id);
 
       toast({
         title: "Event deleted",

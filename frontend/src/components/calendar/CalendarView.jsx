@@ -23,17 +23,24 @@ const localizer = dateFnsLocalizer({
   locales,
 });
 
-const CalendarView = ({ events = [], onSelectSlot, onSelectEvent, selectable = true }) => {
+const CalendarView = ({
+  events = [],
+  onSelectSlot,
+  onSelectEvent,
+  selectable = true,
+  minTime = new Date(0, 0, 0, 8, 0, 0),   // Default 8 AM
+  maxTime = new Date(0, 0, 0, 20, 0, 0),  // Default 8 PM
+}) => {
   const [view, setView] = React.useState("week");
 
   // Custom Month Date Header - shows just the date number, small and non-interactive
   const MonthDateHeader = ({ date, label }) => {
     return (
       <Box
-        fontSize="xs"
-        fontWeight="semibold"
-        color="gray.600"
-        p={1}
+        fontSize="0.875rem"
+        fontWeight="600"
+        color="#111827"
+        p={2}
         textAlign="right"
       >
         {format(date, 'd')}
@@ -159,45 +166,24 @@ const CalendarView = ({ events = [], onSelectSlot, onSelectEvent, selectable = t
   }, [events, view]);
 
   // Calculate hour range based on events with reasonable defaults
+  // We use the passed minTime and maxTime props if provided, otherwise default logic (though logic is largely superseded by props now)
   const hourRange = useMemo(() => {
-    let minHour = 9; // Start at 7 AM
-    let maxHour = 17; // End at 9 PM
-
-    if (events && events.length > 0) {
-      events.forEach(event => {
-        const startHour = new Date(event.start).getHours();
-        const endHour = new Date(event.end).getHours();
-
-        if (startHour < minHour) {
-          minHour = Math.max(minHour, Math.floor(startHour)); // Don't go earlier than 6 AM
-        }
-        if (endHour > maxHour) {
-          maxHour = Math.min(maxHour, Math.ceil(endHour)); // Don't go later than 11 PM
-        }
-      });
-    }
-
-    return { min: new Date(0, 0, 0, minHour, 0, 0), max: new Date(0, 0, 0, maxHour, 0, 0) };
-  }, [events]);
+    // If props are provided, use them directly (this allows parent to control the view)
+    // Note: react-big-calendar expects Date objects for min/max
+    return { min: minTime, max: maxTime };
+  }, [minTime, maxTime]);
 
   // Custom date header component with Chakra UI styling - plain text only
   const CustomDateHeader = ({ date, label }) => {
     return (
       <Box
         as="div"
-        className="rbc-date-header-text"
-        fontWeight="medium"
-        fontSize="sm"
-        color="var(--salt-pepper-dark)"
+        fontWeight="600"
+        fontSize="0.875rem"
+        color="#374151"
         textAlign="center"
-        p={1}
-        cursor="default"
-        pointerEvents="none"
-        background="transparent"
-        border="none"
-        _hover={{ background: "transparent" }}
-        _focus={{ background: "transparent", outline: "none" }}
-        _active={{ background: "transparent" }}
+        p={2}
+        letterSpacing="0.025em"
       >
         {label}
       </Box>
@@ -213,34 +199,17 @@ const CalendarView = ({ events = [], onSelectSlot, onSelectEvent, selectable = t
 
   // Custom event style getter with purple gradient for preferred slots
   const eventStyleGetter = (event) => {
-    // Preferred slots - use purple gradient based on participant count
+    // Preferred slots - purple gradient based on density
     if (event.type === "preferred-slot") {
-      const density = event.resource?.density || 1;
-
-      // Purple gradient color scheme matching timeline view
-      let backgroundColor;
-      if (density <= 2) {
-        backgroundColor = '#efbbff'; // 1-2 people
-      } else if (density <= 4) {
-        backgroundColor = '#d896ff'; // 3-4 people
-      } else if (density <= 6) {
-        backgroundColor = '#be29ec'; // 5-6 people
-      } else if (density <= 9) {
-        backgroundColor = '#800080'; // 7-9 people
-      } else {
-        backgroundColor = '#660066'; // 10+ people
-      }
-
-      const textColor = density >= 7 ? 'white' : '#2b2b2b';
-
       return {
         style: {
-          backgroundColor: backgroundColor,
+          backgroundColor: event.backgroundColor,
+          color: event.textColor,
           borderRadius: "4px",
           border: "none",
           fontSize: "0.75rem",
-          color: textColor,
           fontWeight: "500",
+          cursor: "pointer"
         }
       };
     }
@@ -255,12 +224,14 @@ const CalendarView = ({ events = [], onSelectSlot, onSelectEvent, selectable = t
 
       return {
         style: {
-          backgroundColor: "var(--salt-pepper-dark)",
+          backgroundColor: "var(--salt-pepper-dark)", // Keeping theme var but overriding opacity
           opacity: opacity,
           borderRadius: "4px",
           border: "none",
           fontSize: "0.75rem",
           color: "white",
+          cursor: "default",
+          pointerEvents: "none" // Busy slots shouldn't be interactive usually
         }
       };
     }
@@ -299,61 +270,175 @@ const CalendarView = ({ events = [], onSelectSlot, onSelectEvent, selectable = t
         // Modernize calendar styling with Chakra UI overrides
         '.rbc-calendar': {
           fontFamily: 'inherit',
+          borderRadius: '12px',
+          overflow: 'hidden',
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
         },
-        // Make date numbers more prominent
-        '.rbc-date-cell': {
-          'a': {
-            fontWeight: 'bold',
-            fontSize: '0.95rem',
-            color: 'var(--salt-pepper-dark)',
-          }
-        },
-        // Style the month view date cells
-        '.rbc-month-view .rbc-date-cell': {
-          padding: '8px',
-          'a': {
-            fontWeight: 'bold',
-            fontSize: '1rem',
-            color: 'var(--salt-pepper-dark)',
-          }
-        },
-        // Clean day/date headers styling
+
+        // Header styling - day labels
         '.rbc-header': {
-          borderBottom: '1px solid var(--salt-pepper-light-gray)',
-          padding: '8px 4px',
-          backgroundColor: 'transparent',
+          borderBottom: '1px solid #e5e7eb',
+          padding: '12px 8px',
+          backgroundColor: '#f9fafb',
           fontSize: '0.875rem',
-          fontWeight: '500',
-          color: 'var(--salt-pepper-dark)',
+          fontWeight: '600',
+          color: '#374151',
+          letterSpacing: '0.025em',
         },
-        // Style the time slot labels
-        '.rbc-time-header-gutter': {
-          backgroundColor: 'var(--salt-pepper-white)',
+
+        // Today's column highlight
+        '.rbc-today': {
+          backgroundColor: '#f0f9ff',
         },
+
+        // Time view container
+        '.rbc-time-view': {
+          border: '1px solid #e5e7eb',
+          borderRadius: '8px',
+          overflow: 'hidden',
+        },
+
+        // Time labels (9:00 AM, 10:00 AM, etc.)
         '.rbc-time-slot': {
           fontSize: '0.75rem',
-          color: 'var(--salt-pepper-medium-gray)',
+          color: '#6b7280',
+          fontWeight: '500',
         },
+
+        // Grid lines between time slots
+        '.rbc-timeslot-group': {
+          borderBottom: '1px solid #f3f4f6',
+          minHeight: '60px', // More spacious
+        },
+
+        // Hour marks (stronger lines)
+        '.rbc-time-slot:first-child': {
+          borderTop: '1px solid #e5e7eb',
+        },
+
+        // Time gutter (left side with time labels)
+        '.rbc-time-header-gutter': {
+          backgroundColor: '#fafafa',
+        },
+
+        // Day columns
+        '.rbc-day-slot': {
+          position: 'relative',
+        },
+
+        // Hover effect on time slots
+        '.rbc-day-slot:hover': {
+          backgroundColor: '#f9fafb',
+          transition: 'background-color 0.2s ease',
+        },
+
+        // Month view improvements
+        '.rbc-month-view': {
+          border: '1px solid #e5e7eb',
+          borderRadius: '12px',
+          overflow: 'hidden',
+        },
+
+        '.rbc-month-row': {
+          border: 'none',
+          borderTop: '1px solid #f3f4f6',
+        },
+
+        '.rbc-day-bg': {
+          borderLeft: '1px solid #f3f4f6',
+        },
+
+        '.rbc-off-range-bg': {
+          backgroundColor: '#fafafa',
+        },
+
+        // Date numbers in month view
+        '.rbc-date-cell': {
+          padding: '8px',
+        },
+
+        '.rbc-date-cell a': {
+          fontWeight: '600',
+          fontSize: '0.875rem',
+          color: '#111827',
+        },
+
+        // Toolbar (navigation controls)
+        '.rbc-toolbar': {
+          padding: '16px 0',
+          marginBottom: '16px',
+        },
+
+        '.rbc-toolbar button': {
+          backgroundColor: 'white',
+          border: '1px solid #e5e7eb',
+          color: '#374151',
+          padding: '8px 16px',
+          borderRadius: '8px',
+          fontWeight: '500',
+          fontSize: '0.875rem',
+          transition: 'all 0.2s ease',
+          boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
+        },
+
+        '.rbc-toolbar button:hover': {
+          borderColor: '#d1d5db',
+          backgroundColor: '#f9fafb',
+          transform: 'translateY(-1px)',
+          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+        },
+
+        '.rbc-toolbar button.rbc-active': {
+          backgroundColor: '#7C3AED', // Using purple to match modern theme
+          borderColor: '#7C3AED',
+          color: 'white',
+          boxShadow: '0 2px 4px rgba(124, 58, 237, 0.3)',
+        },
+
+        '.rbc-toolbar button.rbc-active:hover': {
+          backgroundColor: '#6D28D9',
+          borderColor: '#6D28D9',
+        },
+
+        // Current time indicator (red line)
+        '.rbc-current-time-indicator': {
+          backgroundColor: '#EF4444',
+          height: '2px',
+          boxShadow: '0 1px 3px rgba(239, 68, 68, 0.5)',
+        },
+
+        // Scrollbar styling for time view
+        '.rbc-time-content::-webkit-scrollbar': {
+          width: '8px',
+        },
+
+        '.rbc-time-content::-webkit-scrollbar-track': {
+          background: '#f3f4f6',
+        },
+
+        '.rbc-time-content::-webkit-scrollbar-thumb': {
+          background: '#d1d5db',
+          borderRadius: '4px',
+        },
+
+        '.rbc-time-content::-webkit-scrollbar-thumb:hover': {
+          background: '#9ca3af',
+        },
+
         // Event styling
         '.rbc-event': {
-          backgroundColor: 'var(--salt-pepper-dark)',
           borderRadius: '4px',
-          border: "none",
-          fontSize: "0.75rem",
+          border: 'none',
+          boxShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
         },
+
         // Selected event styling
         '.rbc-event.rbc-selected': {
-          backgroundColor: 'var(--salt-pepper-medium-gray)',
-        },
-        // Grid lines
-        '.rbc-time-view': {
-          border: '1px solid var(--salt-pepper-light-gray)',
-        },
-        '.rbc-time-content': {
-          border: 'none',
-        },
-        '.rbc-timeslot-group': {
-          borderBottom: '1px solid var(--salt-pepper-light-gray)',
+          opacity: 1,
+          transform: 'scale(1.02)',
+          zIndex: 10,
+          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+          transition: 'all 0.2s ease',
         }
       }}
     >

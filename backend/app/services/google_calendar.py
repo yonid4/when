@@ -16,6 +16,8 @@ from google.auth.transport.requests import Request
 
 SCOPES = [
     'https://www.googleapis.com/auth/calendar',
+    'https://www.googleapis.com/auth/calendar.readonly',
+    'https://www.googleapis.com/auth/calendar.events',
     'https://www.googleapis.com/auth/userinfo.email',
     'https://www.googleapis.com/auth/userinfo.profile',
     'openid'
@@ -68,16 +70,25 @@ def get_auth_url() -> str:
 def get_credentials_from_code(code: str) -> Credentials:
     """
     Exchange authorization code for credentials.
-    
+
     Args:
         code (str): Authorization code from Google
-        
+
     Returns:
         Credentials: Google API credentials
     """
+    import os
+    os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = '1'
+
     try:
         flow = create_flow()
+
+        # Fetch token - OAUTHLIB_RELAX_TOKEN_SCOPE allows mismatched scopes
         flow.fetch_token(code=code)
+
+        # Use the actual scopes returned by Google (not our requested SCOPES)
+        # This ensures we store what was actually granted
+        actual_scopes = flow.credentials.scopes or SCOPES
 
         token_data = flow.credentials.token
         refresh_token = flow.credentials.refresh_token
@@ -89,9 +100,9 @@ def get_credentials_from_code(code: str) -> Credentials:
             token_uri=current_app.config.get("GOOGLE_TOKEN_URI", "https://oauth2.googleapis.com/token"),
             client_id=current_app.config['GOOGLE_CLIENT_ID'],
             client_secret=current_app.config['GOOGLE_CLIENT_SECRET'],
-            scopes=SCOPES
+            scopes=actual_scopes
         )
-        
+
         return credentials
     except Exception as e:
         raise ValueError(f"Failed to get credentials: {str(e)}")

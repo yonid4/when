@@ -463,7 +463,7 @@ class EventsService():
         try:
             result = (
                 self.service_role_client.table("event_participants")
-                .select("id")
+                .select("user_id")
                 .eq("event_id", event_id)
                 .eq("user_id", user_id)
                 .execute()

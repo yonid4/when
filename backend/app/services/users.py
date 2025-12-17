@@ -243,4 +243,20 @@ class UsersService():
 
         return self.create_profile(user_id, defaults or {})
 
+    def search_users(self, email: str) -> List[Dict[str, Any]]:
+        """Search users by email."""
+        try:
+            # Use ilike for case-insensitive partial match
+            result = (
+                self.supabase.table("profiles")
+                .select("id, email_address, full_name, avatar_url")
+                .ilike("email_address", f"%{email}%")
+                .limit(10)
+                .execute()
+            )
+            return result.data or []
+        except Exception as e:
+            print(f"Failed to search users: {str(e)}")
+            return []
+
 

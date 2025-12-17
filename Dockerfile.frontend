@@ -19,6 +19,10 @@ COPY frontend/ .
 ARG REACT_APP_SUPABASE_URL
 ARG REACT_APP_SUPABASE_ANON_KEY
 
+# Convert ARG to ENV
+ENV REACT_APP_SUPABASE_URL=$REACT_APP_SUPABASE_URL
+ENV REACT_APP_SUPABASE_ANON_KEY=$REACT_APP_SUPABASE_ANON_KEY
+
 # Build the React app for production
 RUN npm run build
 
@@ -27,13 +31,43 @@ RUN npm run build
 # ==========================================
 FROM nginx:1.25-alpine
 
-# Copy custom Nginx configuration
-COPY <<EOF /etc/nginx/conf.d/default.conf
+# Copy custom Nginx configuration with HTTPS support
+# COPY <<EOF /etc/nginx/conf.d/default.conf
+RUN cat > /etc/nginx/conf.d/default.conf <<'EOF'
+# Redirect HTTP to HTTPS
 server {
     listen 80;
-    server_name localhost;
+    server_name when-now.com www.when-now.com;
+    
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+    
+    location / {
+        return 301 https://\$host\$request_uri;
+    }
+}
+
+# HTTPS server
+server {
+    listen 443 ssl;
+    server_name when-now.com www.when-now.com;
     root /usr/share/nginx/html;
     index index.html;
+
+    # Docker DNS resolver - ADDED THIS LINE
+    resolver 127.0.0.11 valid=30s;
+
+    # SSL certificates
+    ssl_certificate /etc/letsencrypt/live/when-now.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/when-now.com/privkey.pem;
+
+    # SSL configuration
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 10m;
 
     # Gzip compression
     gzip on;
@@ -45,6 +79,7 @@ server {
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header X-XSS-Protection "1; mode=block" always;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
 
     # Cache static assets
     location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg|woff|woff2|ttf|eot)$ {
@@ -53,23 +88,32 @@ server {
     }
 
     # API proxy to backend
-    location /api/ {
-        proxy_pass http://backend:5050/api/;
+    # Match /api and /api/ (with or without trailing slash)
+    location ~ ^/api(/.*)?$ {
+        # proxy_pass http://localhost:5050\$request_uri;
+        proxy_pass http://backend:5050;
+        # set $backend "when-backend:5050";
+        # proxy_pass http://$backend$request_uri;
+
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection 'upgrade';
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_set_header X-Forwarded-Proto https;
         proxy_cache_bypass \$http_upgrade;
         proxy_read_timeout 300s;
         proxy_connect_timeout 75s;
+
+        # Prevent nginx from issuing redirects that downgrade to HTTP
+        proxy_redirect http:// https://;
     }
 
     # React Router support - serve index.html for all routes
     location / {
-        try_files \$uri \$uri/ /index.html;
+        # try_files \$uri \$uri/ /index.html;
+        try_files $uri $uri/ /index.html =404;
     }
 
     # Error pages
@@ -80,22 +124,8 @@ EOF
 # Copy built assets from builder stage
 COPY --from=builder /app/build /usr/share/nginx/html
 
-# Create a non-root user for Nginx
-RUN addgroup -g 1000 -S appuser && \
-    adduser -u 1000 -S appuser -G appuser && \
-    chown -R appuser:appuser /usr/share/nginx/html && \
-    chown -R appuser:appuser /var/cache/nginx && \
-    chown -R appuser:appuser /var/log/nginx && \
-    touch /var/run/nginx.pid && \
-    chown -R appuser:appuser /var/run/nginx.pid
-
-# Modify nginx.conf to run as non-root
-RUN sed -i 's/user  nginx;/user  appuser;/' /etc/nginx/nginx.conf
-
-USER appuser
-
-# Expose port 80
-EXPOSE 80
+# Expose ports 80 and 443
+EXPOSE 80 443
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
@@ -103,4 +133,3 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
 
 # Start Nginx
 CMD ["nginx", "-g", "daemon off;"]
-

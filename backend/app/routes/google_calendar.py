@@ -152,6 +152,22 @@ def sync_calendar(user_id):
         )
         
         if success:
+            # Mark proposals as stale for all user's events
+            try:
+                from ..services.time_proposal import TimeProposalService
+                time_proposal_service = TimeProposalService(getattr(request, "access_token", None))
+                
+                # Mark all active events as needing proposal regeneration
+                for event in active_events:
+                    try:
+                        time_proposal_service.mark_proposals_stale(event['id'])
+                        print(f"[CALENDAR_SYNC] Marked proposals as stale for event {event['id']} after calendar sync")
+                    except Exception as event_stale_error:
+                        print(f"[CALENDAR_SYNC] Warning: Failed to mark event {event['id']} proposals as stale: {str(event_stale_error)}")
+            except Exception as stale_error:
+                print(f"[CALENDAR_SYNC] Warning: Failed to mark proposals as stale after sync: {str(stale_error)}")
+                # Don't fail the request if marking as stale fails
+            
             return jsonify({
                 'message': 'Calendar synced successfully'
             }), 200
@@ -166,6 +182,201 @@ def sync_calendar(user_id):
             'error': 'Failed to sync calendar',
             'message': str(e)
         }), 400
+
+@calendar_bp.route('/sync-event/<string:event_uid>', methods=['POST'])
+@require_auth
+def sync_event_participants(event_uid, user_id):
+    """
+    Sync Google Calendars for all participants of an event (coordinator only).
+    Also triggers proposal regeneration after sync.
+    """
+    try:
+        # Get event by UID
+        events_service = EventsService()
+        event = events_service.get_event_by_uid(event_uid)
+
+        if not event:
+            return jsonify({
+                'error': 'Event not found',
+                'message': f'Event with UID \'{event_uid}\' not found'
+            }), 404
+
+        db_event_id = event["id"]
+
+        # Verify user is coordinator
+        is_coordinator = event.get("coordinator_id") == user_id
+
+        if not is_coordinator:
+            return jsonify({
+                'error': 'Access denied',
+                'message': 'Only coordinators can sync calendars for all participants'
+            }), 403
+
+        # Check if event is already finalized
+        if event.get("status") == "finalized":
+            return jsonify({
+                'error': 'Event finalized',
+                'message': 'Cannot sync calendars for finalized events'
+            }), 400
+
+        # Get all event participants (including coordinator)
+        from ..utils.supabase_client import get_supabase
+        from supabase import create_client
+        import os
+
+        supabase_url = os.getenv('SUPABASE_URL')
+        supabase_service_key = os.getenv('SUPABASE_SERVICE_ROLE_KEY')
+
+        if supabase_url and supabase_service_key:
+            supabase = create_client(supabase_url, supabase_service_key)
+        else:
+            supabase = get_supabase()
+
+        participants_result = supabase.table("event_participants") \
+            .select("user_id") \
+            .eq("event_id", db_event_id) \
+            .execute()
+
+        if not participants_result.data:
+            return jsonify({
+                'error': 'No participants',
+                'message': 'Event has no participants to sync'
+            }), 400
+
+        participant_ids = [p["user_id"] for p in participants_result.data]
+
+        # Get participant profiles for better error reporting
+        profiles_result = supabase.table("profiles") \
+            .select("id, full_name, email_address") \
+            .in_("id", participant_ids) \
+            .execute()
+
+        profiles_map = {p["id"]: p for p in profiles_result.data} if profiles_result.data else {}
+
+        # Calculate sync window based on event dates
+        from datetime import timezone
+
+        def to_datetime(d):
+            if isinstance(d, str):
+                return datetime.fromisoformat(d).replace(tzinfo=timezone.utc)
+            if isinstance(d, datetime):
+                return d.replace(tzinfo=timezone.utc) if d.tzinfo is None else d
+            return datetime.combine(d, datetime.min.time()).replace(tzinfo=timezone.utc)
+
+        if event.get('earliest_date'):
+            start_date = to_datetime(event['earliest_date'])
+        else:
+            start_date = datetime.now(timezone.utc)
+
+        # Use latest_date or default to earliest + 90 days
+        min_end_date = start_date + timedelta(days=90)
+        if event.get('latest_date'):
+            max_event_date = to_datetime(event['latest_date'])
+            end_date = max(min_end_date, max_event_date)
+        else:
+            end_date = min_end_date
+
+        # Sync calendars for all participants
+        from ..services.busy_slots import BusySlotService
+        busy_slot_service = BusySlotService()
+
+        sync_results = {
+            'total_participants': len(participant_ids),
+            'synced': 0,
+            'failed': 0,
+            'skipped': 0,
+            'details': []
+        }
+
+        for participant_id in participant_ids:
+            # Get participant info for better error messages
+            profile = profiles_map.get(participant_id, {})
+            participant_name = profile.get("full_name", "Unknown")
+            participant_email = profile.get("email_address", "unknown@email.com")
+
+            # Check if participant has Google credentials
+            credentials = get_stored_credentials(participant_id)
+
+            if not credentials:
+                sync_results['skipped'] += 1
+                sync_results['details'].append({
+                    'user_id': participant_id,
+                    'name': participant_name,
+                    'email': participant_email,
+                    'status': 'skipped',
+                    'reason': 'No Google Calendar connected'
+                })
+                continue
+
+            # Attempt to sync
+            try:
+                success = busy_slot_service.sync_user_google_calendar(
+                    participant_id,
+                    start_date,
+                    end_date
+                )
+
+                if success:
+                    sync_results['synced'] += 1
+                    sync_results['details'].append({
+                        'user_id': participant_id,
+                        'name': participant_name,
+                        'email': participant_email,
+                        'status': 'success'
+                    })
+                else:
+                    sync_results['failed'] += 1
+                    sync_results['details'].append({
+                        'user_id': participant_id,
+                        'name': participant_name,
+                        'email': participant_email,
+                        'status': 'failed',
+                        'reason': 'Sync returned false'
+                    })
+            except Exception as participant_error:
+                error_message = str(participant_error)
+
+                # Check if this is an invalid_grant error (expired/revoked token)
+                if 'invalid_grant' in error_message.lower():
+                    reason = 'Google Calendar access expired - user needs to reconnect'
+                else:
+                    reason = error_message
+
+                sync_results['failed'] += 1
+                sync_results['details'].append({
+                    'user_id': participant_id,
+                    'name': participant_name,
+                    'email': participant_email,
+                    'status': 'failed',
+                    'reason': reason,
+                    'needs_reconnect': 'invalid_grant' in error_message.lower()
+                })
+
+        # Trigger proposal regeneration if any calendars were synced
+        if sync_results['synced'] > 0:
+            try:
+                from ..services.time_proposal import TimeProposalService
+                time_proposal_service = TimeProposalService(getattr(request, "access_token", None))
+
+                # Mark proposals as stale (background job will regenerate)
+                time_proposal_service.mark_proposals_stale(db_event_id)
+                sync_results['proposals_marked_stale'] = True
+            except Exception as stale_error:
+                sync_results['proposals_marked_stale'] = False
+                sync_results['proposals_error'] = str(stale_error)
+
+        return jsonify({
+            'success': True,
+            'message': f'Synced {sync_results["synced"]}/{sync_results["total_participants"]} calendars',
+            'sync_results': sync_results
+        }), 200
+
+    except Exception as e:
+        return jsonify({
+            'error': 'Failed to sync event calendars',
+            'message': str(e)
+        }), 500
+
 
 def get_user_busy_times(user_id, event):
     """Get busy times from a specific user's Google Calendar."""

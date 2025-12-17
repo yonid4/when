@@ -47,6 +47,20 @@ def create_user(user_id):
             'message': str(e)
         }), 400
     
+# IMPORTANT: Static routes MUST come BEFORE dynamic routes in Flask
+# /search must be defined before /<target_user_id> or Flask will match "search" as a user_id
+@user_bp.route('/search', methods=['GET'])
+@require_auth
+def search_users(user_id):
+    """Search users by email - MUST be defined BEFORE /<target_user_id> route"""
+    email = request.args.get('email')
+    if not email:
+        return jsonify({"error": "Email parameter required"}), 400
+    
+    users_service = UsersService(getattr(request, "access_token", None))
+    results = users_service.search_users(email)
+    return jsonify(results), 200
+
 @user_bp.route('/<string:target_user_id>', methods=['GET'])
 @require_auth
 def get_user(target_user_id, user_id):

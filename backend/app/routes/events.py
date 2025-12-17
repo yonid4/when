@@ -62,28 +62,27 @@ def create_event(user_id):
         if not time_str:
             return None
         try:
-            return datetime.strptime(time_str, "%H:%M").time()
+            # Try parsing with seconds first (HH:MM:SS)
+            return datetime.strptime(time_str, "%H:%M:%S").time()
         except ValueError as e:
             logging.error(f"[EVENT] Error parsing time {time_str}: {e}")
             raise ValueError(f"Invalid time format: {time_str}")
 
     try:
-        # Validate required fields
-        required_fields = ["name", "start_date", "end_date", "earliest_daily_start_time", "latest_daily_end_time", "duration_minutes"]
-        missing_fields = [field for field in required_fields if not data.get(field)]
-        if missing_fields:
-            error_msg = f"Missing required fields: {', '.join(missing_fields)}"
-            logging.error(f"[EVENT] {error_msg}")
+        # Validate required fields - only name is truly required
+        if not data.get("name"):
+            logging.error("[EVENT] Missing required field: name")
             return jsonify({
                 'error': 'Validation error',
-                'message': error_msg
+                'message': 'Missing required field: name'
             }), 400
 
-        # Parse dates and times
-        start_date = parse_iso_date(data.get("start_date"))
-        end_date = parse_iso_date(data.get("end_date"))
-        earliest_hour = parse_time_str(data.get("earliest_daily_start_time"))
-        latest_hour = parse_time_str(data.get("latest_daily_end_time"))
+        # Parse dates and times if provided
+        # Use correct database field names: earliest_date, latest_date, earliest_hour, latest_hour
+        earliest_date = parse_iso_date(data.get("earliest_date"))
+        latest_date = parse_iso_date(data.get("latest_date"))
+        earliest_hour = parse_time_str(data.get("earliest_hour"))
+        latest_hour = parse_time_str(data.get("latest_hour"))
         
         # Generate a 12-character UID for the event
         import string
@@ -96,11 +95,11 @@ def create_event(user_id):
             "name": data.get("name"),
             "description": data.get("description"),
             "coordinator_id": user_id,
-            "earliest_date": start_date.isoformat() if start_date else None,
-            "latest_date": end_date.isoformat() if end_date else None,
+            "earliest_date": earliest_date.isoformat() if earliest_date else None,
+            "latest_date": latest_date.isoformat() if latest_date else None,
             "earliest_hour": earliest_hour.isoformat() if earliest_hour else None,
             "latest_hour": latest_hour.isoformat() if latest_hour else None,
-            "duration_minutes": int(data.get("duration_minutes")),
+            "duration_minutes": int(data.get("duration_minutes")) if data.get("duration_minutes") else None,
             "status": "planning"  # Default status
         }
         
@@ -184,7 +183,7 @@ def get_user_events(user_id):
         
         events = events_service.get_user_events(user_id)
         
-        logging.info(f"[EVENT] Retrieved {len(events)} events for user {user_id}")
+        print(f"[EVENT] Retrieved {len(events)} events for user {user_id}")
         return jsonify(events), 200
         
     except Exception as e:
@@ -378,6 +377,17 @@ def add_participant(event_id, user_id):
                 'error': 'Failed to add participant',
                 'message': 'User may already be a participant or event not found'
             }), 400
+        
+        # Trigger immediate proposal regeneration
+        try:
+            from ..services.time_proposal import TimeProposalService
+            time_proposal_service = TimeProposalService(access_token)
+            time_proposal_service.regenerate_proposals_immediately(event_id)
+            print(f"[EVENTS] Triggered proposal regeneration for event {event_id} after adding participant")
+        except Exception as regen_error:
+            print(f"[EVENTS] Warning: Failed to regenerate proposals after adding participant: {str(regen_error)}")
+            # Don't fail the request if proposal regeneration fails
+        
         return jsonify(participant), 201
 
     except Exception as e:
@@ -402,6 +412,17 @@ def remove_participant(event_id, participant_id, user_id):
                 'error': 'Failed to remove participant',
                 'message': 'Participant may not exist or event not found'
             }), 400
+        
+        # Trigger immediate proposal regeneration
+        try:
+            from ..services.time_proposal import TimeProposalService
+            time_proposal_service = TimeProposalService(access_token)
+            time_proposal_service.regenerate_proposals_immediately(event_id)
+            print(f"[EVENTS] Triggered proposal regeneration for event {event_id} after removing participant")
+        except Exception as regen_error:
+            print(f"[EVENTS] Warning: Failed to regenerate proposals after removing participant: {str(regen_error)}")
+            # Don't fail the request if proposal regeneration fails
+        
         return jsonify({
             'message': 'Participant removed successfully'
         }), 200

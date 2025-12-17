@@ -1,5 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
+import { supabase } from "../services/supabaseClient";
 import {
   Box,
   Button,
@@ -42,8 +44,43 @@ const MotionCard = motion(Card);
 
 const Landing = () => {
   const navigate = useNavigate();
+  const { user, session, loading } = useAuth();
   const bgColor = useColorModeValue("white", "gray.900");
   const cardBg = useColorModeValue("white", "gray.800");
+  const featureBgColor = useColorModeValue("gray.50", "gray.800");
+  const footerBgColor = useColorModeValue("gray.900", "gray.950");
+
+  // // Redirect authenticated users to dashboard
+  // useEffect(() => {
+  //   if (!loading && user && session) {
+  //     console.log("User authenticated, redirecting to dashboard...");
+  //     navigate("/dashboard_temp", { replace: true });
+  //   }
+  // }, [user, session, loading, navigate]);
+
+  // Handle Google OAuth sign-in
+  const handleSignIn = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/dashboard_temp`,
+          scopes: "https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events"
+        }
+      });
+
+      if (error) {
+        console.error("Sign in error:", error);
+      }
+    } catch (err) {
+      console.error("Failed to initiate sign in:", err);
+    }
+  };
+
+  // Show loading state while checking auth
+  if (loading) {
+    return null; // Or a loading spinner
+  }
 
   const AnimatedSection = ({ children, delay = 0 }) => {
     const ref = useRef(null);
@@ -133,9 +170,9 @@ const Landing = () => {
                   rightIcon={<FiArrowRight />}
                   _hover={{ transform: "translateY(-2px)", shadow: "xl" }}
                   transition="all 0.3s"
-                  onClick={() => navigate("/dashboard_temp")}
+                  onClick={handleSignIn}
                 >
-                  Get Started
+                  Sign in with Google
                 </Button>
                 <Button
                   size="lg"
@@ -286,7 +323,7 @@ const Landing = () => {
       </Container>
 
       {/* Features Showcase */}
-      <Box bg={useColorModeValue("gray.50", "gray.800")} py={20}>
+      <Box bg={featureBgColor} py={20}>
         <Container maxW="container.xl">
           <VStack spacing={20}>
             {/* Feature 1 */}
@@ -522,7 +559,7 @@ const Landing = () => {
                 rightIcon={<FiArrowRight />}
                 _hover={{ transform: "translateY(-2px)", shadow: "2xl" }}
                 transition="all 0.3s"
-                onClick={() => navigate("/dashboard_temp")}
+                onClick={handleSignIn}
               >
                 Get Started Free
               </Button>
@@ -535,7 +572,7 @@ const Landing = () => {
       </Box>
 
       {/* Footer */}
-      <Box bg={useColorModeValue("gray.900", "gray.950")} color="white" py={12}>
+      <Box bg={footerBgColor} color="white" py={12}>
         <Container maxW="container.xl">
           <Grid
             templateColumns={{ base: "1fr", md: "repeat(4, 1fr)" }}

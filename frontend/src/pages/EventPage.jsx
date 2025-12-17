@@ -416,7 +416,7 @@ const EventPage = () => {
         message: error.message,
         requestData: finalizationData
       });
-      console.error("[ERROR] Detailed error data:", 
+      console.error("[ERROR] Detailed error data:",
         JSON.stringify(error.response.data, null, 2)
       );
 

@@ -1,4 +1,4 @@
-# Use Python 3.9 slim image for smaller size
+# Use Python 3.10 slim image for smaller size
 FROM python:3.10-slim
 
 # Set working directory
@@ -33,10 +33,9 @@ USER appuser
 # Expose port 5050
 EXPOSE 5050
 
-# Health check
+# Health check - Fixed port to 5050
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:5000/api/auth/debug/config', timeout=5)" || exit 1
+    CMD python -c "import requests; requests.get('http://localhost:5050/api/auth/debug/config', timeout=5)" || exit 1
 
 # Run the application with Gunicorn
 CMD ["gunicorn", "--bind", "0.0.0.0:5050", "--workers", "4", "--timeout", "120", "--access-logfile", "-", "--error-logfile", "-", "run:app"]
-

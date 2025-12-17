@@ -59,7 +59,6 @@ def get_supabase(access_token=None) -> Client:
         raise ValueError("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (or ANON_KEY) must be set")
 
     client = create_client(url, key)
-    
     # Note: We generally DON'T want to set auth(access_token) when using Service Role Key
     # because we want to bypass RLS. We validate the token separately in decorators.
     

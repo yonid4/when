@@ -272,11 +272,58 @@ def google_callback():
         except Exception as e:
             logging.error(f"[AUTH] Error enriching profile with Google data: {e}")
             # Don't fail the entire flow if profile update fails
-        
-        # Redirect to frontend with success
-        frontend_url = request.headers.get("Origin", "http://localhost")
-        # return redirect(f"{frontend_url}/events")
-        return redirect(f"{frontend_url}{return_url}")
+
+        # Return HTML that closes the popup window
+        # This preserves the main window's Supabase session
+        return f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Google Calendar Connected</title>
+            <style>
+                body {{
+                    font-family: system-ui, -apple-system, sans-serif;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    height: 100vh;
+                    margin: 0;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                }}
+                .container {{
+                    text-align: center;
+                    padding: 2rem;
+                }}
+                .checkmark {{
+                    font-size: 4rem;
+                    margin-bottom: 1rem;
+                }}
+                h1 {{
+                    margin: 0 0 0.5rem 0;
+                    font-size: 1.5rem;
+                }}
+                p {{
+                    margin: 0;
+                    opacity: 0.9;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="checkmark">✓</div>
+                <h1>Google Calendar Connected</h1>
+                <p>This window will close automatically...</p>
+            </div>
+            <script>
+                // Close the popup window after a short delay
+                setTimeout(function() {{
+                    window.close();
+                }}, 1500);
+            </script>
+        </body>
+        </html>
+        """, 200
         
     except ValueError as e:
         logging.error(f"[ERROR] ValueError in /api/auth/google/callback: {e}")

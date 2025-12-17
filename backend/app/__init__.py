@@ -26,6 +26,7 @@ from .routes.preferred_slots import preferred_slots_bp
 from .routes.event_finalization import event_finalization_bp
 from .routes.notifications import notifications_bp
 from .routes.invitations import invitations_bp
+from .routes.time_proposal import time_proposal_bp
 from .utils.supabase_client import init_supabase
 
 def create_app(config_name="development"):
@@ -58,22 +59,14 @@ def create_app(config_name="development"):
     app.config.from_object(config[config_name])
     
     # Initialize CORS to allow frontend origins and auth headers
-    # CORS(
-    #     app,
-    #     resources={r"/api/*": {"origins": ["http://localhost:3000", "http://127.0.0.1:3000"]}},
-    #     supports_credentials=True,
-    #     allow_headers="*",
-    #     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    #     expose_headers=["Content-Type", "Authorization"]
-    # )
+    # Get CORS origins from environment variable (supports multiple comma-separated origins)
+    # Falls back to localhost for development if CORS_ORIGINS not set
+    cors_origins_str = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000,http://localhost,http://localhost:80")
+    cors_origins = [origin.strip() for origin in cors_origins_str.split(",")]
+
     CORS(
         app,
-        resources={r"/api/*": {"origins": [
-            "http://localhost:3000",      # Development
-            "http://127.0.0.1:3000",      # Development
-            "http://localhost",            # Docker frontend
-            "http://localhost:80"          # Docker frontend explicit
-        ]}},
+        resources={r"/api/*": {"origins": cors_origins}},
         supports_credentials=True,
         allow_headers="*",
         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -95,6 +88,7 @@ def create_app(config_name="development"):
     app.register_blueprint(event_finalization_bp)
     app.register_blueprint(notifications_bp)
     app.register_blueprint(invitations_bp)
+    app.register_blueprint(time_proposal_bp)
 
     # Initialize background jobs
     from .background_jobs import init_background_jobs
