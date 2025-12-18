@@ -54,7 +54,7 @@ const Landing = () => {
   // useEffect(() => {
   //   if (!loading && user && session) {
   //     console.log("User authenticated, redirecting to dashboard...");
-  //     navigate("/dashboard_temp", { replace: true });
+  //     navigate("/dashboard", { replace: true });
   //   }
   // }, [user, session, loading, navigate]);
 
@@ -64,7 +64,7 @@ const Landing = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/dashboard_temp`,
+          redirectTo: `${window.location.origin}/dashboard`,
           scopes: "https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events"
         }
       });

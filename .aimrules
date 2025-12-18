@@ -281,20 +281,45 @@ timezone_handling:
   critical_rules:
     - "ALWAYS store times in UTC in database"
     - "Convert to user timezone ONLY for display"
-    - "Use date-fns or luxon for timezone operations"
+    - "Use date-fns or luxon for timezone operations in complex cases"
+    - "Use browser's Intl API for simple timezone conversion in frontend"
     - "Handle daylight saving time transitions"
-    - "Include timezone info in API responses"
-  
-  example_pattern: |
+    - "Include timezone info in API responses when needed"
+
+  backend_example: |
 ```python
     from datetime import datetime, timezone
-    
+
     # Store in database (UTC)
     utc_time = datetime.now(timezone.utc)
-    
-    # Convert for display (user timezone)
+
+    # Convert for display (user timezone) - if needed server-side
     user_tz = pytz.timezone(user.timezone)
     local_time = utc_time.astimezone(user_tz)
+```
+
+  frontend_example: |
+```javascript
+    // Display UTC time in user's local timezone
+    const formatDate = (utcDateString) => {
+      const date = new Date(utcDateString);
+      return date.toLocaleDateString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+      });
+    };
+
+    const formatTime = (utcTimeString) => {
+      const date = new Date(utcTimeString);
+      return date.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+      });
+    };
 ```
 
 performance_optimization:
@@ -351,10 +376,12 @@ code_review_checklist:
     - "✓ Backend uses service role key consistently"
     - "✓ Authorization checks implemented in backend code"
     - "✓ Proper error handling for external APIs"
-    - "✓ Timezone handling is correct"
+    - "✓ Timezone handling is correct (UTC storage, local display)"
     - "✓ Real-time features work as expected"
     - "✓ Mobile responsive design"
     - "✓ Loading and error states in UI"
+    - "✓ User navigation flows are smooth (no unnecessary page reloads)"
+    - "✓ Features are accessible to appropriate user roles"
 
 ai_assistant_notes:
   context: |
@@ -365,9 +392,37 @@ ai_assistant_notes:
     - This is a TRUSTED BACKEND pattern
     - Never suggest hardcoding credentials
     - Always validate user permissions in backend before database operations
-  
+    - All times are stored in UTC, converted to local timezone for display
+    - Use browser's Intl API for timezone conversion in frontend
+
   common_tasks:
     - "Adding new API endpoints: Include @require_auth decorator and authorization checks"
     - "Database queries: Use service role client in backend, implement auth in code"
     - "Frontend features: Use anon key client, call backend APIs for protected operations"
     - "Google Calendar: Handle rate limits and auth failures gracefully"
+    - "Timezone handling: Store UTC, display in user's local timezone"
+    - "Navigation: API responses can include navigation hints (like event_uid) for better UX"
+
+  recent_patterns_2024_12:
+    ux_improvements:
+      - "Return navigation data in API responses (e.g., event_uid on invitation accept)"
+      - "Use navigate() instead of page reload for better UX"
+      - "Make features accessible to all users when appropriate (not just coordinators)"
+      - "Convert UTC times to local timezone automatically using Intl API"
+
+    example_navigation_pattern: |
+```python
+      # Backend: Return navigation hint
+      return jsonify({
+          "success": True,
+          "event_uid": event.get("uid"),  # For frontend navigation
+          "message": "Invitation accepted"
+      }), 200
+```
+```javascript
+      // Frontend: Use navigation hint
+      const result = await execute(() => api.post(...));
+      if (result?.event_uid) {
+        navigate(`/events/${result.event_uid}`);
+      }
+```

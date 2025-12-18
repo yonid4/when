@@ -2,15 +2,11 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { Box } from "@chakra-ui/react";
 import Layout from "./layout";
-import LandingPage from "./pages/LandingPage";
-import Dashboard from "./pages/Dashboard";
-import EventPage from "./pages/EventPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 
-// New redesigned pages
 import Landing from "./pages/Landing";
-import DashboardTemp from "./pages/DashboardTemp";
-import EventTemp from "./pages/EventTemp";
+import Dashboard from "./pages/Dashboard";
+import EventPage from "./pages/EventPage";
 import EventCreate from "./pages/EventCreate";
 
 const App = () => (
@@ -28,20 +24,7 @@ const App = () => (
               </ProtectedRoute>
             }
           />
-          {/* <Route path="/events/:eventUid" element={<EventPage />} /> */}
-
-          {/* New redesigned routes */}
-          {/* <Route path="/landing" element={<Landing />} /> */}
-          <Route
-            path="/dashboard_temp"
-            element={
-              <ProtectedRoute>
-                <DashboardTemp />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/event/:eventUid" element={<EventPage />} /> // old event page
-          <Route path="/events/:eventUid" element={<EventTemp />} /> // new event page
+          <Route path="/events/:eventUid" element={<EventPage />} />
           <Route
             path="/event/create"
             element={
@@ -51,7 +34,6 @@ const App = () => (
             }
           />
 
-          {/* Add more protected routes as needed */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>

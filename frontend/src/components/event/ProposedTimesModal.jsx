@@ -37,13 +37,26 @@ const ProposedTimesModal = ({
   const cardBg = useColorModeValue("white", "gray.800");
   const borderColor = useColorModeValue("gray.200", "gray.700");
 
+  // Convert UTC time to local time for display
   const formatDate = (dateString) => {
+    // Parse as UTC and convert to local timezone
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
       weekday: "long",
       year: "numeric",
       month: "long",
-      day: "numeric"
+      day: "numeric",
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+    });
+  };
+
+  const formatTime = (timeString) => {
+    // Parse as UTC and convert to local timezone
+    const date = new Date(timeString);
+    return date.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
     });
   };
 
@@ -110,6 +123,13 @@ const ProposedTimesModal = ({
                 const percentage = (option.availableCount / option.totalParticipants) * 100;
                 const isWinner = index === 0;
 
+                // Convert UTC times to local timezone for display
+                const startDate = new Date(option.start_time_utc);
+                const endDate = new Date(option.end_time_utc);
+
+                const localDate = formatDate(option.start_time_utc);
+                const localTime = `${formatTime(option.start_time_utc)} - ${formatTime(option.end_time_utc)}`;
+
                 return (
                   <Card
                     key={option.id}
@@ -136,13 +156,13 @@ const ProposedTimesModal = ({
                         <Box flex={1}>
                           <HStack mb={1}>
                             <Text fontWeight="bold" fontSize="md">
-                              {formatDate(option.date)}
+                              {localDate}
                             </Text>
                             {isWinner && (
                               <Badge colorScheme="green" fontSize="xs">Top Choice</Badge>
                             )}
                           </HStack>
-                          <Text color="gray.600" fontSize="sm" mb={2}>{option.time}</Text>
+                          <Text color="gray.600" fontSize="sm" mb={2}>{localTime}</Text>
                           <HStack spacing={1}>
                             <Text fontSize="xs" color="gray.500">
                               {option.availableCount} of {option.totalParticipants} available

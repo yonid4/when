@@ -264,14 +264,20 @@ def handle_notification_action(notification_id, user_id):
     
     # Record action
     success = notifications_service.record_action(notification_id, user_id, action)
-    
+
     if not success:
         return jsonify({"error": "Failed to record action"}), 500
-    
+
+    # Get event UID for redirect (if action is accept)
+    event_uid = None
+    if action == "accept" and event:
+        event_uid = event.get("uid")
+
     return jsonify({
         "success": True,
         "action": action,
-        "message": f"Invitation {action}ed successfully"
+        "message": f"Invitation {action}ed successfully",
+        "event_uid": event_uid
     }), 200
 
 

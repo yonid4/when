@@ -12,6 +12,7 @@ A full-stack application for coordinating events and managing availability acros
 - **📨 Event Invitations**: Comprehensive invitation system with RSVP tracking and status management
 - **🎯 Event Finalization**: Coordinators can finalize events to specific time slots with participant confirmation
 - **⏱️ Continuous Timeline UI**: New time slot display component for visualizing availability across time ranges
+- **🌍 Timezone Support**: All proposed times are stored in UTC and automatically converted to user's local timezone for display
 
 ### Technical Improvements
 - **Enhanced Authentication**: Refactored backend decorators to pass user IDs more efficiently
@@ -21,6 +22,8 @@ A full-stack application for coordinating events and managing availability acros
 - **Custom Calendar Views**: Implemented custom month view with better participant visualization
 - **Comprehensive API Service**: New `apiService.js` consolidates all API calls with consistent error handling
 - **New React Hooks**: `useApiCall` hook for standardized API call patterns with loading states
+- **Improved UX Flow**: Accepting invitations now redirects to event page instead of reloading dashboard
+- **Universal Calendar Access**: All participants can reconnect their Google Calendar (not just coordinators)
 
 ### Database Enhancements
 - New `proposed_times` table for AI proposal caching
@@ -50,9 +53,11 @@ A full-stack application for coordinating events and managing availability acros
 - **Modern Redesigned UI**: Beautiful new landing page, dashboard, and event creation wizard with smooth animations
 - **Multi-Step Event Creation**: Intuitive wizard-based event creation (Basics → When → Who → Where → Review)
 - **Busy Time Management**: Automatic detection, caching, and merging of busy slots from Google Calendar
-- **Cross-timezone Support**: Handle participants from different time zones with proper conversion
+- **Cross-timezone Support**: All times stored in UTC and displayed in user's local timezone automatically
 - **User Preferences**: Set and manage scheduling preferences and timezone settings
 - **Responsive Design**: Works seamlessly on desktop, tablet, and mobile devices
+- **Seamless Navigation**: Accepting event invitations redirects directly to the event page
+- **Universal Calendar Sync**: All participants can reconnect and sync their Google Calendar
 
 ## 🏗️ Tech Stack
 
@@ -533,6 +538,8 @@ For detailed deployment instructions, see [docs/deployment.md](docs/deployment.m
 
 #### Notifications (NEW)
 - `GET /api/notifications` - Get user's notifications
+- `POST /api/notifications/<notification_id>/action` - Handle notification action (accept/decline invitation)
+  - Returns `event_uid` on accept for seamless navigation
 - `PUT /api/notifications/<notification_id>/read` - Mark notification as read
 - `PUT /api/notifications/read-all` - Mark all notifications as read
 - `DELETE /api/notifications/<notification_id>` - Delete notification
@@ -744,11 +751,24 @@ For support and questions:
 
 ## 📋 Documentation Updates
 
-**Last README Update:** December 13, 2024  
-**Previous Update:** November 5, 2024
+**Last README Update:** December 18, 2024
+**Previous Update:** December 13, 2024
 
-### What Changed in This Update
-This comprehensive update reflects all changes made between November 5 and December 13, 2024:
+### What Changed in This Update (December 18, 2024)
+
+#### UX Improvements
+- ✅ **Invitation Redirect**: Accepting invitations now redirects to event page instead of reloading dashboard
+- ✅ **Universal Calendar Access**: "Reconnect Google Calendar" button now visible to all participants (not just coordinators)
+- ✅ **Timezone Display**: Proposed times stored in UTC, automatically displayed in user's local timezone
+
+#### Technical Changes
+- ✅ Backend: `notifications.py` now returns `event_uid` when accepting invitations
+- ✅ Frontend: `Dashboard.jsx` updated to navigate to event page on invitation acceptance
+- ✅ Frontend: `EventPage.jsx` shows calendar reconnect button to all users
+- ✅ Frontend: `ProposedTimesModal.jsx` converts UTC times to local timezone using browser's `Intl` API
+
+### Previous Update (December 13, 2024)
+This comprehensive update reflected all changes made between November 5 and December 13, 2024:
 
 #### New Features Documented
 - ✅ AI-Powered Time Proposals with Google Gemini integration

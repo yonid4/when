@@ -3,409 +3,546 @@ import { useNavigate } from "react-router-dom";
 import {
   Box,
   Button,
-  VStack,
-  HStack,
-  Text,
-  Heading,
-  FormControl,
-  FormLabel,
-  Input,
-  Textarea,
+  Container,
+  Flex,
   Grid,
+  Heading,
+  Text,
+  HStack,
+  VStack,
+  AvatarGroup,
+  Badge,
   Card,
   CardBody,
-  CardHeader,
-  Badge,
-  Alert,
-  AlertIcon,
-  Spinner,
-  Center,
+  Icon,
+  IconButton,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  useColorModeValue,
+  Image,
   Divider,
-  Flex,
-  Spacer,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalFooter,
-  ModalBody,
-  ModalCloseButton,
-  useDisclosure
+  SimpleGrid,
+  Stat,
+  StatLabel,
+  StatNumber,
+  StatHelpText,
+  Spinner,
+  Center
 } from "@chakra-ui/react";
-import api from "../services/api";
+import { motion } from "framer-motion";
+import {
+  FiCalendar,
+  FiClock,
+  FiMapPin,
+  FiUsers,
+  FiPlus,
+  FiEdit,
+  FiShare2,
+  FiMoreVertical,
+  FiCheck,
+  FiX,
+  FiMinus,
+  FiVideo
+} from "react-icons/fi";
+import { eventsAPI, notificationsAPI } from "../services/apiService";
+import { useApiCall } from "../hooks/useApiCall";
+import { useAuth } from "../hooks/useAuth";
 import { useEnsureProfile } from "../hooks/useEnsureProfile";
-import { supabase } from "../services/supabaseClient";
-import { getMergedBusySlots } from "../services/busySlotsService";
+import { colors, gradients } from "../styles/designSystem";
 
-function formatDateRange(start, end) {
-  const options = { month: "short", day: "numeric" };
-  const startStr = start.toLocaleDateString("en-US", options);
-  const endStr = end.toLocaleDateString("en-US", options);
-  return `${startStr} - ${endStr}`;
-}
-
-const initialForm = {
-  name: "",
-  description: "",
-  start_date: "",
-  end_date: "",
-  earliest_daily_start_time: "",
-  latest_daily_end_time: "",
-  duration_minutes: ""
-};
+const MotionBox = motion(Box);
+const MotionCard = motion(Card);
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { error: profileError } = useEnsureProfile();
-  const [coordinatingEvents, setCoordinatingEvents] = useState([]);
-  const [participatingEvents, setParticipatingEvents] = useState([]);
+  const { user, loading: authLoading } = useAuth();
+  useEnsureProfile();
+
+  const [hoveredCard, setHoveredCard] = useState(null);
+  const [events, setEvents] = useState([]);
+  const [invitations, setInvitations] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const { execute } = useApiCall();
 
-  // Fetch user events on component mount
+  const bgColor = useColorModeValue("gray.50", "gray.900");
+  const cardBg = useColorModeValue("white", "gray.800");
+  const borderColor = useColorModeValue("gray.200", "gray.700");
+
+  // Load dashboard data
   useEffect(() => {
-    const fetchUserEvents = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const response = await api.get('/api/events/');
-        const events = response.data;
-
-        // Separate coordinating and participating events
-        const coordinating = events.filter(event => event.role === 'coordinator');
-        const participating = events.filter(event => event.role === 'participant');
-
-        setCoordinatingEvents(coordinating);
-        setParticipatingEvents(participating);
-
-        console.log('Fetched events:', { coordinating, participating });
-
-        // Preload busy slots for ongoing events (optional performance optimization)
-        const now = new Date();
-        const ongoingEvents = events.filter(event => {
-          const latestDate = new Date(event.latest_date);
-          return latestDate >= now; // Event is still ongoing
-        });
-
-        // Preload in background (don't await, don't block UI)
-        if (ongoingEvents.length > 0) {
-          Promise.allSettled(
-            ongoingEvents.map(event =>
-              getMergedBusySlots(event.uid || event.id)
-                .then(() => console.log(`Preloaded busy slots for event ${event.uid}`))
-                .catch(err => console.warn(`Failed to preload busy slots for event ${event.uid}:`, err))
-            )
-          );
-        }
-      } catch (err) {
-        console.error('Error fetching events:', err);
-        setError('Failed to load events. Please try again.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUserEvents();
+    loadDashboardData();
   }, []);
 
-  const [form, setForm] = useState(initialForm);
-  const [isCreating, setIsCreating] = useState(false);
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setForm(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsCreating(true);
-
+  const loadDashboardData = async () => {
+    setLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        setError('You must be logged in to create an event.');
-        setIsCreating(false);
-        return;
+      const [eventsData, notificationsData] = await Promise.all([
+        execute(() => eventsAPI.getAll(), { showSuccessToast: false }),
+        execute(() => notificationsAPI.getAll(false, 50), { showSuccessToast: false })
+      ]);
+
+      if (eventsData) {
+        setEvents(eventsData);
       }
 
-      const response = await api.post('/api/events/', form);
-      console.log('Event created:', response.data);
-
-      // Reset form
-      setForm(initialForm);
-
-      // Refresh events list
-      const eventsResponse = await api.get('/api/events/');
-      const events = eventsResponse.data;
-      const coordinating = events.filter(event => event.role === 'coordinator');
-      const participating = events.filter(event => event.role === 'participant');
-      setCoordinatingEvents(coordinating);
-      setParticipatingEvents(participating);
-
-      // Close modal and navigate to the new event
-      onClose();
-      navigate(`/events/${response.data.uid}`);
-    } catch (err) {
-      console.error('Error creating event:', err);
-      setError(err.response?.data?.message || 'Failed to create event.');
+      // Filter for pending invitations only
+      if (notificationsData) {
+        const pendingInvitations = (notificationsData.notifications || notificationsData || []).filter(
+          n => n.notification_type === "event_invitation" && !n.action_taken
+        );
+        setInvitations(pendingInvitations);
+      }
+    } catch (error) {
+      console.error("Failed to load dashboard data:", error);
     } finally {
-      setIsCreating(false);
+      setLoading(false);
     }
   };
 
+  const handleCreateEvent = () => {
+    navigate("/event/create");
+  };
 
-  if (profileError) {
-    return (
-      <Center h="100vh">
-        <Alert status="error">
-          <AlertIcon />
-          Error loading profile: {profileError}
-        </Alert>
-      </Center>
+  const handleViewEvent = (eventUid) => {
+    // Navigate using UID, not ID!
+    navigate(`/events/${eventUid}`);
+  };
+
+  const handleAcceptInvitation = async (notificationId, eventUid) => {
+    const result = await execute(
+      () => notificationsAPI.handleAction(notificationId, "accept"),
+      {
+        successMessage: "Invitation accepted!",
+        onSuccess: () => {
+          // Navigate to the event page instead of reloading dashboard
+          if (result?.event_uid || eventUid) {
+            navigate(`/events/${result?.event_uid || eventUid}`);
+          } else {
+            // Fallback to reload if no UID available
+            loadDashboardData();
+          }
+        }
+      }
     );
-  }
+  };
 
-  if (loading) {
+  const handleDeclineInvitation = async (notificationId) => {
+    await execute(
+      () => notificationsAPI.handleAction(notificationId, "decline"),
+      {
+        successMessage: "Invitation declined",
+        onSuccess: () => loadDashboardData()
+      }
+    );
+  };
+
+  const getEventTypeColor = (type) => {
+    const colorMap = {
+      meeting: "blue",
+      social: "green",
+      birthday: "pink",
+      other: "purple"
+    };
+    return colorMap[type] || "gray";
+  };
+
+  const getEventTypeIcon = (type) => {
+    const iconMap = {
+      meeting: FiUsers,
+      social: FiCalendar,
+      birthday: FiCalendar,
+      other: FiCalendar
+    };
+    return iconMap[type] || FiCalendar;
+  };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const options = { month: "short", day: "numeric", weekday: "short" };
+    return date.toLocaleDateString("en-US", options);
+  };
+
+  // Compute stats from real data
+  const stats = {
+    eventsThisMonth: events.length,
+    upcomingEvents: events.filter(e => e.status !== "cancelled").length,
+    pendingInvitations: invitations.length,
+    friendsAvailable: 0 // This would need additional API
+  };
+
+  // Get user info
+  const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || "User";
+  const userAvatar = user?.user_metadata?.avatar_url;
+
+  // Filter events for display
+  const upcomingEvents = events.filter(e => e.status !== "cancelled").slice(0, 6);
+
+  // Show loading state
+  if (loading || authLoading) {
     return (
-      <Center h="100vh">
+      <Center minH="100vh" bg={bgColor}>
         <VStack spacing={4}>
-          <Spinner size="xl" />
-          <Text fontSize="xl">Loading your events...</Text>
+          <Spinner size="xl" color={colors.primary} thickness="4px" />
+          <Text color="gray.600">Loading your dashboard...</Text>
         </VStack>
       </Center>
     );
   }
 
   return (
-    <Box p={8} maxW="1200px" mx="auto">
-      {/* Header */}
-      <Flex mb={8} align="center" justify="space-between">
-        <Heading size="lg">Your Events</Heading>
-        <HStack spacing={4}>
-          <Button colorScheme="blue" onClick={onOpen}>
-            Create Event
-          </Button>
-        </HStack>
-      </Flex>
+    <Box minH="100vh" bg={bgColor}>
+      {/* Main Content */}
+      <Container maxW="container.xl" py={8}>
+        <VStack spacing={8} align="stretch">
+          {/* Welcome Section */}
+          <MotionBox
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <VStack align="start" spacing={2}>
+              <Heading size="xl">Welcome back, {userName.split(" ")[0]}!</Heading>
+              <Text color="gray.600" fontSize="lg">
+                {new Date().toLocaleDateString("en-US", {
+                  weekday: "long",
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric"
+                })}
+              </Text>
+            </VStack>
+          </MotionBox>
 
-      {error && (
-        <Alert status="error" mb={6}>
-          <AlertIcon />
-          {error}
-        </Alert>
-      )}
+          {/* Create Event Button */}
+          <MotionBox
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+          >
+            <Card
+              bg={gradients.ocean}
+              color="white"
+              cursor="pointer"
+              onClick={handleCreateEvent}
+              _hover={{ transform: "translateY(-4px)", shadow: "xl" }}
+              transition="all 0.3s"
+            >
+              <CardBody>
+                <Flex align="center" justify="center" py={4}>
+                  <Icon as={FiPlus} boxSize={8} mr={4} />
+                  <Heading size="lg">Create New Event</Heading>
+                </Flex>
+              </CardBody>
+            </Card>
+          </MotionBox>
 
-      <VStack spacing={8} align="stretch">
-        {/* Coordinating Events */}
-        <Box>
-          <Heading size="md" mb={4}>Events You're Coordinating</Heading>
-          {coordinatingEvents.length > 0 ? (
-            <Grid templateColumns="repeat(auto-fill, minmax(300px, 1fr))" gap={4}>
-              {coordinatingEvents.map((event) => (
-                <Card
-                  key={event.id}
-                  variant="outline"
-                  cursor="pointer"
-                  _hover={{ shadow: "md", transform: "translateY(-2px)" }}
-                  transition="all 0.2s"
-                  onClick={() => navigate(`/events/${event.uid}`)}
-                >
-                  <CardHeader>
-                    <Heading size="sm">{event.name}</Heading>
-                  </CardHeader>
-                  <CardBody pt={0}>
-                    <VStack align="start" spacing={2}>
-                      {event.description && (
-                        <Text fontSize="sm" color="gray.600">
-                          {event.description}
-                        </Text>
-                      )}
-                      {event.earliest_date && event.latest_date && (
-                        <Text fontSize="sm" fontWeight="medium">
-                          {formatDateRange(
-                            new Date(event.earliest_date),
-                            new Date(event.latest_date)
-                          )}
-                        </Text>
-                      )}
-                      <HStack spacing={4}>
-                        <Text fontSize="sm">Duration: {event.duration_minutes} min</Text>
-                        <Badge colorScheme="blue" variant="subtle">
-                          {event.status}
-                        </Badge>
-                      </HStack>
-                    </VStack>
-                  </CardBody>
-                </Card>
-              ))}
-            </Grid>
-          ) : (
-            <Text color="gray.500">No events you're coordinating yet.</Text>
-          )}
-        </Box>
+          {/* Quick Stats */}
+          <MotionBox
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <SimpleGrid columns={{ base: 2, md: 4 }} spacing={4}>
+              <Card bg={cardBg}>
+                <CardBody>
+                  <Stat>
+                    <StatLabel>Events This Month</StatLabel>
+                    <StatNumber color={colors.primary}>{stats.eventsThisMonth}</StatNumber>
+                    <StatHelpText>Active events</StatHelpText>
+                  </Stat>
+                </CardBody>
+              </Card>
+              <Card bg={cardBg}>
+                <CardBody>
+                  <Stat>
+                    <StatLabel>Upcoming</StatLabel>
+                    <StatNumber color={colors.secondary}>{stats.upcomingEvents}</StatNumber>
+                    <StatHelpText>Next 30 days</StatHelpText>
+                  </Stat>
+                </CardBody>
+              </Card>
+              <Card bg={cardBg}>
+                <CardBody>
+                  <Stat>
+                    <StatLabel>Pending</StatLabel>
+                    <StatNumber color={colors.accent}>{stats.pendingInvitations}</StatNumber>
+                    <StatHelpText>Need response</StatHelpText>
+                  </Stat>
+                </CardBody>
+              </Card>
+              <Card bg={cardBg}>
+                <CardBody>
+                  <Stat>
+                    <StatLabel>Friends Available</StatLabel>
+                    <StatNumber color={colors.info}>{stats.friendsAvailable}</StatNumber>
+                    <StatHelpText>This week</StatHelpText>
+                  </Stat>
+                </CardBody>
+              </Card>
+            </SimpleGrid>
+          </MotionBox>
 
-        {/* Participating Events */}
-        <Box>
-          <Heading size="md" mb={4}>Events You're Participating In</Heading>
-          {participatingEvents.length > 0 ? (
-            <Grid templateColumns="repeat(auto-fill, minmax(300px, 1fr))" gap={4}>
-              {participatingEvents.map((event) => (
-                <Card
-                  key={event.id}
-                  variant="outline"
-                  cursor="pointer"
-                  _hover={{ shadow: "md", transform: "translateY(-2px)" }}
-                  transition="all 0.2s"
-                  onClick={() => navigate(`/events/${event.uid}`)}
-                >
-                  <CardHeader>
-                    <Heading size="sm">{event.name}</Heading>
-                  </CardHeader>
-                  <CardBody pt={0}>
-                    <VStack align="start" spacing={2}>
-                      {event.description && (
-                        <Text fontSize="sm" color="gray.600">
-                          {event.description}
-                        </Text>
-                      )}
-                      {event.earliest_date && event.latest_date && (
-                        <Text fontSize="sm" fontWeight="medium">
-                          {formatDateRange(
-                            new Date(event.earliest_date),
-                            new Date(event.latest_date)
-                          )}
-                        </Text>
-                      )}
-                      <HStack spacing={4}>
-                        <Text fontSize="sm">Duration: {event.duration_minutes} min</Text>
-                        <Badge colorScheme="green" variant="subtle">
-                          {event.status}
-                        </Badge>
-                      </HStack>
-                    </VStack>
-                  </CardBody>
-                </Card>
-              ))}
-            </Grid>
-          ) : (
-            <Text color="gray.500">No events you're participating in yet.</Text>
-          )}
-        </Box>
+          {/* Pending Invitations Section */}
+          {invitations.length > 0 && (
+            <MotionBox
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+            >
+              <VStack align="stretch" spacing={4}>
+                <Flex align="center" justify="space-between">
+                  <HStack>
+                    <Heading size="md">Pending Invitations</Heading>
+                    <Badge colorScheme="red" borderRadius="full" px={2}>
+                      {invitations.length}
+                    </Badge>
+                  </HStack>
+                </Flex>
 
-      </VStack>
+                {/* Invitation Cards */}
+                <VStack spacing={3} align="stretch">
+                  {invitations.map((notification, index) => (
+                    <MotionCard
+                      key={notification.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.3, delay: 0.4 + index * 0.1 }}
+                      bg={cardBg}
+                      borderLeft="4px"
+                      borderColor={colors.accent}
+                      _hover={{ shadow: "md" }}
+                      cursor="pointer"
+                      onClick={() => {
+                        // Navigate to event if uid exists in metadata
+                        if (notification.metadata?.event_uid) {
+                          navigate(`/events/${notification.metadata.event_uid}`);
+                        }
+                      }}
+                    >
+                      <CardBody>
+                        <Flex justify="space-between" align="center">
+                          <VStack align="start" spacing={2} flex={1}>
+                            <HStack>
+                              <Icon as={FiCalendar} color={colors.primary} />
+                              <Heading size="sm">
+                                {notification.metadata?.event_name || notification.title}
+                              </Heading>
+                            </HStack>
+                            <Text fontSize="sm" color="gray.600">
+                              {notification.message}
+                            </Text>
+                            {notification.metadata?.event_description && (
+                              <Text fontSize="sm" color="gray.500" noOfLines={2}>
+                                {notification.metadata.event_description}
+                              </Text>
+                            )}
+                          </VStack>
 
-      {/* Create Event Modal */}
-      <Modal isOpen={isOpen} onClose={onClose} size="xl">
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Create New Event</ModalHeader>
-          <ModalCloseButton />
-          <form onSubmit={handleSubmit}>
-            <ModalBody>
-              <VStack spacing={4} align="stretch">
-                <FormControl isRequired>
-                  <FormLabel>Event Name</FormLabel>
-                  <Input
-                    name="name"
-                    value={form.name}
-                    onChange={handleInputChange}
-                    placeholder="Enter event name"
-                  />
-                </FormControl>
-
-                <FormControl>
-                  <FormLabel>Description</FormLabel>
-                  <Textarea
-                    name="description"
-                    value={form.description}
-                    onChange={handleInputChange}
-                    placeholder="Enter event description"
-                    rows={3}
-                  />
-                </FormControl>
-
-                <Grid templateColumns="repeat(auto-fit, minmax(200px, 1fr))" gap={4}>
-                  <FormControl isRequired>
-                    <FormLabel>Start Date</FormLabel>
-                    <Input
-                      type="date"
-                      name="start_date"
-                      value={form.start_date}
-                      onChange={handleInputChange}
-                    />
-                  </FormControl>
-
-                  <FormControl isRequired>
-                    <FormLabel>End Date</FormLabel>
-                    <Input
-                      type="date"
-                      name="end_date"
-                      value={form.end_date}
-                      onChange={handleInputChange}
-                    />
-                  </FormControl>
-                </Grid>
-
-                <Grid templateColumns="repeat(auto-fit, minmax(200px, 1fr))" gap={4}>
-                  <FormControl isRequired>
-                    <FormLabel>Earliest Start Time</FormLabel>
-                    <Input
-                      type="time"
-                      name="earliest_daily_start_time"
-                      value={form.earliest_daily_start_time}
-                      onChange={handleInputChange}
-                    />
-                  </FormControl>
-
-                  <FormControl isRequired>
-                    <FormLabel>Latest End Time</FormLabel>
-                    <Input
-                      type="time"
-                      name="latest_daily_end_time"
-                      value={form.latest_daily_end_time}
-                      onChange={handleInputChange}
-                    />
-                  </FormControl>
-                </Grid>
-
-                <FormControl isRequired>
-                  <FormLabel>Duration (minutes)</FormLabel>
-                  <Input
-                    type="number"
-                    name="duration_minutes"
-                    value={form.duration_minutes}
-                    onChange={handleInputChange}
-                    min="15"
-                    step="15"
-                    placeholder="60"
-                  />
-                </FormControl>
+                          <HStack spacing={2} ml={4}>
+                            <Button
+                              leftIcon={<FiCheck />}
+                              colorScheme="green"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAcceptInvitation(notification.id, notification.metadata?.event_uid);
+                              }}
+                            >
+                              Accept
+                            </Button>
+                            <IconButton
+                              icon={<FiX />}
+                              colorScheme="red"
+                              variant="ghost"
+                              size="sm"
+                              aria-label="Decline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeclineInvitation(notification.id);
+                              }}
+                            />
+                          </HStack>
+                        </Flex>
+                      </CardBody>
+                    </MotionCard>
+                  ))}
+                </VStack>
               </VStack>
-            </ModalBody>
+            </MotionBox>
+          )}
 
-            <ModalFooter>
-              <Button variant="ghost" mr={3} onClick={onClose}>
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                colorScheme="blue"
-                isLoading={isCreating}
-                loadingText="Creating..."
-              >
-                Create Event
-              </Button>
-            </ModalFooter>
-          </form>
-        </ModalContent>
-      </Modal>
+          {/* Upcoming Events Section */}
+          <MotionBox
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.5 }}
+          >
+            <VStack align="stretch" spacing={4}>
+              <Heading size="md">Upcoming Events</Heading>
+
+              {upcomingEvents.length > 0 ? (
+                <Grid
+                  templateColumns={{
+                    base: "1fr",
+                    md: "repeat(2, 1fr)",
+                    lg: "repeat(3, 1fr)"
+                  }}
+                  gap={6}
+                >
+                  {upcomingEvents.map((event, index) => (
+                    <MotionCard
+                      key={event.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: 0.6 + index * 0.1 }}
+                      bg={cardBg}
+                      cursor="pointer"
+                      onClick={() => handleViewEvent(event.uid)}
+                      onMouseEnter={() => setHoveredCard(event.id)}
+                      onMouseLeave={() => setHoveredCard(null)}
+                      _hover={{ shadow: "lg", transform: "translateY(-4px)" }}
+                    >
+                      <CardBody>
+                        <VStack align="stretch" spacing={3}>
+                          {/* Header */}
+                          <Flex justify="space-between" align="start">
+                            <HStack>
+                              <Icon
+                                as={FiCalendar}
+                                color={colors.primary}
+                                boxSize={5}
+                              />
+                              <Badge colorScheme={event.status === "finalized" ? "green" : "blue"}>
+                                {event.status}
+                              </Badge>
+                              {event.role && (
+                                <Badge colorScheme={event.role === "coordinator" ? "purple" : "gray"}>
+                                  {event.role}
+                                </Badge>
+                              )}
+                            </HStack>
+                            <Menu>
+                              <MenuButton
+                                as={IconButton}
+                                icon={<FiMoreVertical />}
+                                variant="ghost"
+                                size="sm"
+                                aria-label="Options"
+                              />
+                              <MenuList>
+                                <MenuItem icon={<FiEdit />}>Edit</MenuItem>
+                                <MenuItem icon={<FiShare2 />}>Share</MenuItem>
+                              </MenuList>
+                            </Menu>
+                          </Flex>
+
+                          {/* Title */}
+                          <Heading size="sm" noOfLines={2}>
+                            {event.name}
+                          </Heading>
+
+                          {/* Date Range */}
+                          <VStack align="stretch" spacing={2} fontSize="sm">
+                            {event.status === "finalized" && event.finalized_start_time_utc ? (
+                              <>
+                                <HStack color="gray.600">
+                                  <Icon as={FiCalendar} />
+                                  <Text fontWeight="medium">
+                                    {new Date(event.finalized_start_time_utc).toLocaleDateString()}
+                                  </Text>
+                                </HStack>
+                                <HStack color="gray.600">
+                                  <Icon as={FiClock} />
+                                  <Text>
+                                    {new Date(event.finalized_start_time_utc).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                  </Text>
+                                </HStack>
+                              </>
+                            ) : (
+                              <>
+                                <HStack color="gray.600">
+                                  <Icon as={FiCalendar} />
+                                  <Text fontWeight="medium">
+                                    {event.earliest_date} - {event.latest_date}
+                                  </Text>
+                                </HStack>
+                                <HStack color="gray.600">
+                                  <Icon as={FiClock} />
+                                  <Text>{event.duration_minutes} min</Text>
+                                </HStack>
+                              </>
+                            )}
+                          </VStack>
+
+                          <Divider />
+
+                          {/* Event Info */}
+                          <VStack align="stretch" spacing={2} fontSize="sm">
+                            {event.description && (
+                              <Text color="gray.600" noOfLines={2}>
+                                {event.description}
+                              </Text>
+                            )}
+                            {event.google_calendar_html_link && (
+                              <HStack color="blue.500">
+                                <Icon as={FiVideo} />
+                                <Text fontSize="xs">Calendar Link Available</Text>
+                              </HStack>
+                            )}
+                          </VStack>
+
+                          {/* Quick Actions */}
+                          {hoveredCard === event.id && (
+                            <HStack spacing={2} pt={2}>
+                              <Button
+                                size="sm"
+                                colorScheme="blue"
+                                flex={1}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleViewEvent(event.uid);
+                                }}
+                              >
+                                View
+                              </Button>
+                              <IconButton
+                                icon={<FiShare2 />}
+                                size="sm"
+                                variant="outline"
+                                aria-label="Share"
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                            </HStack>
+                          )}
+                        </VStack>
+                      </CardBody>
+                    </MotionCard>
+                  ))}
+                </Grid>
+              ) : (
+                <Card bg={cardBg}>
+                  <CardBody>
+                    <VStack spacing={4} py={8}>
+                      <Icon as={FiCalendar} boxSize={12} color="gray.400" />
+                      <Text color="gray.500" fontSize="lg">
+                        No upcoming events. Create one!
+                      </Text>
+                      <Button colorScheme="blue" onClick={handleCreateEvent}>
+                        Create Event
+                      </Button>
+                    </VStack>
+                  </CardBody>
+                </Card>
+              )}
+            </VStack>
+          </MotionBox>
+        </VStack>
+      </Container>
     </Box>
   );
 };
 
 export default Dashboard;
+
