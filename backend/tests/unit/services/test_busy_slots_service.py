@@ -374,7 +374,7 @@ class TestSyncUserGoogleCalendar:
     def test_sync_no_credentials(self, busy_slot_service, sample_date_range):
         """Test sync fails when user has no Google credentials."""
         # Arrange
-        with patch("app.services.busy_slots.google_calendar.get_stored_credentials", return_value=None):
+        with patch("app.services.google_calendar.get_stored_credentials", return_value=None):
             # Act
             result = busy_slot_service.sync_user_google_calendar("user-123", sample_date_range["start"], sample_date_range["end"])
 
@@ -414,8 +414,8 @@ class TestSyncUserGoogleCalendar:
         mock_service.events.return_value.list.return_value.execute.return_value = google_events
         mock_supabase.table.return_value.select.return_value.eq.return_value.gte.return_value.lte.return_value.not_.is_.return_value.execute.return_value = db_slots
 
-        with patch("app.services.busy_slots.google_calendar.get_stored_credentials", return_value=mock_credentials):
-            with patch("app.services.busy_slots.google_calendar.get_calendar_service", return_value=mock_service):
+        with patch("app.services.google_calendar.get_stored_credentials", return_value=mock_credentials):
+            with patch("app.services.google_calendar.get_calendar_service", return_value=mock_service):
                 # Act
                 result = busy_slot_service.sync_user_google_calendar("user-123", sample_date_range["start"], sample_date_range["end"])
 
