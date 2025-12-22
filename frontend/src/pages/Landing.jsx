@@ -50,13 +50,13 @@ const Landing = () => {
   const featureBgColor = useColorModeValue("gray.50", "gray.800");
   const footerBgColor = useColorModeValue("gray.900", "gray.950");
 
-  // // Redirect authenticated users to dashboard
-  // useEffect(() => {
-  //   if (!loading && user && session) {
-  //     console.log("User authenticated, redirecting to dashboard...");
-  //     navigate("/dashboard", { replace: true });
-  //   }
-  // }, [user, session, loading, navigate]);
+  // Redirect authenticated users to dashboard
+  useEffect(() => {
+    if (!loading && user && session) {
+      console.log("User authenticated, redirecting to dashboard...");
+      navigate("/dashboard", { replace: true });
+    }
+  }, [user, session, loading, navigate]);
 
   // Handle Google OAuth sign-in
   const handleSignIn = async () => {
@@ -96,6 +96,14 @@ const Landing = () => {
         {children}
       </MotionBox>
     );
+  };
+
+  const scrollToAbout = (e) => {
+    e.preventDefault();
+    const target = document.querySelector("#about-section");
+    if (target) {
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   };
 
   return (
@@ -256,7 +264,7 @@ const Landing = () => {
       </Box>
 
       {/* Value Propositions */}
-      <Container maxW="container.xl" py={20}>
+      <Container maxW="container.xl" py={20} id="about-section">
         <AnimatedSection>
           <VStack spacing={4} textAlign="center" mb={16}>
             <Heading size="2xl">Why teams love When</Heading>
@@ -488,9 +496,9 @@ const Landing = () => {
                   <VStack align="start" spacing={3}>
                     {[
                       "Google Calendar sync",
-                      "Microsoft Outlook support",
-                      "Apple Calendar integration",
-                      "Two-way synchronization"
+                      // "Microsoft Outlook support",
+                      // "Apple Calendar integration",
+                      // "Two-way synchronization"
                     ].map((item, i) => (
                       <HStack key={i}>
                         <Icon as={FiCheck} color={colors.secondary} boxSize={5} />
@@ -602,7 +610,7 @@ const Landing = () => {
 
             <VStack align="start" spacing={3}>
               <Text fontWeight="bold">Company</Text>
-              <Link fontSize="sm" color="gray.400" _hover={{ color: "white" }}>
+              <Link fontSize="sm" color="gray.400" _hover={{ color: "white" }} onClick={scrollToAbout}>
                 About
               </Link>
               <Link fontSize="sm" color="gray.400" _hover={{ color: "white" }}>
@@ -636,7 +644,7 @@ const Landing = () => {
             gap={4}
           >
             <Text fontSize="sm" color="gray.400">
-              © 2024 When. All rights reserved.
+              © 2025 When. All rights reserved.
             </Text>
             <HStack spacing={6}>
               <Link fontSize="sm" color="gray.400" _hover={{ color: "white" }}>
@@ -657,8 +665,13 @@ const Landing = () => {
 };
 
 // Missing Link component import
-const Link = ({ children, ...props }) => (
-  <Text as="a" cursor="pointer" {...props}>
+const Link = ({ children, onClick, ...props }) => (
+  <Text
+    as="a"
+    cursor="pointer"
+    onClick={onClick}
+    {...props}
+  >
     {children}
   </Text>
 );

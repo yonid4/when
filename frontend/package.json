@@ -10,7 +10,6 @@
     "@supabase/supabase-js": "^2.39.0",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
-    "@testing-library/user-event": "^13.5.0",
     "axios": "^1.6.2",
     "date-fns": "^2.30.0",
     "date-fns-tz": "^2.0.0",
@@ -47,5 +46,20 @@
       "last 1 safari version"
     ]
   },
-  "proxy": "http://localhost:5000"
+  "proxy": "http://localhost:5000",
+  "jest": {
+    "transformIgnorePatterns": [
+      "node_modules/(?!(axios|@chakra-ui)/)"
+    ],
+    "moduleNameMapper": {
+      "^axios$": "axios/dist/node/axios.cjs",
+      "^test-fixtures/(.*)$": "<rootDir>/tests/fixtures/$1",
+      "^test-mocks/(.*)$": "<rootDir>/tests/__mocks__/$1",
+      "^@chakra-ui/utils/context$": "<rootDir>/tests/__mocks__/chakraContext.js",
+      "\\.(css|less|scss|sass)$": "identity-obj-proxy"
+    }
+  },
+  "devDependencies": {
+    "@testing-library/user-event": "^14.6.1"
+  }
 }

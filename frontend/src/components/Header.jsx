@@ -1,36 +1,27 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@chakra-ui/react";
 import { supabase } from "../services/supabaseClient";
 import NotificationBell from "./notifications/NotificationBell";
 
 const Header = () => {
     const navigate = useNavigate();
-    const location = useLocation();
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [currentUserId, setCurrentUserId] = useState(null);
-    const [user, setUser] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
 
-    const isLandingPage = location.pathname === '/';
-    const isDashboard = location.pathname === '/dashboard';
-    // const isEventPage = location.pathname.startsWith('/events/'); // Not strictly needed for logic but good for context
-
     useEffect(() => {
-        // Check authentication status
         const checkAuth = async () => {
             const { data: { session } } = await supabase.auth.getSession();
             setIsAuthenticated(!!session);
             setCurrentUserId(session?.user?.id || null);
-            setUser(session?.user || null);
         };
 
         checkAuth();
 
-        // Listen for auth changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             setIsAuthenticated(!!session);
             setCurrentUserId(session?.user?.id || null);
-            setUser(session?.user || null);
         });
 
         return () => {
@@ -44,7 +35,7 @@ const Header = () => {
             const { error } = await supabase.auth.signInWithOAuth({
                 provider: "google",
                 options: {
-                    redirectTo: window.location.origin + "/dashboard", // Redirect to dashboard after login
+                    redirectTo: window.location.origin + "/dashboard",
                     queryParams: {
                         access_type: 'offline',
                         prompt: 'consent',
@@ -63,10 +54,7 @@ const Header = () => {
     const handleLogout = async () => {
         try {
             await supabase.auth.signOut();
-            if (isDashboard) {
-                navigate("/");
-            }
-            // If on landing page, stay there. Auth state change will update UI.
+            navigate("/");
         } catch (error) {
             console.error("Error logging out:", error);
         }
@@ -79,11 +67,15 @@ const Header = () => {
             justifyContent: "space-between",
             height: "64px",
             background: "var(--primary-color)",
-            boxShadow: "0 2px 4px rgba(0,0,0,0.04)",
+            borderBottom: "1px solid var(--salt-pepper-light-gray)",
             padding: "0 2rem",
             width: "100%",
-            boxSizing: "border-box"
+            boxSizing: "border-box",
+            position: "sticky",
+            top: 0,
+            zIndex: 1000
         }}>
+            {/* Logo */}
             <button
                 onClick={() => navigate(isAuthenticated ? "/dashboard" : "/")}
                 style={{
@@ -103,152 +95,41 @@ const Header = () => {
                 />
             </button>
 
-            {/* Right side container */}
-            <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-
-                {/* Notification Bell - Always visible if authenticated? Or always? User didn't specify, but usually requires auth. 
-            The previous layout showed it always, but passed currentUserId. 
-            Let's keep it consistent with previous layout but maybe hide if not auth? 
-            Previous layout: <NotificationBell currentUserId={currentUserId} isAuthenticated={isAuthenticated} />
-        */}
+            {/* Right side: Notification Bell + Login/Logout */}
+            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
                 {isAuthenticated && (
-                    <NotificationBell currentUserId={currentUserId} isAuthenticated={isAuthenticated} />
+                    <NotificationBell
+                        currentUserId={currentUserId}
+                        isAuthenticated={isAuthenticated}
+                    />
                 )}
 
-                {/* Landing Page Logic */}
-                {isLandingPage && !isAuthenticated && (
-                    <button
-                        onClick={handleGoogleLogin}
-                        disabled={isLoading}
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            background: "white",
-                            color: "#444",
-                            border: "1px solid #ddd",
-                            borderRadius: "4px",
-                            padding: "0.5rem 1rem",
-                            fontSize: "0.9rem",
-                            fontWeight: 500,
-                            cursor: isLoading ? "not-allowed" : "pointer",
-                            transition: "all 0.2s"
-                        }}
+                {isAuthenticated ? (
+                    <Button
+                        onClick={handleLogout}
+                        variant="outline"
+                        colorScheme="gray"
+                        size="sm"
+                        borderColor="var(--salt-pepper-medium-gray)"
+                        color="var(--secondary-color)"
+                        _hover={{ bg: "gray.50" }}
                     >
-                        {isLoading ? "Signing in..." : "Sign in with Google"}
-                    </button>
+                        Logout
+                    </Button>
+                ) : (
+                    <Button
+                        onClick={handleGoogleLogin}
+                        isLoading={isLoading}
+                        loadingText="Signing in..."
+                        variant="solid"
+                        size="sm"
+                        bg="var(--secondary-color)"
+                        color="white"
+                        _hover={{ bg: "#3d3d3d" }}
+                    >
+                        Sign in with Google
+                    </Button>
                 )}
-
-                {isLandingPage && isAuthenticated && (
-                    <>
-                        <button
-                            onClick={() => navigate('/dashboard')}
-                            style={{
-                                background: "var(--secondary-color)",
-                                color: "white",
-                                border: "none",
-                                padding: "0.5rem 1rem",
-                                borderRadius: "4px",
-                                cursor: "pointer",
-                                fontSize: "0.9rem",
-                                fontWeight: 500,
-                                transition: "all 0.2s"
-                            }}
-                        >
-                            Go to Dashboard
-                        </button>
-                        <button
-                            onClick={handleLogout}
-                            style={{
-                                background: "none",
-                                border: "1px solid var(--secondary-color)",
-                                color: "var(--secondary-color)",
-                                padding: "0.5rem 1rem",
-                                borderRadius: "4px",
-                                cursor: "pointer",
-                                fontSize: "0.9rem",
-                                fontWeight: 500,
-                                transition: "all 0.2s"
-                            }}
-                        >
-                            Logout
-                        </button>
-                    </>
-                )}
-
-                {/* Dashboard Logic */}
-                {isDashboard && isAuthenticated && (
-                    <>
-                        {/* User Avatar - simplified as text or image if available */}
-                        {user?.user_metadata?.avatar_url ? (
-                            <img
-                                src={user.user_metadata.avatar_url}
-                                alt="User Avatar"
-                                style={{ width: 32, height: 32, borderRadius: '50%' }}
-                            />
-                        ) : (
-                            <div style={{ fontWeight: 500, color: 'var(--secondary-color)' }}>
-                                {user?.email?.charAt(0).toUpperCase()}
-                            </div>
-                        )}
-                        <button
-                            onClick={handleLogout}
-                            style={{
-                                background: "none",
-                                border: "1px solid var(--secondary-color)",
-                                color: "var(--secondary-color)",
-                                padding: "0.5rem 1rem",
-                                borderRadius: "4px",
-                                cursor: "pointer",
-                                fontSize: "0.9rem",
-                                fontWeight: 500,
-                                transition: "all 0.2s"
-                            }}
-                        >
-                            Logout
-                        </button>
-                    </>
-                )}
-
-                {/* Fallback for other pages (like EventPage) or if states don't match above exactly */}
-                {!isLandingPage && !isDashboard && (
-                    <>
-                        {isAuthenticated ? (
-                            <button
-                                onClick={handleLogout}
-                                style={{
-                                    background: "none",
-                                    border: "1px solid var(--secondary-color)",
-                                    color: "var(--secondary-color)",
-                                    padding: "0.5rem 1rem",
-                                    borderRadius: "4px",
-                                    cursor: "pointer",
-                                    fontSize: "0.9rem",
-                                    fontWeight: 500,
-                                    transition: "all 0.2s"
-                                }}
-                            >
-                                Logout
-                            </button>
-                        ) : (
-                            <button
-                                onClick={handleGoogleLogin}
-                                style={{
-                                    background: "white",
-                                    color: "#444",
-                                    border: "1px solid #ddd",
-                                    borderRadius: "4px",
-                                    padding: "0.5rem 1rem",
-                                    fontSize: "0.9rem",
-                                    fontWeight: 500,
-                                    cursor: "pointer"
-                                }}
-                            >
-                                Sign in with Google
-                            </button>
-                        )}
-                    </>
-                )}
-
             </div>
         </header>
     );

@@ -160,6 +160,27 @@ def expired_jwt_token(sample_user):
     return jwt.encode(payload, secret, algorithm="HS256")
 
 
+@pytest.fixture
+def auth_headers(sample_jwt_token, sample_user):
+    """
+    Create Authorization headers with a valid JWT token for API testing.
+    Also mocks Supabase auth to return the sample user when token is verified.
+    """
+    with patch("app.utils.decorators.get_supabase") as mock_get_supabase:
+        mock_supabase = Mock()
+        mock_user_obj = Mock()
+        mock_user_obj.id = "user-1"  # Match the sample auth user ID used in tests
+        mock_user_obj.email = sample_user["email"]
+
+        mock_user_response = Mock()
+        mock_user_response.user = mock_user_obj
+
+        mock_supabase.auth.get_user.return_value = mock_user_response
+        mock_get_supabase.return_value = mock_supabase
+
+        yield {"Authorization": f"Bearer {sample_jwt_token}"}
+
+
 # ============================================================================
 # Sample Event Fixtures
 # ============================================================================
@@ -173,8 +194,8 @@ def sample_event(sample_user):
         "name": "Test Event",
         "description": "A test event for testing",
         "coordinator_id": sample_user["id"],
-        "earliest_date": "2024-12-20",
-        "latest_date": "2024-12-25",
+        "earliest_date": "2024-12-20T00:00:00+00:00",
+        "latest_date": "2024-12-25T23:59:59+00:00",
         "earliest_hour": "09:00:00",
         "latest_hour": "17:00:00",
         "duration_minutes": 60,
@@ -200,8 +221,8 @@ def sample_finalized_event(sample_user):
         "name": "Finalized Event",
         "description": "A finalized event",
         "coordinator_id": sample_user["id"],
-        "earliest_date": "2024-12-20",
-        "latest_date": "2024-12-25",
+        "earliest_date": "2024-12-20T00:00:00+00:00",
+        "latest_date": "2024-12-25T23:59:59+00:00",
         "earliest_hour": "09:00:00",
         "latest_hour": "17:00:00",
         "duration_minutes": 60,

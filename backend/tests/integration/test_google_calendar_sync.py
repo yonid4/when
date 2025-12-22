@@ -1,0 +1,515 @@
+"""
+Integration tests for Google Calendar synchronization flow.
+
+Flow tested:
+1. OAuth flow initiation →
+2. Token exchange and storage →
+3. Fetch busy times from Google Calendar →
+4. Merge with existing busy slots →
+5. Update cache
+"""
+
+import pytest
+from datetime import datetime, timezone, timedelta
+from unittest.mock import Mock, patch, MagicMock
+from google.oauth2.credentials import Credentials
+from app.services.google_calendar import (
+    get_auth_url,
+    get_credentials_from_code,
+    store_credentials,
+    get_stored_credentials,
+    get_calendar_service
+)
+
+
+class TestGoogleCalendarSync:
+    """Integration tests for Google Calendar synchronization workflow."""
+
+    @pytest.fixture
+    def mock_google_oauth_flow(self):
+        """Mock Google OAuth flow."""
+        mock_flow = Mock()
+        mock_flow.authorization_url.return_value = (
+            "https://accounts.google.com/o/oauth2/auth?client_id=test",
+            "state-123"
+        )
+
+        # Mock credentials after token exchange
+        mock_credentials = Mock(spec=Credentials)
+        mock_credentials.token = "access-token-123"
+        mock_credentials.refresh_token = "refresh-token-123"
+        mock_credentials.token_uri = "https://oauth2.googleapis.com/token"
+        mock_credentials.client_id = "test-client-id"
+        mock_credentials.client_secret = "test-client-secret"
+        mock_credentials.scopes = [
+            "https://www.googleapis.com/auth/calendar",
+            "https://www.googleapis.com/auth/userinfo.email"
+        ]
+
+        mock_flow.credentials = mock_credentials
+        mock_flow.fetch_token = Mock()
+
+        return mock_flow
+
+    @pytest.fixture
+    def mock_supabase_for_calendar(self):
+        """Mock Supabase client for calendar operations."""
+        mock_client = Mock()
+
+        # Storage
+        profiles = [{
+            "id": "user-123",
+            "email_address": "user@example.com",
+            "full_name": "Test User",
+            "google_auth_token": None
+        }]
+
+        busy_slots = []
+
+        def table_mock(table_name: str):
+            table = Mock()
+
+            if table_name == "profiles":
+                def select_mock(fields="*"):
+                    query = Mock()
+
+                    def eq_mock(field, value):
+                        result = Mock()
+                        filtered = [p for p in profiles if p.get(field) == value]
+                        result.execute.return_value.data = filtered
+                        return result
+
+                    query.eq = eq_mock
+                    return query
+
+                def update_mock(data):
+                    query = Mock()
+
+                    def eq_mock(field, value):
+                        result = Mock()
+                        # Update matching profiles
+                        for profile in profiles:
+                            if profile.get(field) == value:
+                                profile.update(data)
+                        result.execute.return_value.data = [p for p in profiles if p.get(field) == value]
+                        return result
+
+                    query.eq = eq_mock
+                    return query
+
+                table.select = select_mock
+                table.update = update_mock
+
+            elif table_name == "busy_slots":
+                def insert_mock(data):
+                    result = Mock()
+                    # Handle both single insert and batch insert
+                    if isinstance(data, list):
+                        for item in data:
+                            slot_data = {
+                                **item,
+                                "id": f"busy-{len(busy_slots) + 1}",
+                                "created_at": datetime.now(timezone.utc).isoformat()
+                            }
+                            busy_slots.append(slot_data)
+                        result.execute.return_value.data = [busy_slots[-len(data):]]
+                    else:
+                        slot_data = {
+                            **data,
+                            "id": f"busy-{len(busy_slots) + 1}",
+                            "created_at": datetime.now(timezone.utc).isoformat()
+                        }
+                        busy_slots.append(slot_data)
+                        result.execute.return_value.data = [slot_data]
+                    return result
+
+                def select_mock(fields="*"):
+                    query = Mock()
+
+                    def eq_mock(field, value):
+                        result = Mock()
+                        filtered = [b for b in busy_slots if b.get(field) == value]
+                        result.execute.return_value.data = filtered
+                        return result
+
+                    query.eq = eq_mock
+                    return query
+
+                def delete_mock():
+                    query = Mock()
+
+                    def eq_mock(field, value):
+                        result = Mock()
+                        # Remove matching slots
+                        nonlocal busy_slots
+                        busy_slots = [b for b in busy_slots if b.get(field) != value]
+                        result.execute.return_value = Mock()
+                        return result
+
+                    query.eq = eq_mock
+                    return query
+
+                table.insert = insert_mock
+                table.select = select_mock
+                table.delete = delete_mock
+
+            return table
+
+        mock_client.table = table_mock
+        return mock_client
+
+    @pytest.fixture
+    def mock_calendar_service(self):
+        """Mock Google Calendar API service."""
+        mock_service = Mock()
+        mock_events = Mock()
+
+        # Mock calendar event list response
+        mock_events.list.return_value.execute.return_value = {
+            "items": [
+                {
+                    "id": "gcal-event-1",
+                    "summary": "Busy Meeting",
+                    "start": {
+                        "dateTime": (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat()
+                    },
+                    "end": {
+                        "dateTime": (datetime.now(timezone.utc) + timedelta(hours=2)).isoformat()
+                    },
+                    "transparency": "opaque"
+                },
+                {
+                    "id": "gcal-event-2",
+                    "summary": "Another Meeting",
+                    "start": {
+                        "dateTime": (datetime.now(timezone.utc) + timedelta(hours=3)).isoformat()
+                    },
+                    "end": {
+                        "dateTime": (datetime.now(timezone.utc) + timedelta(hours=4)).isoformat()
+                    },
+                    "transparency": "opaque"
+                }
+            ]
+        }
+
+        mock_service.events.return_value = mock_events
+        return mock_service
+
+    def test_oauth_flow_initiation(self, mock_google_oauth_flow, app):
+        """Test OAuth flow can be initiated and returns authorization URL."""
+        # Arrange
+        with app.app_context():
+            with patch('app.services.google_calendar.create_flow', return_value=mock_google_oauth_flow):
+                with patch('flask.current_app') as mock_app:
+                    mock_app.config = {
+                        "GOOGLE_CLIENT_ID": "test-client-id",
+                        "GOOGLE_CLIENT_SECRET": "test-client-secret",
+                        "GOOGLE_REDIRECT_URI": "http://localhost:5000/callback"
+                    }
+
+                    # Act
+                    auth_url = get_auth_url()
+
+                    # Assert
+                    assert auth_url is not None
+                    assert "accounts.google.com" in auth_url
+                    assert "oauth2" in auth_url
+
+    def test_token_exchange_and_storage(self, mock_google_oauth_flow, mock_supabase_for_calendar, app):
+        """
+        Test complete flow from authorization code to stored credentials.
+
+        Steps:
+        1. Exchange code for credentials
+        2. Store credentials in database
+        3. Verify credentials can be retrieved
+        """
+        # Arrange
+        user_id = "user-123"
+        auth_code = "test-auth-code"
+
+        with app.app_context():
+            with patch('app.services.google_calendar.create_flow', return_value=mock_google_oauth_flow):
+                with patch('flask.current_app') as mock_app:
+                    mock_app.config = {
+                        "GOOGLE_CLIENT_ID": "test-client-id",
+                        "GOOGLE_CLIENT_SECRET": "test-client-secret",
+                        "GOOGLE_REDIRECT_URI": "http://localhost:5000/callback",
+                        "GOOGLE_TOKEN_URI": "https://oauth2.googleapis.com/token"
+                    }
+
+                    with patch('app.utils.supabase_client.get_supabase', return_value=mock_supabase_for_calendar):
+                        with patch('supabase.create_client', return_value=mock_supabase_for_calendar):
+                            # Act - Step 1: Exchange code for credentials
+                            credentials = get_credentials_from_code(auth_code)
+
+                            # Assert - Credentials obtained
+                            assert credentials is not None
+                            assert credentials.token == "access-token-123"
+                            assert credentials.refresh_token == "refresh-token-123"
+
+                            # Act - Step 2: Store credentials
+                            store_credentials(user_id, credentials)
+
+                            # Act - Step 3: Retrieve credentials
+                            stored_creds = get_stored_credentials(user_id)
+
+                            # Assert - Credentials stored and retrieved
+                            assert stored_creds is not None
+                            assert stored_creds.token == "access-token-123"
+
+    def test_fetch_busy_times_from_calendar(self, mock_calendar_service, mock_supabase_for_calendar):
+        """
+        Test fetching busy times from Google Calendar.
+
+        Steps:
+        1. Get calendar service with valid credentials
+        2. Fetch events from calendar
+        3. Parse busy times
+        """
+        # Arrange
+        user_id = "user-123"
+
+        mock_credentials = Mock(spec=Credentials)
+        mock_credentials.token = "access-token-123"
+        mock_credentials.refresh_token = "refresh-token-123"
+        mock_credentials.expired = False
+        mock_credentials.valid = True
+
+        with patch('app.services.google_calendar.get_stored_credentials', return_value=mock_credentials):
+            with patch('app.services.google_calendar.store_credentials'):
+                with patch('app.services.google_calendar.build', return_value=mock_calendar_service):
+                    with patch('app.utils.supabase_client.get_supabase', return_value=mock_supabase_for_calendar):
+                        with patch('supabase.create_client', return_value=mock_supabase_for_calendar):
+                            # Act - Get calendar service
+                            service = get_calendar_service(mock_credentials, user_id)
+
+                            # Act - Fetch events
+                            time_min = datetime.now(timezone.utc).isoformat()
+                            time_max = (datetime.now(timezone.utc) + timedelta(days=7)).isoformat()
+
+                            events_result = service.events().list(
+                                calendarId='primary',
+                                timeMin=time_min,
+                                timeMax=time_max,
+                                singleEvents=True,
+                                orderBy='startTime'
+                            ).execute()
+
+                            events = events_result.get('items', [])
+
+                            # Assert - Events retrieved
+                            assert len(events) == 2
+                            assert events[0]['summary'] == "Busy Meeting"
+                            assert events[1]['summary'] == "Another Meeting"
+
+    def test_merge_calendar_events_with_existing_busy_slots(self, mock_calendar_service, mock_supabase_for_calendar):
+        """
+        Test merging Google Calendar events with existing busy slots.
+
+        Steps:
+        1. Create existing busy slots in database
+        2. Fetch new events from Google Calendar
+        3. Merge and deduplicate
+        4. Store in database
+        """
+        # Arrange
+        user_id = "user-123"
+
+        with patch('app.utils.supabase_client.get_supabase', return_value=mock_supabase_for_calendar):
+            with patch('supabase.create_client', return_value=mock_supabase_for_calendar):
+                from app.services.busy_slots import BusySlotService
+
+                busy_slots_service = BusySlotService()
+
+                # Create existing busy slot
+                existing_slot = {
+                    "user_id": user_id,
+                    "start_time_utc": (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat(),
+                    "end_time_utc": (datetime.now(timezone.utc) + timedelta(hours=2)).isoformat(),
+                    "source": "google_calendar",
+                    "external_event_id": "gcal-event-1"
+                }
+
+                # Insert via mock table
+                result = mock_supabase_for_calendar.table("busy_slots").insert(existing_slot).execute()
+
+                # Act - Fetch calendar events (mocked)
+                mock_credentials = Mock(spec=Credentials)
+                mock_credentials.token = "test-access-token"
+                mock_credentials.refresh_token = "test-refresh-token"
+                mock_credentials.token_uri = "https://oauth2.googleapis.com/token"
+                mock_credentials.client_id = "test-client-id"
+                mock_credentials.client_secret = "test-client-secret"
+                mock_credentials.scopes = ["https://www.googleapis.com/auth/calendar"]
+                mock_credentials.expired = False
+                mock_credentials.valid = True
+
+                with patch('app.services.google_calendar.store_credentials'):
+                    with patch('app.services.google_calendar.build', return_value=mock_calendar_service):
+                        service = get_calendar_service(mock_credentials, user_id)
+
+                        events_result = service.events().list(
+                            calendarId='primary',
+                            timeMin=datetime.now(timezone.utc).isoformat(),
+                            timeMax=(datetime.now(timezone.utc) + timedelta(days=7)).isoformat(),
+                            singleEvents=True,
+                            orderBy='startTime'
+                        ).execute()
+
+                        calendar_events = events_result.get('items', [])
+
+                        # Convert to busy slots
+                        new_busy_slots = []
+                        for event in calendar_events:
+                            if event.get('transparency') != 'transparent':
+                                new_busy_slots.append({
+                                    "user_id": user_id,
+                                    "start_time_utc": event['start']['dateTime'],
+                                    "end_time_utc": event['end']['dateTime'],
+                                    "source": "google_calendar",
+                                    "external_event_id": event['id']
+                                })
+
+                        # Filter out duplicates (events with same external_event_id)
+                        existing_slots = mock_supabase_for_calendar.table("busy_slots").select("*").eq("user_id", user_id).execute().data
+                        existing_event_ids = {slot.get("external_event_id") for slot in existing_slots}
+
+                        unique_new_slots = [
+                            slot for slot in new_busy_slots
+                            if slot.get("external_event_id") not in existing_event_ids
+                        ]
+
+                        # Assert - Only new event is added (first event already exists)
+                        assert len(new_busy_slots) == 2
+                        assert len(unique_new_slots) == 1
+                        assert unique_new_slots[0]["external_event_id"] == "gcal-event-2"
+
+    def test_token_refresh_on_expiry(self, mock_supabase_for_calendar):
+        """Test that expired tokens are refreshed automatically."""
+        # Arrange
+        user_id = "user-123"
+
+        # Mock expired credentials
+        mock_credentials = Mock(spec=Credentials)
+        mock_credentials.token = "old-token"
+        mock_credentials.refresh_token = "refresh-token-123"
+        mock_credentials.expired = True
+        mock_credentials.valid = False
+
+        # Mock refreshed credentials
+        mock_credentials.refresh = Mock()
+
+        def refresh_mock(request):
+            mock_credentials.token = "new-refreshed-token"
+            mock_credentials.expired = False
+            mock_credentials.valid = True
+
+        mock_credentials.refresh.side_effect = refresh_mock
+
+        with patch('app.utils.supabase_client.get_supabase', return_value=mock_supabase_for_calendar):
+            with patch('supabase.create_client', return_value=mock_supabase_for_calendar):
+                with patch('app.services.google_calendar.store_credentials'):
+                    with patch('app.services.google_calendar.build', return_value=Mock()):
+                        # Act - Get calendar service (should trigger refresh)
+                        service = get_calendar_service(mock_credentials, user_id)
+
+                        # Assert - Token was refreshed
+                        mock_credentials.refresh.assert_called_once()
+                        assert mock_credentials.token == "new-refreshed-token"
+                        assert mock_credentials.valid is True
+
+    def test_calendar_sync_with_no_events(self, mock_supabase_for_calendar):
+        """Test calendar sync when Google Calendar has no events."""
+        # Arrange
+        user_id = "user-123"
+
+        # Mock calendar service with empty events
+        mock_service = Mock()
+        mock_events = Mock()
+        mock_events.list.return_value.execute.return_value = {"items": []}
+        mock_service.events.return_value = mock_events
+
+        mock_credentials = Mock(spec=Credentials)
+        mock_credentials.token = "test-access-token"
+        mock_credentials.refresh_token = "test-refresh-token"
+        mock_credentials.token_uri = "https://oauth2.googleapis.com/token"
+        mock_credentials.client_id = "test-client-id"
+        mock_credentials.client_secret = "test-client-secret"
+        mock_credentials.scopes = ["https://www.googleapis.com/auth/calendar.readonly"]
+        mock_credentials.expired = False
+        mock_credentials.valid = True
+
+        with patch('app.services.google_calendar.store_credentials'):
+            with patch('app.services.google_calendar.build', return_value=mock_service):
+                # Act
+                service = get_calendar_service(mock_credentials, user_id)
+                events_result = service.events().list(
+                    calendarId='primary',
+                    timeMin=datetime.now(timezone.utc).isoformat(),
+                    timeMax=(datetime.now(timezone.utc) + timedelta(days=7)).isoformat()
+                ).execute()
+
+                events = events_result.get('items', [])
+
+                # Assert
+                assert len(events) == 0
+
+    def test_differential_sync_updates_cache(self, mock_supabase_for_calendar):
+        """
+        Test that differential sync only updates changed events.
+
+        Steps:
+        1. Store initial busy slots from calendar
+        2. Simulate calendar update (add new event, remove old)
+        3. Perform differential sync
+        4. Verify only changes are applied
+        """
+        # Arrange
+        user_id = "user-123"
+
+        with patch('app.utils.supabase_client.get_supabase', return_value=mock_supabase_for_calendar):
+            with patch('supabase.create_client', return_value=mock_supabase_for_calendar):
+                # Step 1: Insert initial busy slots
+                initial_slots = [
+                    {
+                        "user_id": user_id,
+                        "start_time_utc": (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat(),
+                        "end_time_utc": (datetime.now(timezone.utc) + timedelta(hours=2)).isoformat(),
+                        "source": "google_calendar",
+                        "external_event_id": "gcal-event-old"
+                    }
+                ]
+
+                mock_supabase_for_calendar.table("busy_slots").insert(initial_slots).execute()
+
+                # Step 2: Simulate fetching updated calendar events
+                new_calendar_events = [
+                    {
+                        "id": "gcal-event-new",
+                        "summary": "New Meeting",
+                        "start": {"dateTime": (datetime.now(timezone.utc) + timedelta(hours=3)).isoformat()},
+                        "end": {"dateTime": (datetime.now(timezone.utc) + timedelta(hours=4)).isoformat()},
+                        "transparency": "opaque"
+                    }
+                ]
+
+                # Step 3: Delete old events and insert new
+                mock_supabase_for_calendar.table("busy_slots").delete().eq("external_event_id", "gcal-event-old").execute()
+
+                new_slots = [{
+                    "user_id": user_id,
+                    "start_time_utc": event["start"]["dateTime"],
+                    "end_time_utc": event["end"]["dateTime"],
+                    "source": "google_calendar",
+                    "external_event_id": event["id"]
+                } for event in new_calendar_events]
+
+                mock_supabase_for_calendar.table("busy_slots").insert(new_slots).execute()
+
+                # Step 4: Verify final state
+                all_slots = mock_supabase_for_calendar.table("busy_slots").select("*").eq("user_id", user_id).execute().data
+
+                # Assert - Old event removed, new event added
+                assert len(all_slots) == 1
+                assert all_slots[0]["external_event_id"] == "gcal-event-new"
