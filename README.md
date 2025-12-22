@@ -13,6 +13,7 @@ A full-stack application for coordinating events and managing availability acros
 - **🎯 Event Finalization**: Coordinators can finalize events to specific time slots with participant confirmation
 - **⏱️ Continuous Timeline UI**: New time slot display component for visualizing availability across time ranges
 - **🌍 Timezone Support**: All proposed times are stored in UTC and automatically converted to user's local timezone for display
+- **🧪 Comprehensive Testing Suite**: 307+ backend tests and extensive frontend testing infrastructure covering API endpoints, integration flows, services, components, and hooks
 
 ### Technical Improvements
 - **Enhanced Authentication**: Refactored backend decorators to pass user IDs more efficiently
@@ -24,6 +25,8 @@ A full-stack application for coordinating events and managing availability acros
 - **New React Hooks**: `useApiCall` hook for standardized API call patterns with loading states
 - **Improved UX Flow**: Accepting invitations now redirects to event page instead of reloading dashboard
 - **Universal Calendar Access**: All participants can reconnect their Google Calendar (not just coordinators)
+- **Streamlined Codebase**: Removed deprecated components and consolidated routing for better maintainability
+- **Test-Driven Development**: Comprehensive test coverage for all critical paths including authentication, availability calculation, event management, AI proposals, and calendar integration
 
 ### Database Enhancements
 - New `proposed_times` table for AI proposal caching
@@ -242,7 +245,27 @@ when/
 │   │   │   └── validators.py
 │   │   └── background_jobs/  # Scheduled tasks
 │   │       └── proposal_regeneration.py # Auto-refresh AI proposals
-│   ├── tests/                # Test suite
+│   ├── tests/                # Comprehensive test suite (307+ tests)
+│   │   ├── api/              # API endpoint tests (123 tests)
+│   │   │   ├── test_auth_routes.py
+│   │   │   ├── test_events_routes.py
+│   │   │   ├── test_busy_slots_routes.py
+│   │   │   ├── test_invitations_routes.py
+│   │   │   ├── test_notifications_routes.py
+│   │   │   └── test_time_proposal_routes.py
+│   │   ├── integration/      # Integration flow tests
+│   │   │   ├── test_ai_proposal_flow.py
+│   │   │   ├── test_event_creation_flow.py
+│   │   │   ├── test_event_finalization_flow.py
+│   │   │   ├── test_google_calendar_sync.py
+│   │   │   └── test_invitation_flow.py
+│   │   ├── unit/services/    # Service unit tests
+│   │   │   ├── test_event_finalization_service.py
+│   │   │   ├── test_google_calendar_service.py
+│   │   │   ├── test_invitations_service.py
+│   │   │   ├── test_notifications_service.py
+│   │   │   └── test_time_proposal_service.py
+│   │   └── conftest.py       # Test fixtures and configuration
 │   ├── run.py               # Application entry point
 │   └── requirements.txt     # Python dependencies
 ├── frontend/               # React Application
@@ -264,13 +287,10 @@ when/
 │   │   │   │   └── NotificationItem.jsx
 │   │   │   └── common/     # Shared UI components
 │   │   ├── pages/          # Route-level components
-│   │   │   ├── Dashboard.jsx
-│   │   │   ├── DashboardTemp.jsx  # New redesigned dashboard
-│   │   │   ├── EventPage.jsx
-│   │   │   ├── EventTemp.jsx      # New event details page
+│   │   │   ├── Dashboard.jsx      # Main dashboard
+│   │   │   ├── EventPage.jsx      # Event details page
 │   │   │   ├── EventCreate.jsx    # Multi-step creation wizard
-│   │   │   ├── Landing.jsx        # New marketing landing page
-│   │   │   └── LandingPage.jsx
+│   │   │   └── Landing.jsx        # Marketing landing page
 │   │   ├── hooks/          # Custom React hooks
 │   │   │   ├── useApiCall.js      # API call abstraction (NEW)
 │   │   │   ├── useAuth.js
@@ -294,7 +314,36 @@ when/
 │   │       ├── mockData.js        # Mock data for testing (NEW)
 │   │       ├── dateUtils.js
 │   │       └── timezoneUtils.js
-│   └── package.json        # Node.js dependencies
+│   ├── src/__tests__/       # Frontend test suite
+│   │   └── unit/            # Unit tests
+│   │       ├── components/  # Component tests
+│   │       │   ├── calendar/CalendarView.test.jsx
+│   │       │   ├── event/InviteModal.test.jsx
+│   │       │   ├── event/ProposedTimesModal.test.jsx
+│   │       │   ├── events/TimeSlotDisplay.test.jsx
+│   │       │   └── notifications/NotificationBell.test.jsx
+│   │       ├── hooks/       # Hook tests
+│   │       │   ├── useAuth.test.js
+│   │       │   ├── useApiCall.test.js
+│   │       │   └── useAvailability.test.js
+│   │       └── services/    # Service tests
+│   │           ├── apiService.test.js
+│   │           ├── authService.test.js
+│   │           └── eventService.test.js
+│   ├── tests/               # Test infrastructure
+│   │   ├── __mocks__/       # Mock implementations
+│   │   │   ├── axios.js
+│   │   │   ├── chakraContext.js
+│   │   │   └── supabase.js
+│   │   ├── fixtures/        # Test fixtures and helpers
+│   │   │   ├── mockApiResponses.js
+│   │   │   ├── mockData.js
+│   │   │   ├── renderWithProviders.js
+│   │   │   └── testHelpers.js
+│   │   ├── setup.js         # Test environment setup
+│   │   └── TEST_INFRASTRUCTURE_GUIDE.md
+│   ├── setupTests.js        # Jest configuration
+│   └── package.json         # Node.js dependencies
 ├── shared/                 # Shared type definitions and constants
 │   ├── types/              # TypeScript type definitions
 │   └── constants/          # Shared constants
@@ -309,7 +358,12 @@ when/
 ├── docs/                   # Documentation
 │   ├── api.md             # API documentation
 │   ├── deployment.md      # Deployment guide
-│   └── setup.md           # Setup instructions
+│   ├── setup.md           # Setup instructions
+│   ├── API_TESTING_SUMMARY.md      # API endpoint test coverage
+│   ├── API_TEST_STATUS.md          # Test status and results
+│   ├── TEST_SUITE_SUMMARY.md       # Overall test suite summary
+│   ├── backend_testing_prompt.md   # Backend testing guide
+│   └── frontend_testing_prompt.md  # Frontend testing guide
 ├── scripts/                # Deployment and utility scripts
 │   ├── backup.sh          # Database backup script
 │   ├── deploy.sh          # Deployment script
@@ -431,27 +485,126 @@ All migrations are located in `/migrations/` with numbered SQL files (001-005)
 
 ## 🧪 Testing
 
+The application includes a comprehensive test suite with **307+ backend tests** and extensive frontend testing infrastructure.
+
 ### Backend Tests
+
+#### Run Tests
 ```bash
 cd backend
 source venv/bin/activate  # Activate virtual environment
-pytest                    # Run all tests
-pytest -v                 # Verbose output
-pytest --cov=app         # Run with coverage report
+
+# Run all tests
+pytest
+
+# Run with verbose output
+pytest -v
+
+# Run with coverage report
+pytest --cov=app --cov-report=html
+
+# Run specific test categories
+pytest backend/tests/api/           # API endpoint tests (123 tests)
+pytest backend/tests/integration/   # Integration tests
+pytest backend/tests/unit/          # Unit tests for services
 ```
+
+#### Test Coverage
+- **API Endpoint Tests** (`backend/tests/api/`): 123 tests
+  - Authentication routes (`test_auth_routes.py`): 23 tests
+  - Event routes (`test_events_routes.py`): 27 tests
+  - Busy slots routes (`test_busy_slots_routes.py`): 24 tests
+  - Invitation routes (`test_invitations_routes.py`): 11 tests
+  - Notification routes (`test_notifications_routes.py`): 24 tests
+  - Time proposal routes (`test_time_proposal_routes.py`): 14 tests
+
+- **Integration Tests** (`backend/tests/integration/`):
+  - AI proposal flow testing
+  - Event creation flow testing
+  - Event finalization flow testing
+  - Google Calendar sync integration testing
+  - Invitation flow testing
+
+- **Service Unit Tests** (`backend/tests/unit/services/`):
+  - Event finalization service
+  - Google Calendar service
+  - Invitations service
+  - Notifications service
+  - Time proposal service
+  - Busy slots service
+
+#### Test Infrastructure
+- Comprehensive fixtures in `conftest.py`
+- Mock Supabase client, Google Calendar API, and Gemini AI clients
+- Sample user and event data fixtures
+- Authentication header helpers
 
 ### Frontend Tests
+
+#### Run Tests
 ```bash
 cd frontend
-npm test                  # Run tests in watch mode
-npm test -- --coverage   # Run with coverage report
-npm test -- --watchAll=false  # Run once without watch mode
+
+# Run tests in watch mode
+npm test
+
+# Run with coverage report
+npm test -- --coverage
+
+# Run once without watch mode
+npm test -- --watchAll=false
+
+# Run specific test suites
+npm test -- CalendarView.test.jsx
+npm test -- --testPathPattern=hooks
 ```
 
-### Test Structure
-- Backend: Comprehensive unit tests for services, API endpoints, and utilities
-- Frontend: Component tests and integration tests
-- Test coverage for critical paths like authentication, availability calculation, and event management
+#### Test Coverage
+- **Component Tests** (`frontend/src/__tests__/unit/components/`):
+  - CalendarView
+  - InviteModal
+  - ProposedTimesModal
+  - TimeSlotDisplay
+  - NotificationBell
+
+- **Hook Tests** (`frontend/src/__tests__/unit/hooks/`):
+  - useAuth
+  - useApiCall
+  - useAvailability
+
+- **Service Tests** (`frontend/src/__tests__/unit/services/`):
+  - apiService
+  - authService
+  - eventService
+
+#### Test Infrastructure
+- Mock implementations for axios, Chakra UI, and Supabase client (`frontend/tests/__mocks__/`)
+- Test fixtures: mockApiResponses, mockData, renderWithProviders, testHelpers (`frontend/tests/fixtures/`)
+- Centralized test setup in `setupTests.js` and `frontend/tests/setup.js`
+- Comprehensive test infrastructure guide in `frontend/tests/TEST_INFRASTRUCTURE_GUIDE.md`
+
+### Test Documentation
+- `docs/API_TESTING_SUMMARY.md` - Complete API endpoint test coverage
+- `docs/API_TEST_STATUS.md` - Test status and results
+- `docs/TEST_SUITE_SUMMARY.md` - Overall test suite summary
+- `docs/backend_testing_prompt.md` - Backend testing guide
+- `docs/frontend_testing_prompt.md` - Frontend testing guide
+- Multiple frontend testing documentation files with detailed status reports
+
+### Test Pattern
+All tests follow the **AAA pattern** (Arrange-Act-Assert):
+- **Arrange**: Set up test data and mocks
+- **Act**: Execute the code under test
+- **Assert**: Verify expected outcomes
+
+Tests cover:
+- ✅ Success paths (200/201 status codes)
+- ✅ Authentication required (401 without token)
+- ✅ Authorization checks (403 for non-coordinators)
+- ✅ Input validation (400 for invalid data)
+- ✅ Not found scenarios (404)
+- ✅ Error handling (500 server errors)
+- ✅ Edge cases and special scenarios
 
 ## 🚀 Deployment
 
@@ -463,9 +616,13 @@ The application includes optimized Docker configuration for production deploymen
 # Quick start
 docker-compose up --build -d
 
-# Or use the helper script
+# Or use the helper scripts
 chmod +x docker-commands.sh
 ./docker-commands.sh start
+
+# Or use the deployment script
+chmod +x scripts/deploy.sh
+./scripts/deploy.sh
 
 # View logs
 docker-compose logs -f
@@ -575,20 +732,20 @@ For detailed deployment instructions, see [docs/deployment.md](docs/deployment.m
 
 For detailed API documentation, see `docs/api.md`.
 
-## 🎨 New Redesigned UI
+## 🎨 Redesigned UI
 
-The application includes a **completely redesigned user interface** with modern aesthetics and smooth animations. These new pages are available alongside the existing interface for comparison and testing.
+The application features a **modern user interface** with beautiful aesthetics and smooth animations.
 
-### New Routes
+### Main Routes
 
-#### Landing Page - `/landing`
+#### Landing Page - `/`
 Beautiful marketing page with:
 - Hero section with gradient background
 - Feature showcase with animations
 - Value propositions and social proof
 - Call-to-action sections
 
-#### Dashboard - `/dashboard_temp`
+#### Dashboard - `/dashboard`
 Modern dashboard featuring:
 - Top navigation with notifications and user menu
 - Quick stats cards with metrics
@@ -596,13 +753,14 @@ Modern dashboard featuring:
 - Upcoming events grid with hover effects
 - Empty states and loading animations
 
-#### Event Details - `/event_temp/:eventId`
+#### Event Details - `/event/:eventId`
 Comprehensive event view with:
 - Hero section with event details
 - RSVP buttons and statistics
-- Time voting section for multiple options
-- Comments and discussion area
-- Sidebar with participants and quick actions
+- AI-powered time proposals modal
+- Calendar view with availability
+- Participant management
+- Google Calendar integration
 
 #### Event Creation - `/event/create`
 Multi-step wizard with 5 steps:
@@ -618,8 +776,6 @@ Multi-step wizard with 5 steps:
 - **Animations**: Framer Motion for smooth transitions
 - **Responsive**: Mobile-first design with breakpoints
 - **Mock Data**: Available in `src/utils/mockData.js` for testing
-
-For complete documentation, see `frontend/NEW_ROUTES_README.md`.
 
 ## 🔧 Development
 
@@ -751,10 +907,57 @@ For support and questions:
 
 ## 📋 Documentation Updates
 
-**Last README Update:** December 18, 2024
-**Previous Update:** December 13, 2024
+**Last README Update:** December 21, 2024
+**Previous Update:** December 18, 2024
 
-### What Changed in This Update (December 18, 2024)
+### What Changed in This Update (December 21, 2024)
+
+#### Comprehensive Testing Suite ✅
+- **Backend API Tests**: Added comprehensive API endpoint tests covering all 6 route modules
+  - 123 API endpoint tests for authentication, events, busy slots, invitations, notifications, and time proposals
+  - Complete coverage including success paths, authentication, authorization, validation, and error scenarios
+  - All service layer calls are mocked with proper fixtures
+  - Test files: `test_auth_routes.py`, `test_events_routes.py`, `test_busy_slots_routes.py`, `test_invitations_routes.py`, `test_notifications_routes.py`, `test_time_proposal_routes.py`
+
+- **Backend Integration Tests**: Added end-to-end workflow tests
+  - AI proposal flow testing
+  - Event creation flow testing
+  - Event finalization flow testing
+  - Google Calendar sync integration testing
+  - Invitation flow testing
+  - Test files in `backend/tests/integration/`
+
+- **Backend Service Tests**: Enhanced service layer testing
+  - Comprehensive fixtures in `conftest.py` (mock Supabase, Google Calendar API, Gemini AI clients)
+  - Service tests for event finalization, Google Calendar, invitations, notifications, and time proposals
+  - 307+ total backend tests
+
+- **Frontend Testing Infrastructure**: Complete testing setup
+  - Component tests for CalendarView, InviteModal, ProposedTimesModal, TimeSlotDisplay, NotificationBell
+  - Hook tests for useAuth, useApiCall, useAvailability
+  - Service tests for apiService, authService, eventService
+  - Mock infrastructure: axios, Chakra UI context, Supabase client
+  - Test fixtures: mockApiResponses, mockData, renderWithProviders, testHelpers
+  - Files in `frontend/src/__tests__/unit/` and `frontend/tests/`
+
+- **Testing Documentation**:
+  - `docs/API_TESTING_SUMMARY.md` - API endpoint test coverage
+  - `docs/API_TEST_STATUS.md` - Test status and results
+  - `docs/TEST_SUITE_SUMMARY.md` - Overall test suite summary
+  - `docs/backend_testing_prompt.md` - Backend testing guide
+  - `docs/frontend_testing_prompt.md` - Frontend testing guide
+  - `frontend/tests/TEST_INFRASTRUCTURE_GUIDE.md` - Frontend test infrastructure
+
+#### UI/UX Improvements
+- **Streamlined Routing**: Removed deprecated `DashboardTemp.jsx`, `EventTemp.jsx`, and `LandingPage.jsx` components
+- **Consolidated Pages**: Now using single Dashboard, EventPage, and Landing components
+- **Improved Navigation**: Simplified routing in `App.jsx` for better maintainability
+
+#### Developer Tools
+- **Deployment Script**: Added `scripts/deploy.sh` for streamlined deployment workflow
+- **Enhanced .aimrules**: Updated timezone handling guidelines with clear examples for backend and frontend
+
+### Previous Update (December 18, 2024)
 
 #### UX Improvements
 - ✅ **Invitation Redirect**: Accepting invitations now redirects to event page instead of reloading dashboard
@@ -767,7 +970,7 @@ For support and questions:
 - ✅ Frontend: `EventPage.jsx` shows calendar reconnect button to all users
 - ✅ Frontend: `ProposedTimesModal.jsx` converts UTC times to local timezone using browser's `Intl` API
 
-### Previous Update (December 13, 2024)
+### Update from December 13, 2024
 This comprehensive update reflected all changes made between November 5 and December 13, 2024:
 
 #### New Features Documented
