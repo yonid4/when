@@ -12,6 +12,19 @@ from ..services.events import EventsService
 
 event_bp = Blueprint("events", __name__, url_prefix="/api/events")
 
+def parse_utc_datetime(datetime_str):
+    """Parse ISO format datetime string to datetime object"""
+    if not datetime_str:
+        return None
+    try:
+        # Remove 'Z' and add '+00:00' if present
+        if datetime_str.endswith('Z'):
+            datetime_str = datetime_str[:-1] + '+00:00'
+        return datetime.fromisoformat(datetime_str)
+    except ValueError as e:
+        logging.error(f"[EVENT] Error parsing datetime {datetime_str}: {e}")
+        raise ValueError(f"Invalid datetime format: {datetime_str}")
+
 # Create service role client for operations that need to bypass RLS (like event creation)
 # This client bypasses Row Level Security policies
 def get_service_role_client():
@@ -46,28 +59,6 @@ def create_event(user_id):
     logging.info(f"[EVENT] Creating event with data: {data}")
     logging.info(f"[EVENT] User ID: {user_id}")
 
-    def parse_iso_date(date_str):
-        if not date_str:
-            return None
-        try:
-            # Remove 'Z' and add '+00:00' if present
-            if date_str.endswith('Z'):
-                date_str = date_str[:-1] + '+00:00'
-            return datetime.fromisoformat(date_str).date()
-        except ValueError as e:
-            logging.error(f"[EVENT] Error parsing date {date_str}: {e}")
-            raise ValueError(f"Invalid date format: {date_str}")
-
-    def parse_time_str(time_str):
-        if not time_str:
-            return None
-        try:
-            # Try parsing with seconds first (HH:MM:SS)
-            return datetime.strptime(time_str, "%H:%M:%S").time()
-        except ValueError as e:
-            logging.error(f"[EVENT] Error parsing time {time_str}: {e}")
-            raise ValueError(f"Invalid time format: {time_str}")
-
     try:
         # Validate required fields - only name is truly required
         if not data.get("name"):
@@ -77,30 +68,51 @@ def create_event(user_id):
                 'message': 'Missing required field: name'
             }), 400
 
-        # Parse dates and times if provided
-        # Use correct database field names: earliest_date, latest_date, earliest_hour, latest_hour
-        earliest_date = parse_iso_date(data.get("earliest_date"))
-        latest_date = parse_iso_date(data.get("latest_date"))
-        earliest_hour = parse_time_str(data.get("earliest_hour"))
-        latest_hour = parse_time_str(data.get("latest_hour"))
-        
+        # Parse UTC datetime fields (required)
+        logging.info("[EVENT] Parsing UTC timestamp fields")
+        earliest_datetime_utc = parse_utc_datetime(data.get("earliest_datetime_utc"))
+        latest_datetime_utc = parse_utc_datetime(data.get("latest_datetime_utc"))
+
+        # Validate that UTC timestamps are provided
+        if not earliest_datetime_utc or not latest_datetime_utc:
+            logging.error("[EVENT] Missing required UTC timestamp fields")
+            return jsonify({
+                'error': 'Validation error',
+                'message': 'earliest_datetime_utc and latest_datetime_utc are required'
+            }), 400
+
+        # Get coordinator timezone (default to UTC if not provided)
+        coordinator_timezone = data.get("coordinator_timezone", "UTC")
+
         # Generate a 12-character UID for the event
         import string
         import random
         event_uid = ''.join(random.choices(string.ascii_letters + string.digits, k=12))
-        
-        # Create event
+
+        # Validate event_type if provided
+        event_type = data.get("event_type")
+        if event_type and event_type not in ['meeting', 'social', 'birthday', 'other']:
+            logging.error(f"[EVENT] Invalid event_type: {event_type}")
+            return jsonify({
+                'error': 'Validation error',
+                'message': 'event_type must be one of: meeting, social, birthday, other'
+            }), 400
+
+        # Create event with UTC timestamp fields
         event_data = {
             "uid": event_uid,
             "name": data.get("name"),
             "description": data.get("description"),
             "coordinator_id": user_id,
-            "earliest_date": earliest_date.isoformat() if earliest_date else None,
-            "latest_date": latest_date.isoformat() if latest_date else None,
-            "earliest_hour": earliest_hour.isoformat() if earliest_hour else None,
-            "latest_hour": latest_hour.isoformat() if latest_hour else None,
+            # UTC timestamp fields
+            "earliest_datetime_utc": earliest_datetime_utc.isoformat(),
+            "latest_datetime_utc": latest_datetime_utc.isoformat(),
+            "coordinator_timezone": coordinator_timezone,
             "duration_minutes": int(data.get("duration_minutes")) if data.get("duration_minutes") else None,
-            "status": "planning"  # Default status
+            "status": "planning",  # Default status
+            "event_type": event_type,
+            "video_call_link": data.get("video_call_link"),
+            "location": data.get("location")
         }
         
         logging.info(f"[EVENT] Inserting event data: {event_data}")
@@ -214,26 +226,70 @@ def get_event(event_id, user_id):
                 'error': 'Event not found',
                 'message': f'No event found with id/uid {event_id}'
             }), 404
-        return jsonify(event), 200
+
+        # Add cache-control headers to prevent stale data
+        response = jsonify(event)
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+        return response, 200
     except Exception as e:
         return jsonify({
             'error': 'Failed to get event',
             'message': str(e)
         }), 400
 
-@event_bp.route('/<string:event_id>', methods=['PUT'])
+@event_bp.route('/<string:event_uid>', methods=['PUT'])
 @require_auth
-def update_event(event_id, user_id):
+def update_event(event_uid, user_id):
     """
-    Update an event.
+    Update an event by UID.
+    Only the event coordinator can update the event.
     Requires authentication.
     """
     try:
         data = request.get_json()
         access_token = getattr(request, "access_token", None)
         events_service = EventsService(access_token)
-        event = events_service.update_event(event_id, data)
-        return jsonify(event), 200
+
+        # Get event to check coordinator permission
+        event = events_service.get_event_by_uid(event_uid)
+        if not event:
+            return jsonify({
+                'error': 'Event not found',
+                'message': f'No event found with UID {event_uid}'
+            }), 404
+
+        # Only coordinator can update event
+        if event.get('coordinator_id') != user_id:
+            return jsonify({
+                'error': 'Access denied',
+                'message': 'Only the event coordinator can update the event'
+            }), 403
+
+        # Handle UTC datetime updates if provided
+        if 'earliest_datetime_utc' in data:
+            logging.info("[EVENT] Updating earliest_datetime_utc")
+            earliest_datetime_utc = parse_utc_datetime(data.get("earliest_datetime_utc"))
+            data['earliest_datetime_utc'] = earliest_datetime_utc.isoformat() if earliest_datetime_utc else None
+
+        if 'latest_datetime_utc' in data:
+            logging.info("[EVENT] Updating latest_datetime_utc")
+            latest_datetime_utc = parse_utc_datetime(data.get("latest_datetime_utc"))
+            data['latest_datetime_utc'] = latest_datetime_utc.isoformat() if latest_datetime_utc else None
+
+        # Store coordinator timezone if provided
+        if 'coordinator_timezone' in data:
+            logging.info(f"[EVENT] Storing coordinator timezone: {data.get('coordinator_timezone')}")
+
+        # Update event using the UUID (not UID)
+        updated_event = events_service.update_event(event['id'], data)
+        return jsonify(updated_event), 200
+    except ValueError as e:
+        return jsonify({
+            'error': 'Validation error',
+            'message': str(e)
+        }), 400
     except Exception as e:
         return jsonify({
             'error': 'Failed to update event',
@@ -430,5 +486,132 @@ def remove_participant(event_id, participant_id, user_id):
     except Exception as e:
         return jsonify({
             'error': 'Failed to remove participant',
+            'message': str(e)
+        }), 400
+
+@event_bp.route('/<string:event_uid>/participants/<string:participant_id>/permissions', methods=['PUT'])
+@require_auth
+def update_participant_permissions(event_uid, participant_id, user_id):
+    """
+    Update a participant's permissions (e.g., can_invite).
+    Only the event coordinator can update permissions.
+
+    Body: { "can_invite": true/false }
+    """
+    try:
+        data = request.get_json()
+
+        if not data or "can_invite" not in data:
+            return jsonify({
+                'error': 'Validation error',
+                'message': 'can_invite field is required'
+            }), 400
+
+        can_invite = data.get("can_invite")
+
+        if not isinstance(can_invite, bool):
+            return jsonify({
+                'error': 'Validation error',
+                'message': 'can_invite must be a boolean'
+            }), 400
+
+        # Get event by UID
+        if not service_role_client:
+            return jsonify({"error": "Server configuration error"}), 500
+
+        event_response = service_role_client.table("events")\
+            .select("*")\
+            .eq("uid", event_uid)\
+            .execute()
+
+        if not event_response.data or len(event_response.data) == 0:
+            return jsonify({"error": "Event not found"}), 404
+
+        event = event_response.data[0]
+
+        # Verify user is coordinator
+        if event["coordinator_id"] != user_id:
+            return jsonify({
+                'error': 'Authorization error',
+                'message': 'Only the event coordinator can update participant permissions'
+            }), 403
+
+        # Update participant permissions
+        update_response = service_role_client.table("event_participants")\
+            .update({"can_invite": can_invite})\
+            .eq("event_id", event["id"])\
+            .eq("user_id", participant_id)\
+            .execute()
+
+        if not update_response.data or len(update_response.data) == 0:
+            return jsonify({
+                'error': 'Participant not found',
+                'message': 'Participant not found for this event'
+            }), 404
+
+        logging.info(f"[EVENTS] Updated can_invite={can_invite} for participant {participant_id} in event {event_uid}")
+
+        return jsonify({
+            'message': 'Participant permissions updated successfully',
+            'can_invite': can_invite
+        }), 200
+
+    except Exception as e:
+        logging.error(f"[EVENTS] Failed to update participant permissions: {str(e)}")
+        return jsonify({
+            'error': 'Failed to update permissions',
+            'message': str(e)
+        }), 400
+
+@event_bp.route('/<string:event_uid>/status', methods=['PUT'])
+@require_auth
+def update_rsvp_status(event_uid, user_id):
+    """
+    Update the current user's RSVP status for an event.
+    Requires authentication.
+
+    Body: { "status": "going" | "maybe" | "not_going" }
+    """
+    try:
+        data = request.get_json()
+        rsvp_status = data.get("status")
+
+        if not rsvp_status:
+            return jsonify({
+                'error': 'Validation error',
+                'message': 'Missing required field: status'
+            }), 400
+
+        # Validate RSVP status
+        valid_statuses = ["going", "maybe", "not_going"]
+        if rsvp_status not in valid_statuses:
+            return jsonify({
+                'error': 'Validation error',
+                'message': f'Invalid status. Must be one of: {", ".join(valid_statuses)}'
+            }), 400
+
+        access_token = getattr(request, "access_token", None)
+        events_service = EventsService(access_token)
+
+        # Update the participant's RSVP status
+        participant = events_service.update_participant_rsvp_status(event_uid, user_id, rsvp_status)
+
+        if not participant:
+            return jsonify({
+                'error': 'Failed to update RSVP status',
+                'message': 'Participant not found or not authorized'
+            }), 404
+
+        logging.info(f"[EVENT] Updated RSVP status for user {user_id} in event {event_uid} to {rsvp_status}")
+
+        return jsonify({
+            'message': 'RSVP status updated successfully',
+            'participant': participant
+        }), 200
+
+    except Exception as e:
+        logging.error(f"[EVENT] Failed to update RSVP status: {str(e)}")
+        return jsonify({
+            'error': 'Failed to update RSVP status',
             'message': str(e)
         }), 400
