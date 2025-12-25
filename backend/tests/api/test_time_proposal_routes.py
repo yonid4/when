@@ -25,13 +25,13 @@ class TestProposeTimes:
 
         mock_proposals = [
             {
-                "start_time": "2024-01-15T10:00:00Z",
-                "end_time": "2024-01-15T11:00:00Z",
+                "start_time": "2025-01-15T10:00:00Z",
+                "end_time": "2025-01-15T11:00:00Z",
                 "score": 0.95
             },
             {
-                "start_time": "2024-01-15T14:00:00Z",
-                "end_time": "2024-01-15T15:00:00Z",
+                "start_time": "2025-01-15T14:00:00Z",
+                "end_time": "2025-01-15T15:00:00Z",
                 "score": 0.90
             }
         ]
@@ -49,7 +49,7 @@ class TestProposeTimes:
             mock_proposal_instance.should_regenerate.return_value = {
                 "has_proposals": True,
                 "needs_regeneration": False,
-                "last_generated_at": "2024-01-15T09:00:00Z"
+                "last_generated_at": "2025-01-15T09:00:00Z"
             }
             mock_proposal_instance.get_cached_proposals.return_value = mock_proposals
             mock_proposal_service.return_value = mock_proposal_instance
@@ -84,8 +84,8 @@ class TestProposeTimes:
 
         mock_proposals = [
             {
-                "start_time": "2024-01-15T10:00:00Z",
-                "end_time": "2024-01-15T11:00:00Z",
+                "start_time": "2025-01-15T10:00:00Z",
+                "end_time": "2025-01-15T11:00:00Z",
                 "score": 0.95
             }
         ]
@@ -102,7 +102,7 @@ class TestProposeTimes:
             mock_proposal_instance.should_regenerate.return_value = {
                 "has_proposals": True,
                 "needs_regeneration": False,
-                "last_generated_at": "2024-01-15T09:00:00Z"
+                "last_generated_at": "2025-01-15T09:00:00Z"
             }
             mock_proposal_instance.get_cached_proposals.return_value = mock_proposals
             mock_proposal_service.return_value = mock_proposal_instance
@@ -134,8 +134,8 @@ class TestProposeTimes:
 
         mock_proposals = [
             {
-                "start_time": "2024-01-15T10:00:00Z",
-                "end_time": "2024-01-15T11:00:00Z",
+                "start_time": "2025-01-15T10:00:00Z",
+                "end_time": "2025-01-15T11:00:00Z",
                 "score": 0.95
             }
         ]
@@ -152,7 +152,7 @@ class TestProposeTimes:
             mock_proposal_instance.should_regenerate.return_value = {
                 "has_proposals": True,
                 "needs_regeneration": False,
-                "last_generated_at": "2024-01-15T09:00:00Z"
+                "last_generated_at": "2025-01-15T09:00:00Z"
             }
             mock_proposal_instance.regenerate_proposals_immediately.return_value = mock_proposals
             mock_proposal_service.return_value = mock_proposal_instance

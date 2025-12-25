@@ -54,7 +54,7 @@ def sample_notification():
         "is_read": False,
         "read_at": None,
         "action_taken": False,
-        "created_at": "2024-12-18T10:00:00Z"
+        "created_at": "2025-12-18T10:00:00Z"
     }
 
 
@@ -372,7 +372,7 @@ class TestHelperMethods:
             user_id="user-123",
             event_id="event-123",
             event_title="Team Meeting",
-            finalized_time="2024-12-20 at 2:00 PM"
+            finalized_time="2025-12-20 at 2:00 PM"
         )
 
         # Assert

@@ -67,8 +67,8 @@ describe('apiService', () => {
           name: 'New Meeting',
           description: 'Test meeting',
           duration_minutes: 30,
-          earliest_date: '2024-12-25',
-          latest_date: '2024-12-31'
+          earliest_date: '2025-12-25',
+          latest_date: '2025-12-31'
         };
         const mockResponse = { data: { ...mockEvent, ...eventData } };
         api.post.mockResolvedValue(mockResponse);
@@ -199,8 +199,8 @@ describe('apiService', () => {
     describe('finalize', () => {
       it('should finalize event and create calendar event', async () => {
         const finalizationData = {
-          start_time_utc: '2024-12-28T15:00:00Z',
-          end_time_utc: '2024-12-28T15:30:00Z',
+          start_time_utc: '2025-12-28T15:00:00Z',
+          end_time_utc: '2025-12-28T15:30:00Z',
           participant_ids: ['user-1', 'user-2'],
           include_google_meet: true
         };
@@ -264,7 +264,7 @@ describe('apiService', () => {
     describe('getByEvent', () => {
       it('should fetch preferred slots for event', async () => {
         const mockSlots = [
-          { id: 'slot-1', start_time_utc: '2024-12-26T14:00:00Z', end_time_utc: '2024-12-26T14:30:00Z' }
+          { id: 'slot-1', start_time_utc: '2025-12-26T14:00:00Z', end_time_utc: '2025-12-26T14:30:00Z' }
         ];
         const mockResponse = { data: { slots: mockSlots } };
         api.get.mockResolvedValue(mockResponse);
@@ -288,8 +288,8 @@ describe('apiService', () => {
     describe('create', () => {
       it('should create a preferred slot', async () => {
         const slotData = {
-          start_time_utc: '2024-12-26T14:00:00Z',
-          end_time_utc: '2024-12-26T14:30:00Z'
+          start_time_utc: '2025-12-26T14:00:00Z',
+          end_time_utc: '2025-12-26T14:30:00Z'
         };
         const mockResponse = { data: { id: 'slot-1', ...slotData } };
         api.post.mockResolvedValue(mockResponse);
@@ -328,7 +328,7 @@ describe('apiService', () => {
     describe('getMerged', () => {
       it('should fetch merged busy slots for event', async () => {
         const mockBusySlots = [
-          { user_id: 'user-1', start_time_utc: '2024-12-26T09:00:00Z', end_time_utc: '2024-12-26T10:00:00Z' }
+          { user_id: 'user-1', start_time_utc: '2025-12-26T09:00:00Z', end_time_utc: '2025-12-26T10:00:00Z' }
         ];
         const mockResponse = { data: mockBusySlots };
         api.get.mockResolvedValue(mockResponse);

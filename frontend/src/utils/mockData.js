@@ -66,7 +66,7 @@ export const mockEvents = [
     uid: "evt_001",
     title: "Team Standup",
     description: "Daily team sync to discuss progress and blockers",
-    date: "2024-12-02",
+    date: "2025-12-02",
     time: "10:00 AM",
     endTime: "10:30 AM",
     duration: 30,
@@ -84,15 +84,15 @@ export const mockEvents = [
     },
     userRsvp: "going",
     attachments: [],
-    createdAt: "2024-11-20T10:00:00Z",
-    updatedAt: "2024-11-25T15:30:00Z"
+    createdAt: "2025-11-20T10:00:00Z",
+    updatedAt: "2025-11-25T15:30:00Z"
   },
   {
     id: 2,
     uid: "evt_002",
     title: "Product Planning Workshop",
     description: "Q1 2025 roadmap planning session with the product team",
-    date: "2024-12-05",
+    date: "2025-12-05",
     time: "2:00 PM",
     endTime: "4:00 PM",
     duration: 120,
@@ -111,7 +111,7 @@ export const mockEvents = [
     timeOptions: [
       {
         id: "opt_1",
-        date: "2024-12-05",
+        date: "2025-12-05",
         time: "2:00 PM",
         availableCount: 8,
         totalParticipants: 14,
@@ -119,7 +119,7 @@ export const mockEvents = [
       },
       {
         id: "opt_2",
-        date: "2024-12-05",
+        date: "2025-12-05",
         time: "3:00 PM",
         availableCount: 12,
         totalParticipants: 14,
@@ -127,7 +127,7 @@ export const mockEvents = [
       },
       {
         id: "opt_3",
-        date: "2024-12-06",
+        date: "2025-12-06",
         time: "10:00 AM",
         availableCount: 10,
         totalParticipants: 14,
@@ -137,15 +137,15 @@ export const mockEvents = [
     attachments: [
       { id: 1, name: "Q1_Roadmap_Draft.pdf", size: "2.4 MB" }
     ],
-    createdAt: "2024-11-22T09:00:00Z",
-    updatedAt: "2024-11-26T11:15:00Z"
+    createdAt: "2025-11-22T09:00:00Z",
+    updatedAt: "2025-11-26T11:15:00Z"
   },
   {
     id: 3,
     uid: "evt_003",
     title: "Coffee Chat",
     description: "Casual coffee meetup to catch up",
-    date: "2024-12-03",
+    date: "2025-12-03",
     time: "11:00 AM",
     endTime: "12:00 PM",
     duration: 60,
@@ -162,15 +162,15 @@ export const mockEvents = [
     },
     userRsvp: "going",
     attachments: [],
-    createdAt: "2024-11-18T14:30:00Z",
-    updatedAt: "2024-11-24T16:00:00Z"
+    createdAt: "2025-11-18T14:30:00Z",
+    updatedAt: "2025-11-24T16:00:00Z"
   },
   {
     id: 4,
     uid: "evt_004",
     title: "Birthday Party - Emma",
     description: "Celebrating Emma's 30th birthday! Dress code: Smart casual",
-    date: "2024-12-08",
+    date: "2025-12-08",
     time: "7:00 PM",
     endTime: "11:00 PM",
     duration: 240,
@@ -187,15 +187,15 @@ export const mockEvents = [
     },
     userRsvp: "going",
     attachments: [],
-    createdAt: "2024-11-15T10:00:00Z",
-    updatedAt: "2024-11-27T12:00:00Z"
+    createdAt: "2025-11-15T10:00:00Z",
+    updatedAt: "2025-11-27T12:00:00Z"
   },
   {
     id: 5,
     uid: "evt_005",
     title: "Quarterly All-Hands",
     description: "Company-wide Q4 review and Q1 preview",
-    date: "2024-12-10",
+    date: "2025-12-10",
     time: "9:00 AM",
     endTime: "11:00 AM",
     duration: 120,
@@ -216,15 +216,15 @@ export const mockEvents = [
       { id: 2, name: "Q4_Results.pdf", size: "5.2 MB" },
       { id: 3, name: "Q1_Preview.pptx", size: "8.7 MB" }
     ],
-    createdAt: "2024-11-10T08:00:00Z",
-    updatedAt: "2024-11-26T09:30:00Z"
+    createdAt: "2025-11-10T08:00:00Z",
+    updatedAt: "2025-11-26T09:30:00Z"
   },
   {
     id: 6,
     uid: "evt_006",
     title: "Design Review",
     description: "Review new mobile app designs",
-    date: "2024-12-04",
+    date: "2025-12-04",
     time: "3:00 PM",
     endTime: "4:00 PM",
     duration: 60,
@@ -242,15 +242,15 @@ export const mockEvents = [
     },
     userRsvp: "going",
     attachments: [],
-    createdAt: "2024-11-23T13:00:00Z",
-    updatedAt: "2024-11-25T14:45:00Z"
+    createdAt: "2025-11-23T13:00:00Z",
+    updatedAt: "2025-11-25T14:45:00Z"
   },
   {
     id: 7,
     uid: "evt_007",
     title: "Hiking Trip",
     description: "Weekend hiking adventure in the mountains",
-    date: "2024-12-14",
+    date: "2025-12-14",
     time: "8:00 AM",
     endTime: "5:00 PM",
     duration: 540,
@@ -267,8 +267,8 @@ export const mockEvents = [
     },
     userRsvp: "maybe",
     attachments: [],
-    createdAt: "2024-11-21T16:00:00Z",
-    updatedAt: "2024-11-26T18:30:00Z"
+    createdAt: "2025-11-21T16:00:00Z",
+    updatedAt: "2025-11-26T18:30:00Z"
   }
 ];
 
@@ -278,7 +278,7 @@ export const mockInvitations = [
     uid: "evt_010",
     title: "Client Presentation",
     description: "Final presentation to ABC Corp",
-    date: "2024-12-06",
+    date: "2025-12-06",
     time: "2:00 PM",
     duration: 90,
     location: "Client Office",
@@ -286,14 +286,14 @@ export const mockInvitations = [
     host: mockUsers[1],
     participantCount: 8,
     status: "pending",
-    invitedAt: "2024-11-26T10:00:00Z"
+    invitedAt: "2025-11-26T10:00:00Z"
   },
   {
     id: 11,
     uid: "evt_011",
     title: "Team Lunch",
     description: "Celebrating project completion",
-    date: "2024-12-07",
+    date: "2025-12-07",
     time: "12:30 PM",
     duration: 90,
     location: "Italian Bistro",
@@ -301,14 +301,14 @@ export const mockInvitations = [
     host: mockUsers[0],
     participantCount: 12,
     status: "pending",
-    invitedAt: "2024-11-25T15:30:00Z"
+    invitedAt: "2025-11-25T15:30:00Z"
   },
   {
     id: 12,
     uid: "evt_012",
     title: "Code Review Session",
     description: "Review PRs and discuss architecture",
-    date: "2024-12-05",
+    date: "2025-12-05",
     time: "4:00 PM",
     duration: 60,
     location: "Zoom",
@@ -316,7 +316,7 @@ export const mockInvitations = [
     host: mockUsers[7],
     participantCount: 5,
     status: "pending",
-    invitedAt: "2024-11-27T09:00:00Z"
+    invitedAt: "2025-11-27T09:00:00Z"
   }
 ];
 
@@ -326,7 +326,7 @@ export const mockComments = [
     eventId: 2,
     user: mockUsers[0],
     text: "Looking forward to this! I've prepared some ideas for Q1.",
-    timestamp: "2024-11-26T10:30:00Z",
+    timestamp: "2025-11-26T10:30:00Z",
     type: "comment"
   },
   {
@@ -334,7 +334,7 @@ export const mockComments = [
     eventId: 2,
     user: mockUsers[3],
     text: "Can we move this 30 minutes earlier? I have a conflict at 2pm.",
-    timestamp: "2024-11-26T11:00:00Z",
+    timestamp: "2025-11-26T11:00:00Z",
     type: "comment"
   },
   {
@@ -342,7 +342,7 @@ export const mockComments = [
     eventId: 2,
     user: mockUsers[1],
     text: "@Alex Kim - Let me check if we can adjust the time!",
-    timestamp: "2024-11-26T11:15:00Z",
+    timestamp: "2025-11-26T11:15:00Z",
     type: "comment"
   },
   {
@@ -350,7 +350,7 @@ export const mockComments = [
     eventId: 2,
     user: mockUsers[4],
     text: "Just confirmed my attendance!",
-    timestamp: "2024-11-26T14:00:00Z",
+    timestamp: "2025-11-26T14:00:00Z",
     type: "rsvp"
   },
   {
@@ -358,7 +358,7 @@ export const mockComments = [
     eventId: 4,
     user: mockUsers[0],
     text: "So excited! Should I bring anything?",
-    timestamp: "2024-11-25T16:00:00Z",
+    timestamp: "2025-11-25T16:00:00Z",
     type: "comment"
   },
   {
@@ -366,7 +366,7 @@ export const mockComments = [
     eventId: 4,
     user: mockUsers[4],
     text: "Just come and have fun! Everything is arranged 🎉",
-    timestamp: "2024-11-25T16:30:00Z",
+    timestamp: "2025-11-25T16:30:00Z",
     type: "comment"
   }
 ];

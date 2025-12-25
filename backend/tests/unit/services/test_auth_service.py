@@ -73,7 +73,7 @@ def sample_user():
         "id": "user-123",
         "email": "test@example.com",
         "full_name": "Test User",
-        "created_at": "2024-01-01T00:00:00Z"
+        "created_at": "2025-01-01T00:00:00Z"
     }
 
 

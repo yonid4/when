@@ -6,8 +6,8 @@ def test_create_single_day_event_success(client, auth_headers, mock_authenticate
     """Test that creating an event with the same start and end date succeeds."""
     payload = {
         "name": "Single Day Event",
-        "start_date": "2024-01-01T00:00:00Z",
-        "end_date": "2024-01-01T00:00:00Z",  # Same day
+        "start_date": "2025-01-01T00:00:00Z",
+        "end_date": "2025-01-01T00:00:00Z",  # Same day
         "earliest_daily_start_time": "09:00",
         "latest_daily_end_time": "17:00",
         "duration_minutes": 60,

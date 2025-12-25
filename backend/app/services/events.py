@@ -67,39 +67,59 @@ class EventsService():
             return None
 
     def validate_event_data(self, event_data: dict) -> bool:
-        """Validate event data"""
+        """Validate event data (supports both old and new datetime formats)"""
         required_fields = ['name', 'coordinator_id', 'duration_minutes']
-        
+
         for field in required_fields:
             if field not in event_data or not event_data[field]:
                 print(f"Missing required field: {field}")
                 return False
-        
+
         # Validate duration
         duration = event_data.get('duration_minutes')
         if not isinstance(duration, int) or duration <= 0 or duration > 1440:  # Max 24 hours
             print("Invalid duration: must be positive integer <= 1440 minutes")
             return False
-        
-        # Validate date range
-        if event_data.get('earliest_date') and event_data.get('latest_date'):
-            try:
-                from datetime import datetime
-                earliest = datetime.fromisoformat(event_data['earliest_date'])
-                latest = datetime.fromisoformat(event_data['latest_date'])
-                if earliest > latest:
-                    print("Invalid date range: earliest_date must be before latest_date")
-                    return False
-            except ValueError:
-                print("Invalid date format")
+
+        # Validate UTC datetime range (required)
+        if not event_data.get('earliest_datetime_utc') or not event_data.get('latest_datetime_utc'):
+            print("Missing required fields: earliest_datetime_utc and latest_datetime_utc")
+            return False
+
+        try:
+            earliest = datetime.fromisoformat(event_data['earliest_datetime_utc'])
+            latest = datetime.fromisoformat(event_data['latest_datetime_utc'])
+            if earliest > latest:
+                print("Invalid datetime range: earliest_datetime_utc must be before latest_datetime_utc")
                 return False
-            
+        except (ValueError, TypeError) as e:
+            print(f"Invalid datetime format: {e}")
+            return False
+
+        # Validate event_type if provided
+        event_type = event_data.get('event_type')
+        if event_type and event_type not in ['meeting', 'social', 'birthday', 'other']:
+            print(f"Invalid event_type: {event_type}. Must be one of: meeting, social, birthday, other")
+            return False
+
+        # Validate video_call_link if provided (basic URL validation)
+        video_call_link = event_data.get('video_call_link')
+        if video_call_link:
+            if not (video_call_link.startswith('http://') or video_call_link.startswith('https://')):
+                print(f"Invalid video_call_link: must start with http:// or https://")
+                return False
+
         return True
 
     def validate_participant_status(self, status: str) -> bool:
-        """Validate participant status"""
+        """Validate participant invitation status"""
         valid_statuses = ["pending", "accepted", "declined"]
         return status in valid_statuses
+
+    def validate_rsvp_status(self, rsvp_status: str) -> bool:
+        """Validate participant RSVP status"""
+        valid_statuses = ["going", "maybe", "not_going"]
+        return rsvp_status in valid_statuses
 
     def get_user_events(self, user_id: str) -> List[dict]:
         """Get all events for a user with role information"""
@@ -211,12 +231,12 @@ class EventsService():
             return None
 
     def update_participant_status(self, event_id: str, user_id: str, status: str) -> Optional[dict]:
-        """Update a participant's status"""
+        """Update a participant's invitation status"""
         try:
             if not self.validate_participant_status(status):
                 print("Invalid status")
                 return None
-            
+
             result = (
                 self.service_role_client.table("event_participants")
                 .update({"status": status})
@@ -232,6 +252,39 @@ class EventsService():
             return result.data[0]
         except Exception as e:
             print(f"Failed to update participant status: {str(e)}")
+            return None
+
+    def update_participant_rsvp_status(self, event_uid: str, user_id: str, rsvp_status: str) -> Optional[dict]:
+        """Update a participant's RSVP status (going/maybe/not_going)"""
+        try:
+            if not self.validate_rsvp_status(rsvp_status):
+                print(f"Invalid RSVP status: {rsvp_status}")
+                return None
+
+            # Get event by UID to get the event ID
+            event = self.get_event_by_uid(event_uid)
+            if not event:
+                print(f"Event not found with UID: {event_uid}")
+                return None
+
+            event_id = event["id"]
+
+            # Update the participant's RSVP status
+            result = (
+                self.service_role_client.table("event_participants")
+                .update({"rsvp_status": rsvp_status})
+                .eq("event_id", event_id)
+                .eq("user_id", user_id)
+                .execute()
+            )
+
+            if not result.data:
+                print(f"No participant found for event_id={event_id}, user_id={user_id}")
+                return None
+
+            return result.data[0]
+        except Exception as e:
+            print(f"Failed to update participant RSVP status: {str(e)}")
             return None
 
     def get_event(self, event_id: str) -> Optional[dict]:
@@ -317,6 +370,8 @@ class EventsService():
                     "user_id": participant["user_id"],
                     "event_id": participant["event_id"],
                     "status": participant["status"],
+                    "rsvp_status": participant.get("rsvp_status"),  # Include RSVP status
+                    "can_invite": participant.get("can_invite", False),  # Include invite permission
                     "name": profile.get("full_name", ""),
                     "email": profile.get("email_address", ""),
                     "avatar_url": profile.get("avatar_url"),
@@ -387,8 +442,28 @@ class EventsService():
             return False
 
     def update_event(self, event_id: str, event_data: dict) -> Optional[dict]:
-        """Update an event"""
+        """Update an event with validation"""
         try:
+            # Validate event_type if provided
+            if 'event_type' in event_data and event_data['event_type'] is not None:
+                if event_data['event_type'] not in ['meeting', 'social', 'birthday', 'other']:
+                    print(f"Invalid event_type: {event_data['event_type']}")
+                    raise ValueError("event_type must be one of: meeting, social, birthday, other")
+
+            # Validate video_call_link if provided
+            if 'video_call_link' in event_data and event_data['video_call_link']:
+                if not (event_data['video_call_link'].startswith('http://') or
+                        event_data['video_call_link'].startswith('https://')):
+                    print(f"Invalid video_call_link: must be a valid URL")
+                    raise ValueError("video_call_link must start with http:// or https://")
+
+            # Validate duration if provided
+            if 'duration_minutes' in event_data and event_data['duration_minutes'] is not None:
+                duration = event_data['duration_minutes']
+                if not isinstance(duration, int) or duration <= 0 or duration > 1440:
+                    print(f"Invalid duration: {duration}")
+                    raise ValueError("duration_minutes must be a positive integer <= 1440")
+
             result = (
                 self.supabase.table("events")
                 .update(event_data)
@@ -403,7 +478,7 @@ class EventsService():
             return result.data[0]
         except Exception as e:
             print(f"Failed to update event: {str(e)}")
-            return None
+            raise
 
     def delete_event(self, event_id: str) -> bool:
         """Delete an event"""

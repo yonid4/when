@@ -14,8 +14,8 @@ def test_create_event_validation(client, auth_headers, mock_authenticated_user):
 def test_create_event_success(client, auth_headers, mock_authenticated_user):
     payload = {
         "name": "Meet",
-        "start_date": "2024-01-01T00:00:00Z",
-        "end_date": "2024-01-02T00:00:00Z",
+        "start_date": "2025-01-01T00:00:00Z",
+        "end_date": "2025-01-02T00:00:00Z",
         "earliest_daily_start_time": "09:00",
         "latest_daily_end_time": "17:00",
         "duration_minutes": 60,

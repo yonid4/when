@@ -156,8 +156,8 @@ def test_db():
         # Creating an event (need to add a check if this event just got created by the same user)
         event = Event(name="trial",
                       coordinator=user1.id,
-                      start=datetime.date(2024, 12, 1),
-                      end=datetime.date(2024, 12, 6),
+                      start=datetime.date(2025, 12, 1),
+                      end=datetime.date(2025, 12, 6),
                       earliest=datetime.time(9, 0),
                       latest=datetime.time(17, 0),
                       length=1.5,
@@ -171,9 +171,9 @@ def test_db():
         event.users.append(user3)
         db.session.commit()
 
-        startDate = datetime.date(2024, 12, 11)
+        startDate = datetime.date(2025, 12, 11)
         startTime = datetime.time(12, 0)
-        endDate = datetime.date(2024, 12, 11)
+        endDate = datetime.date(2025, 12, 11)
         endTime = datetime.time(14, 0)
 
         start = datetime.datetime.combine(startDate, startTime)
@@ -191,8 +191,8 @@ def test_db():
             db.session.add(user_unavailability1)
             db.session.commit()
         
-        startDate = datetime.date(2024, 12, 13)
-        endDate = datetime.date(2024, 12, 13)
+        startDate = datetime.date(2025, 12, 13)
+        endDate = datetime.date(2025, 12, 13)
         startTime = datetime.time(16, 0)
         endTime = datetime.time(18, 0)
 

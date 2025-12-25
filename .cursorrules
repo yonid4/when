@@ -1,6 +1,6 @@
 # README for AI Assistants
 
-**Last Updated:** December 13, 2024
+**Last Updated:** December 13, 2025
 **Purpose:** This document provides critical context and rules for AI assistants working on the When event coordination app.
 
 ---
@@ -314,7 +314,7 @@ proposals = TimeProposalService.regenerate_proposals(event_uid)
 
 ---
 
-## 🔄 Recent Major Changes (Nov 5 - Dec 13, 2024)
+## 🔄 Recent Major Changes (Nov 5 - Dec 13, 2025)
 
 ### New Features
 - ✅ **AI Time Proposals** - Gemini integration with smart caching

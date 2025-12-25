@@ -13,29 +13,29 @@ describe('TimeSlotDisplay', () => {
   const mockOnSlotClick = jest.fn();
   const mockOnEmptyClick = jest.fn();
 
-  const mockDate = new Date('2024-12-25T12:00:00.000Z');
+  const mockDate = new Date('2025-12-25T12:00:00.000Z');
 
   const mockSlots = [
     {
       id: 'slot-1',
       user_id: 'user-1',
       user_name: 'Alice',
-      start_time_utc: '2024-12-25T14:00:00.000Z', // 9 AM EST
-      end_time_utc: '2024-12-25T15:00:00.000Z',   // 10 AM EST
+      start_time_utc: '2025-12-25T14:00:00.000Z', // 9 AM EST
+      end_time_utc: '2025-12-25T15:00:00.000Z',   // 10 AM EST
     },
     {
       id: 'slot-2',
       user_id: 'user-2',
       user_name: 'Bob',
-      start_time_utc: '2024-12-25T14:00:00.000Z',
-      end_time_utc: '2024-12-25T15:00:00.000Z',
+      start_time_utc: '2025-12-25T14:00:00.000Z',
+      end_time_utc: '2025-12-25T15:00:00.000Z',
     },
     {
       id: 'slot-3',
       user_id: 'user-3',
       user_name: 'Charlie',
-      start_time_utc: '2024-12-25T15:00:00.000Z', // 10 AM EST
-      end_time_utc: '2024-12-25T16:00:00.000Z',   // 11 AM EST
+      start_time_utc: '2025-12-25T15:00:00.000Z', // 10 AM EST
+      end_time_utc: '2025-12-25T16:00:00.000Z',   // 11 AM EST
     },
   ];
 
@@ -110,15 +110,15 @@ describe('TimeSlotDisplay', () => {
           id: 'slot-1',
           user_id: 'user-1',
           user_name: 'Alice',
-          start_time_utc: '2024-12-25T14:00:00.000Z',
-          end_time_utc: '2024-12-25T15:00:00.000Z',
+          start_time_utc: '2025-12-25T14:00:00.000Z',
+          end_time_utc: '2025-12-25T15:00:00.000Z',
         },
         {
           id: 'slot-2',
           user_id: 'user-1', // Same user
           user_name: 'Alice',
-          start_time_utc: '2024-12-25T14:00:00.000Z',
-          end_time_utc: '2024-12-25T15:00:00.000Z',
+          start_time_utc: '2025-12-25T14:00:00.000Z',
+          end_time_utc: '2025-12-25T15:00:00.000Z',
         },
       ];
 
@@ -137,15 +137,15 @@ describe('TimeSlotDisplay', () => {
           id: 'slot-1',
           user_id: 'user-1',
           user_name: 'Alice',
-          start_time_utc: '2024-12-25T14:00:00.000Z',
-          end_time_utc: '2024-12-25T15:00:00.000Z',
+          start_time_utc: '2025-12-25T14:00:00.000Z',
+          end_time_utc: '2025-12-25T15:00:00.000Z',
         },
         {
           id: 'slot-2',
           user_id: 'user-1',
           user_name: 'Alice',
-          start_time_utc: '2024-12-25T15:00:00.000Z', // Adjacent, no gap
-          end_time_utc: '2024-12-25T16:00:00.000Z',
+          start_time_utc: '2025-12-25T15:00:00.000Z', // Adjacent, no gap
+          end_time_utc: '2025-12-25T16:00:00.000Z',
         },
       ];
 
@@ -164,15 +164,15 @@ describe('TimeSlotDisplay', () => {
           id: 'slot-1',
           user_id: 'user-1',
           user_name: 'Alice',
-          start_time_utc: '2024-12-25T14:00:00.000Z',
-          end_time_utc: '2024-12-25T15:00:00.000Z',
+          start_time_utc: '2025-12-25T14:00:00.000Z',
+          end_time_utc: '2025-12-25T15:00:00.000Z',
         },
         {
           id: 'slot-2',
           user_id: 'user-1',
           user_name: 'Alice',
-          start_time_utc: '2024-12-25T16:00:00.000Z', // Gap of 1 hour
-          end_time_utc: '2024-12-25T17:00:00.000Z',
+          start_time_utc: '2025-12-25T16:00:00.000Z', // Gap of 1 hour
+          end_time_utc: '2025-12-25T17:00:00.000Z',
         },
       ];
 
@@ -190,11 +190,11 @@ describe('TimeSlotDisplay', () => {
     it('applies different colors based on participant count', () => {
       const varyingDensitySlots = [
         // 1-2 people - lightest
-        { id: '1', user_id: 'u1', user_name: 'A', start_time_utc: '2024-12-25T14:00:00.000Z', end_time_utc: '2024-12-25T14:30:00.000Z' },
+        { id: '1', user_id: 'u1', user_name: 'A', start_time_utc: '2025-12-25T14:00:00.000Z', end_time_utc: '2025-12-25T14:30:00.000Z' },
         // 3-4 people
-        { id: '2', user_id: 'u2', user_name: 'B', start_time_utc: '2024-12-25T15:00:00.000Z', end_time_utc: '2024-12-25T15:30:00.000Z' },
-        { id: '3', user_id: 'u3', user_name: 'C', start_time_utc: '2024-12-25T15:00:00.000Z', end_time_utc: '2024-12-25T15:30:00.000Z' },
-        { id: '4', user_id: 'u4', user_name: 'D', start_time_utc: '2024-12-25T15:00:00.000Z', end_time_utc: '2024-12-25T15:30:00.000Z' },
+        { id: '2', user_id: 'u2', user_name: 'B', start_time_utc: '2025-12-25T15:00:00.000Z', end_time_utc: '2025-12-25T15:30:00.000Z' },
+        { id: '3', user_id: 'u3', user_name: 'C', start_time_utc: '2025-12-25T15:00:00.000Z', end_time_utc: '2025-12-25T15:30:00.000Z' },
+        { id: '4', user_id: 'u4', user_name: 'D', start_time_utc: '2025-12-25T15:00:00.000Z', end_time_utc: '2025-12-25T15:30:00.000Z' },
       ];
 
       renderWithProviders(
@@ -218,8 +218,8 @@ describe('TimeSlotDisplay', () => {
         id: `slot-${i}`,
         user_id: `user-${i}`,
         user_name: `User ${i}`,
-        start_time_utc: '2024-12-25T14:00:00.000Z',
-        end_time_utc: '2024-12-25T15:00:00.000Z',
+        start_time_utc: '2025-12-25T14:00:00.000Z',
+        end_time_utc: '2025-12-25T15:00:00.000Z',
       }));
 
       renderWithProviders(
@@ -251,8 +251,8 @@ describe('TimeSlotDisplay', () => {
           id: 'slot-1',
           user_id: 'user-1',
           user_name: 'Alice',
-          start_time_utc: '2024-12-26T14:00:00.000Z', // Different day
-          end_time_utc: '2024-12-26T15:00:00.000Z',
+          start_time_utc: '2025-12-26T14:00:00.000Z', // Different day
+          end_time_utc: '2025-12-26T15:00:00.000Z',
         },
       ];
 
@@ -569,8 +569,8 @@ describe('TimeSlotDisplay', () => {
         id: 'slot-1',
         user_id: 'user-1',
         // user_name missing
-        start_time_utc: '2024-12-25T14:00:00.000Z',
-        end_time_utc: '2024-12-25T15:00:00.000Z',
+        start_time_utc: '2025-12-25T14:00:00.000Z',
+        end_time_utc: '2025-12-25T15:00:00.000Z',
       }];
 
       renderWithProviders(

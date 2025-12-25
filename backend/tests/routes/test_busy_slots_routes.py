@@ -34,10 +34,10 @@ class TestBusySlotsRoutesSimple:
         """Test datetime parsing logic used in routes."""
         
         # Test valid datetime parsing
-        test_datetime_str = "2024-01-01T09:00:00Z"
+        test_datetime_str = "2025-01-01T09:00:00Z"
         parsed_dt = datetime.fromisoformat(test_datetime_str.replace('Z', '+00:00'))
         
-        assert parsed_dt.year == 2024
+        assert parsed_dt.year == 2025
         assert parsed_dt.month == 1
         assert parsed_dt.day == 1
         assert parsed_dt.hour == 9
@@ -52,8 +52,8 @@ class TestBusySlotsRoutesSimple:
         
         sample_event_data = {
             "id": "event-123",
-            "earliest_date": "2024-01-01T00:00:00Z",
-            "latest_date": "2024-01-02T00:00:00Z"
+            "earliest_date": "2025-01-01T00:00:00Z",
+            "latest_date": "2025-01-02T00:00:00Z"
         }
         
         mock_execute = Mock()
@@ -69,8 +69,8 @@ class TestBusySlotsRoutesSimple:
             .execute()
         )
         
-        assert event_result.data[0]["earliest_date"] == "2024-01-01T00:00:00Z"
-        assert event_result.data[0]["latest_date"] == "2024-01-02T00:00:00Z"
+        assert event_result.data[0]["earliest_date"] == "2025-01-01T00:00:00Z"
+        assert event_result.data[0]["latest_date"] == "2025-01-02T00:00:00Z"
 
     def test_request_payload_validation_logic(self):
         """Test request payload validation logic."""
@@ -79,8 +79,8 @@ class TestBusySlotsRoutesSimple:
         valid_payload = {
             "slots": [
                 {
-                    "start_time_utc": "2024-01-01T09:00:00Z",
-                    "end_time_utc": "2024-01-01T10:00:00Z"
+                    "start_time_utc": "2025-01-01T09:00:00Z",
+                    "end_time_utc": "2025-01-01T10:00:00Z"
                 }
             ]
         }
@@ -100,8 +100,8 @@ class TestBusySlotsRoutesSimple:
         
         # Test valid sync payload
         valid_payload = {
-            "start_date": "2024-01-01T00:00:00Z",
-            "end_date": "2024-01-02T00:00:00Z"
+            "start_date": "2025-01-01T00:00:00Z",
+            "end_date": "2025-01-02T00:00:00Z"
         }
         
         start_date_str = valid_payload.get('start_date')
@@ -111,7 +111,7 @@ class TestBusySlotsRoutesSimple:
         assert end_date_str is not None
         
         # Test missing dates
-        invalid_payload = {"start_date": "2024-01-01T00:00:00Z"}
+        invalid_payload = {"start_date": "2025-01-01T00:00:00Z"}
         start_date_str = invalid_payload.get('start_date')
         end_date_str = invalid_payload.get('end_date')
         
@@ -125,13 +125,13 @@ class TestBusySlotsRoutesSimple:
         # Mock service response
         merged_slots = [
             {
-                "start_time": "2024-01-01T09:00:00Z",
-                "end_time": "2024-01-01T10:00:00Z",
+                "start_time": "2025-01-01T09:00:00Z",
+                "end_time": "2025-01-01T10:00:00Z",
                 "busy_participants_count": 2
             },
             {
-                "start_time": "2024-01-01T14:00:00Z",
-                "end_time": "2024-01-01T15:00:00Z",
+                "start_time": "2025-01-01T14:00:00Z",
+                "end_time": "2025-01-01T15:00:00Z",
                 "busy_participants_count": 1
             }
         ]
@@ -144,8 +144,8 @@ class TestBusySlotsRoutesSimple:
             "merged_busy_slots": merged_slots,
             "total_slots": len(merged_slots),
             "date_range": {
-                "start_date": "2024-01-01T00:00:00Z",
-                "end_date": "2024-01-02T00:00:00Z"
+                "start_date": "2025-01-01T00:00:00Z",
+                "end_date": "2025-01-02T00:00:00Z"
             }
         }
         
@@ -189,8 +189,8 @@ class TestBusySlotsLogicUnits:
         user_id = "user-123"
         event_id = "event-456"
         slot_data = {
-            "start_time_utc": "2024-01-01T09:00:00Z",
-            "end_time_utc": "2024-01-01T10:00:00Z"
+            "start_time_utc": "2025-01-01T09:00:00Z",
+            "end_time_utc": "2025-01-01T10:00:00Z"
         }
         
         # Simulate BusySlot creation logic from routes
@@ -210,19 +210,19 @@ class TestBusySlotsLogicUnits:
         """Test date range extraction from event data."""
         
         event_data = {
-            "earliest_date": "2024-01-01T00:00:00Z",
-            "latest_date": "2024-01-02T00:00:00Z"
+            "earliest_date": "2025-01-01T00:00:00Z",
+            "latest_date": "2025-01-02T00:00:00Z"
         }
         
         # Simulate date extraction logic from routes
         start_date = datetime.fromisoformat(event_data["earliest_date"].replace('Z', '+00:00'))
         latest_date = datetime.fromisoformat(event_data["latest_date"].replace('Z', '+00:00'))
         
-        assert start_date.year == 2024
+        assert start_date.year == 2025
         assert start_date.month == 1
         assert start_date.day == 1
         
-        assert latest_date.year == 2024
+        assert latest_date.year == 2025
         assert latest_date.month == 1
         assert latest_date.day == 2
 
@@ -249,8 +249,8 @@ class TestBusySlotsLogicUnits:
         
         busy_slot = BusySlot(
             user_id="user-123",
-            start_time_utc=datetime(2024, 1, 1, 9, 0, 0),
-            end_time_utc=datetime(2024, 1, 1, 10, 0, 0)
+            start_time_utc=datetime(2025, 1, 1, 9, 0, 0),
+            end_time_utc=datetime(2025, 1, 1, 10, 0, 0)
         )
         
         mock_service.store_busy_slot.return_value = {"id": "new-slot"}
@@ -268,8 +268,8 @@ class TestBusySlotsLogicUnits:
             "slots": [
                 {
                     "id": "slot-1",
-                    "start_time": "2024-01-01T09:00:00Z",
-                    "end_time": "2024-01-01T10:00:00Z"
+                    "start_time": "2025-01-01T09:00:00Z",
+                    "end_time": "2025-01-01T10:00:00Z"
                 }
             ],
             "total": 1

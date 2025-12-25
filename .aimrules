@@ -403,7 +403,7 @@ ai_assistant_notes:
     - "Timezone handling: Store UTC, display in user's local timezone"
     - "Navigation: API responses can include navigation hints (like event_uid) for better UX"
 
-  recent_patterns_2024_12:
+  recent_patterns_2025_12:
     ux_improvements:
       - "Return navigation data in API responses (e.g., event_uid on invitation accept)"
       - "Use navigate() instead of page reload for better UX"

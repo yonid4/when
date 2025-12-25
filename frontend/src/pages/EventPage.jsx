@@ -44,7 +44,12 @@ import {
   FiPaperclip,
   FiCopy,
   FiMail,
-  FiRefreshCw
+  FiRefreshCw,
+  FiVideo,
+  FiUsers,
+  FiCoffee,
+  FiGift,
+  FiMoreHorizontal
 } from "react-icons/fi";
 import { eventsAPI, preferredSlotsAPI, busySlotsAPI } from "../services/apiService";
 import api from "../services/api";
@@ -52,9 +57,11 @@ import { useApiCall } from "../hooks/useApiCall";
 import { useAuth } from "../hooks/useAuth";
 import { colors } from "../styles/designSystem";
 import InviteModal from "../components/event/InviteModal";
+import EditEventModal from "../components/event/EditEventModal";
 import CalendarView from "../components/calendar/CalendarView";
 import ProposedTimesModal from "../components/event/ProposedTimesModal";
 import FinalizeEventModal from "../components/event/FinalizeEventModal";
+import { getUserTimezone, formatTimezone } from "../utils/timezoneUtils";
 
 // Helper to convert time string to Date object for calendar
 const parseTimeForCalendar = (timeString) => {
@@ -67,6 +74,57 @@ const MotionBox = motion(Box);
 const MotionCard = motion(Card);
 
 const EventPage = () => {
+  // Helper to format UTC datetime in user's local timezone
+  const formatEventDateTime = (utcTimestamp, timezone = null) => {
+    if (!utcTimestamp) return null;
+
+    const date = new Date(utcTimestamp);
+    const viewerTimezone = timezone || getUserTimezone();
+
+    return date.toLocaleString('en-US', {
+      timeZone: viewerTimezone,
+      dateStyle: 'medium',
+      timeStyle: 'short'
+    });
+  };
+
+  // Helper to format UTC date only in user's local timezone
+  const formatEventDateOnly = (utcTimestamp, timezone = null) => {
+    if (!utcTimestamp) return null;
+
+    const date = new Date(utcTimestamp);
+    const viewerTimezone = timezone || getUserTimezone();
+
+    return date.toLocaleDateString('en-US', {
+      timeZone: viewerTimezone,
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+
+  // Helper to extract time bounds from UTC timestamp for calendar view
+  const extractCalendarTimeBound = (utcTimestamp, fallbackHour) => {
+    if (utcTimestamp) {
+      // Convert UTC timestamp to local time
+      const localDate = new Date(utcTimestamp);
+      const timeBound = new Date(0, 0, 0, localDate.getHours(), localDate.getMinutes(), 0);
+
+      console.log('[EventPage] Calendar time bound:', {
+        utc: utcTimestamp,
+        localHour: localDate.getHours(),
+        localMinute: localDate.getMinutes(),
+        timeBound: timeBound
+      });
+
+      return timeBound;
+    }
+    // Fallback to old format or default
+    const fallback = parseTimeForCalendar(fallbackHour) || new Date(0, 0, 0, fallbackHour || 8, 0, 0);
+    console.log('[EventPage] Using fallback time bound:', { fallbackHour, timeBound: fallback });
+    return fallback;
+  };
+
   const { eventUid } = useParams();
   const navigate = useNavigate();
   const toast = useToast();
@@ -80,8 +138,10 @@ const EventPage = () => {
   const [busySlots, setBusySlots] = useState([]);
   const [busySlotsLoading, setBusySlotsLoading] = useState(false);
   const [userRsvp, setUserRsvp] = useState(null);
+  const [canInvite, setCanInvite] = useState(false);
   const [selectedTimeOption, setSelectedTimeOption] = useState(null);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isProposedTimesModalOpen, setIsProposedTimesModalOpen] = useState(false);
   const [isFinalizeModalOpen, setIsFinalizeModalOpen] = useState(false);
   const [selectedFinalizeTime, setSelectedFinalizeTime] = useState(null);
@@ -111,10 +171,10 @@ const EventPage = () => {
     }
   }, [eventUid, authLoading]);
 
-  const loadEventData = async () => {
+  const loadEventData = async (bustCache = false) => {
     try {
-      // 1. Fetch event details by UID
-      const eventData = await execute(() => eventsAPI.getByUid(eventUid));
+      // 1. Fetch event details by UID (with optional cache-busting)
+      const eventData = await execute(() => eventsAPI.getByUid(eventUid, bustCache));
 
       if (eventData) {
         setEvent(eventData);
@@ -135,10 +195,14 @@ const EventPage = () => {
           setPreferredSlotsLoading(false);
         }
 
-        // Determine user's RSVP status from participants list
+        // Determine user's RSVP status and invite permission from participants list
         const myParticipantRecord = participantsData?.find(p => p.user_id === user?.id);
         if (myParticipantRecord) {
-          setUserRsvp(myParticipantRecord.status);
+          setUserRsvp(myParticipantRecord.rsvp_status); // Use new rsvp_status field
+          setCanInvite(myParticipantRecord.can_invite || false); // Check if user has invite permission
+        } else {
+          // User is not a participant, reset permissions
+          setCanInvite(false);
         }
 
         // 3. Fetch busy slots
@@ -397,11 +461,19 @@ const EventPage = () => {
       // For now, assume they are a participant or the endpoint handles it.
       // Actually, the API requires eventId (UUID) not UID.
 
-      await execute(() => eventsAPI.updateParticipantStatus(event.id, user.id, status), { showSuccessToast: false });
+      // Use the new RSVP status endpoint with eventUid
+      await execute(() => eventsAPI.updateRsvpStatus(eventUid, status), { showSuccessToast: false });
+
+      // Create user-friendly status messages
+      const statusMessages = {
+        'going': 'confirmed your attendance',
+        'maybe': 'marked yourself as tentative',
+        'not_going': 'declined'
+      };
 
       toast({
         title: "RSVP Updated",
-        description: `You have ${status === 'accepted' ? 'accepted' : status === 'declined' ? 'declined' : 'marked as tentative'} this event.`,
+        description: `You have ${statusMessages[status]} for this event.`,
         status: "success",
         duration: 3000,
         isClosable: true
@@ -597,12 +669,12 @@ const EventPage = () => {
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   };
 
-  // Calculate RSVP stats from real participants data
+  // Calculate RSVP stats from real participants data using rsvp_status
   const rsvpStats = {
-    going: participants.filter(p => p.status === 'accepted').length,
-    maybe: participants.filter(p => p.status === 'tentative').length,
-    declined: participants.filter(p => p.status === 'declined').length,
-    invited: participants.filter(p => p.status === 'invited').length
+    going: participants.filter(p => p.rsvp_status === 'going').length,
+    maybe: participants.filter(p => p.rsvp_status === 'maybe').length,
+    declined: participants.filter(p => p.rsvp_status === 'not_going').length,
+    noResponse: participants.filter(p => !p.rsvp_status).length
   };
 
   const totalResponses = rsvpStats.going + rsvpStats.maybe + rsvpStats.declined;
@@ -616,6 +688,22 @@ const EventPage = () => {
   // Find host
   const host = participants.find(p => p.user_id === event.coordinator_id) || { name: 'Coordinator', avatar: null };
   const isCoordinator = user?.id === event.coordinator_id;
+
+  // Get event type icon and label
+  const getEventTypeInfo = (eventType) => {
+    switch (eventType) {
+      case 'meeting':
+        return { icon: FiUsers, label: 'Meeting', color: 'blue' };
+      case 'social':
+        return { icon: FiCoffee, label: 'Social', color: 'purple' };
+      case 'birthday':
+        return { icon: FiGift, label: 'Birthday', color: 'pink' };
+      case 'other':
+        return { icon: FiMoreHorizontal, label: 'Other', color: 'gray' };
+      default:
+        return null;
+    }
+  };
 
   const handleSelectSlot = async (slotInfo) => {
     console.log('Slot selected:', slotInfo);
@@ -944,6 +1032,19 @@ const EventPage = () => {
     }
   };
 
+  const handleEditSuccess = (updatedEvent) => {
+    console.log("[EDIT_EVENT] Event updated successfully:", updatedEvent);
+    // Reload event data to reflect changes (with cache-busting to ensure fresh data)
+    loadEventData(true);
+    toast({
+      title: "Changes saved",
+      description: "Event has been updated successfully",
+      status: "success",
+      duration: 3000,
+      isClosable: true
+    });
+  };
+
   // Use AI-generated proposals as time options
   const timeOptions = aiProposals;
 
@@ -978,7 +1079,9 @@ const EventPage = () => {
                 </Badge>
                 <Text color="gray.600" fontSize="sm">
                   {event.status === 'finalized' && event.finalized_start_time_utc
-                    ? formatDate(event.finalized_start_time_utc)
+                    ? formatEventDateTime(event.finalized_start_time_utc, event.coordinator_timezone)
+                    : event.earliest_datetime_utc && event.latest_datetime_utc
+                    ? `${formatEventDateOnly(event.earliest_datetime_utc, event.coordinator_timezone)} - ${formatEventDateOnly(event.latest_datetime_utc, event.coordinator_timezone)}`
                     : `${formatDateForDisplay(event.earliest_date)} - ${formatDateForDisplay(event.latest_date)}`}
                 </Text>
                 {event.status === "finalized" && event.google_calendar_html_link && (
@@ -1052,8 +1155,8 @@ const EventPage = () => {
                     onSelectSlot={handleSelectSlot}
                     onSelectEvent={handleSelectEvent}
                     selectable={event?.status !== 'finalized'}
-                    minTime={parseTimeForCalendar(event.earliest_hour) || new Date(0, 0, 0, 8, 0, 0)}
-                    maxTime={parseTimeForCalendar(event.latest_hour) || new Date(0, 0, 0, 20, 0, 0)}
+                    minTime={extractCalendarTimeBound(event.earliest_datetime_utc, event.earliest_hour)}
+                    maxTime={extractCalendarTimeBound(event.latest_datetime_utc, event.latest_hour)}
                   />
                 )}
               </Box>
@@ -1076,8 +1179,8 @@ const EventPage = () => {
                       colorScheme="green"
                       flex={1}
                       size="sm"
-                      variant={userRsvp === "accepted" ? "solid" : "outline"}
-                      onClick={() => handleRsvp("accepted")}
+                      variant={userRsvp === "going" ? "solid" : "outline"}
+                      onClick={() => handleRsvp("going")}
                     >
                       Going
                     </Button>
@@ -1086,8 +1189,8 @@ const EventPage = () => {
                       colorScheme="yellow"
                       flex={1}
                       size="sm"
-                      variant={userRsvp === "tentative" ? "solid" : "outline"}
-                      onClick={() => handleRsvp("tentative")}
+                      variant={userRsvp === "maybe" ? "solid" : "outline"}
+                      onClick={() => handleRsvp("maybe")}
                     >
                       Maybe
                     </Button>
@@ -1096,8 +1199,8 @@ const EventPage = () => {
                       colorScheme="red"
                       flex={1}
                       size="sm"
-                      variant={userRsvp === "declined" ? "solid" : "outline"}
-                      onClick={() => handleRsvp("declined")}
+                      variant={userRsvp === "not_going" ? "solid" : "outline"}
+                      onClick={() => handleRsvp("not_going")}
                     >
                       Can't
                     </Button>
@@ -1141,6 +1244,52 @@ const EventPage = () => {
                     <Box>
                       <Text fontWeight="bold" fontSize="xs" mb={1}>Description</Text>
                       <Text color="gray.700" fontSize="xs" noOfLines={3}>{event.description}</Text>
+                    </Box>
+                  )}
+
+                  {/* Event Type */}
+                  {event.event_type && getEventTypeInfo(event.event_type) && (
+                    <Box>
+                      <Text fontWeight="bold" fontSize="xs" mb={1}>Event Type</Text>
+                      <HStack spacing={1.5}>
+                        <Icon
+                          as={getEventTypeInfo(event.event_type).icon}
+                          boxSize={3}
+                          color={`${getEventTypeInfo(event.event_type).color}.500`}
+                        />
+                        <Text color="gray.700" fontSize="xs">
+                          {getEventTypeInfo(event.event_type).label}
+                        </Text>
+                      </HStack>
+                    </Box>
+                  )}
+
+                  {/* Video Call Link */}
+                  {event.video_call_link && (
+                    <Box>
+                      <Text fontWeight="bold" fontSize="xs" mb={1}>Video Call</Text>
+                      <Link href={event.video_call_link} isExternal>
+                        <HStack spacing={1.5} color="blue.500" _hover={{ color: "blue.600" }}>
+                          <Icon as={FiVideo} boxSize={3} />
+                          <Text fontSize="xs" noOfLines={1} textDecoration="underline">
+                            Join Meeting
+                          </Text>
+                          <Icon as={FiExternalLink} boxSize={2.5} />
+                        </HStack>
+                      </Link>
+                    </Box>
+                  )}
+
+                  {/* Location */}
+                  {event.location && (
+                    <Box>
+                      <Text fontWeight="bold" fontSize="xs" mb={1}>Location</Text>
+                      <HStack spacing={1.5}>
+                        <Icon as={FiMapPin} boxSize={3} color="red.500" />
+                        <Text color="gray.700" fontSize="xs" noOfLines={2}>
+                          {event.location}
+                        </Text>
+                      </HStack>
                     </Box>
                   )}
 
@@ -1204,6 +1353,7 @@ const EventPage = () => {
               <Box borderWidth="1px" borderRadius="lg" p={3} bg={cardBg} shadow="sm">
                 <Heading size="sm" mb={3}>Actions</Heading>
                 <VStack spacing={2}>
+                  {/* Copy Link - Available to all */}
                   <Button
                     leftIcon={<FiCopy />}
                     w="full"
@@ -1213,23 +1363,29 @@ const EventPage = () => {
                   >
                     Copy Link
                   </Button>
-                  <Button
-                    leftIcon={isLoadingProposals ? <Spinner size="xs" /> : <FiClock />}
-                    w="full"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setIsProposedTimesModalOpen(true)}
-                    isDisabled={timeOptions.length === 0 || isLoadingProposals}
-                    isLoading={isLoadingProposals}
-                  >
-                    {isLoadingProposals ? "Generating AI Proposals..." : "View Proposed Times"}
-                    {!isLoadingProposals && timeOptions.length > 0 && (
-                      <Badge ml={2} colorScheme="purple">{timeOptions.length}</Badge>
-                    )}
-                    {proposalMetadata.needsUpdate && (
-                      <Badge ml={2} colorScheme="yellow">Updates Available</Badge>
-                    )}
-                  </Button>
+
+                  {/* View Proposed Times - Coordinator only */}
+                  {isCoordinator && (
+                    <Button
+                      leftIcon={isLoadingProposals ? <Spinner size="xs" /> : <FiClock />}
+                      w="full"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setIsProposedTimesModalOpen(true)}
+                      isDisabled={timeOptions.length === 0 || isLoadingProposals}
+                      isLoading={isLoadingProposals}
+                    >
+                      {isLoadingProposals ? "Generating AI Proposals..." : "View Proposed Times"}
+                      {!isLoadingProposals && timeOptions.length > 0 && (
+                        <Badge ml={2} colorScheme="purple">{timeOptions.length}</Badge>
+                      )}
+                      {proposalMetadata.needsUpdate && (
+                        <Badge ml={2} colorScheme="yellow">Updates Available</Badge>
+                      )}
+                    </Button>
+                  )}
+
+                  {/* Sync All Calendars - Coordinator only */}
                   {isCoordinator && (
                     <Button
                       leftIcon={<FiRefreshCw />}
@@ -1243,54 +1399,53 @@ const EventPage = () => {
                       Sync All Calendars
                     </Button>
                   )}
+
+                  {/* Reconnect Google Calendar - Available to all */}
                   <Button
                     leftIcon={<FiCalendar />}
                     w="full"
                     size="sm"
                     variant="outline"
-                    colorScheme="blue"
                     onClick={handleReconnectGoogleCalendar}
                     data-reconnect-calendar
                   >
                     Reconnect Google Calendar
                   </Button>
-                  <Button
-                    leftIcon={<FiMail />}
-                    w="full"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setIsInviteModalOpen(true)}
-                  >
-                    Invite Participants
-                  </Button>
-                  {isCoordinator && event?.status !== "finalized" && (
+
+                  {/* Invite Participants - Coordinator or users with invite permission */}
+                  {(isCoordinator || canInvite) && (
                     <Button
-                      leftIcon={<FiCheck />}
+                      leftIcon={<FiMail />}
                       w="full"
                       size="sm"
-                      variant="solid"
-                      colorScheme="green"
-                      onClick={() => {
-                        // Open finalize modal with a default time (using earliest date + earliest hour)
-                        const now = new Date();
-                        const startTime = new Date(now.getTime() + 24 * 60 * 60 * 1000); // Tomorrow
-                        startTime.setHours(10, 0, 0, 0); // 10 AM
-                        const endTime = new Date(startTime.getTime() + (event.duration_minutes || 60) * 60 * 1000);
-
-                        setSelectedFinalizeTime({
-                          start_time: startTime.toISOString(),
-                          end_time: endTime.toISOString()
-                        });
-                        setIsFinalizeModalOpen(true);
-                      }}
+                      variant="outline"
+                      onClick={() => setIsInviteModalOpen(true)}
                     >
-                      Finalize Event
+                      Invite Participants
                     </Button>
                   )}
-                  <Button leftIcon={<FiEdit />} w="full" size="sm" variant="outline">
-                    Edit Event
-                  </Button>
-                  <Button leftIcon={<FiArrowLeft />} w="full" size="sm" variant="ghost" onClick={() => navigate("/dashboard")}>
+
+                  {/* Edit Event - Coordinator only */}
+                  {isCoordinator && (
+                    <Button
+                      leftIcon={<FiEdit />}
+                      w="full"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setIsEditModalOpen(true)}
+                    >
+                      Edit Event
+                    </Button>
+                  )}
+
+                  {/* Back to Dashboard - Available to all */}
+                  <Button
+                    leftIcon={<FiArrowLeft />}
+                    w="full"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => navigate("/dashboard")}
+                  >
                     Back to Dashboard
                   </Button>
                 </VStack>
@@ -1308,13 +1463,16 @@ const EventPage = () => {
                       </VStack>
                       <Badge
                         colorScheme={
-                          participant.status === 'accepted' ? 'green' :
-                            participant.status === 'tentative' ? 'yellow' :
-                              participant.status === 'declined' ? 'red' : 'gray'
+                          participant.rsvp_status === 'going' ? 'green' :
+                            participant.rsvp_status === 'maybe' ? 'yellow' :
+                              participant.rsvp_status === 'not_going' ? 'red' : 'gray'
                         }
                         fontSize="2xs"
                       >
-                        {participant.status}
+                        {participant.rsvp_status === 'going' ? 'Going' :
+                          participant.rsvp_status === 'maybe' ? 'Maybe' :
+                            participant.rsvp_status === 'not_going' ? 'Can\'t go' :
+                              'No response'}
                       </Badge>
                     </HStack>
                   ))}
@@ -1336,6 +1494,14 @@ const EventPage = () => {
           loadEventData();
           setIsInviteModalOpen(false);
         }}
+      />
+
+      {/* Edit Event Modal */}
+      <EditEventModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        event={event}
+        onSuccess={handleEditSuccess}
       />
 
       {/* Proposed Times Modal */}

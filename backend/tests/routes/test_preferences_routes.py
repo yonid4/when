@@ -10,8 +10,8 @@ def test_add_preference_success(client, auth_headers, mock_authenticated_user):
         resp = client.post(
             "/api/preferences/e1",
             json={
-                "preferred_start_time_utc": "2024-01-01T10:00:00Z",
-                "preferred_end_time_utc": "2024-01-01T11:00:00Z",
+                "preferred_start_time_utc": "2025-01-01T10:00:00Z",
+                "preferred_end_time_utc": "2025-01-01T11:00:00Z",
             },
             headers=auth_headers,
         )

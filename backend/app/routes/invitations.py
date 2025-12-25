@@ -10,6 +10,7 @@ from ..utils.decorators import require_auth
 from ..services.invitations import InvitationsService
 from ..services.notifications import NotificationsService
 from ..utils.supabase_client import get_supabase
+from ..utils.email_utils import get_email_variants
 
 
 invitations_bp = Blueprint("invitations", __name__)
@@ -33,45 +34,75 @@ service_role_client = get_service_role_client()
 def send_invitations(event_uid: str, user_id):
     """
     Send invitations to multiple users for an event.
-    
+
     Body:
         emails: List of email addresses to invite
-        
+
     Returns:
         Results of invitation attempts with success/failure for each
     """
 
+    print(f"[INVITE] Starting invitation process for event UID: {event_uid}")
+    print(f"[INVITE] Coordinator user ID: {user_id}")
+
     data = request.get_json()
-    
+    print(f"[INVITE] Request data: {data}")
+
     # Get list of emails to invite
     invitee_emails = data.get("emails", [])
     if not invitee_emails:
+        print("[INVITE] ERROR: No emails provided")
         return jsonify({"error": "No emails provided"}), 400
-    
+
+    print(f"[INVITE] Inviting {len(invitee_emails)} users: {invitee_emails}")
+
     # Get event by UID (use service role to bypass RLS)
     if not service_role_client:
+        print("[INVITE] ERROR: Service role client not available")
         return jsonify({"error": "Server configuration error"}), 500
-    
+
     event_response = service_role_client.table("events")\
         .select("*")\
         .eq("uid", event_uid)\
         .execute()
-    
+
     if not event_response.data or len(event_response.data) == 0:
+        print(f"[INVITE] ERROR: Event not found with UID: {event_uid}")
         return jsonify({"error": "Event not found"}), 404
-    
+
     event = event_response.data[0]
-    
-    # Debug: Log event object to see what fields it has
-    print(f"DEBUG: Event object keys: {list(event.keys())}")
-    print(f"DEBUG: Event object: {event}")
+
+    print(f"[INVITE] Found event: ID={event['id']}, Name={event.get('name')}")
+    print(f"[INVITE] Event coordinator_id: {event['coordinator_id']}")
     
     # Get event title with fallback (events table uses 'name' not 'title')
     event_title = event.get("name") or event.get("title") or "Untitled Event"
-    
-    # Verify user is coordinator
-    if event["coordinator_id"] != user_id:
-        return jsonify({"error": "Only coordinator can send invitations"}), 403
+    print(f"[INVITE] Event title: {event_title}")
+
+    # Verify user is coordinator OR has can_invite permission
+    is_coordinator = event["coordinator_id"] == user_id
+
+    if not is_coordinator:
+        # Check if user is a participant with can_invite permission
+        print(f"[INVITE] User {user_id} is not coordinator, checking can_invite permission")
+        participant_response = service_role_client.table("event_participants")\
+            .select("can_invite")\
+            .eq("event_id", event["id"])\
+            .eq("user_id", user_id)\
+            .execute()
+
+        if not participant_response.data or len(participant_response.data) == 0:
+            print(f"[INVITE] ERROR: User {user_id} is not a participant")
+            return jsonify({"error": "You must be a participant to invite others"}), 403
+
+        participant = participant_response.data[0]
+        if not participant.get("can_invite"):
+            print(f"[INVITE] ERROR: User {user_id} does not have invite permission")
+            return jsonify({"error": "You don't have permission to invite users"}), 403
+
+        print(f"[INVITE] Authorization check passed - user has can_invite permission")
+    else:
+        print(f"[INVITE] Authorization check passed - user is coordinator")
     
     # Get coordinator profile (use service role to bypass RLS)
     coordinator_response = service_role_client.table("profiles")\
@@ -86,24 +117,34 @@ def send_invitations(event_uid: str, user_id):
     coordinator_name = coordinator.get("full_name") or coordinator.get("email_address", "Someone")
     
     results = []
-    
+    success_count = 0
+    error_count = 0
+
     for email in invitee_emails:
+        print(f"[INVITE] Processing invitation for: {email}")
         try:
             # Check if user exists with this email (use service role)
+            # Get both original and normalized email variants for lookup
+            email_variants = get_email_variants(email)
+            print(f"[INVITE] Searching for user with email variants: {email_variants}")
+
             invitee_response = service_role_client.table("profiles")\
                 .select("*")\
-                .eq("email_address", email)\
+                .in_("email_address", email_variants)\
                 .execute()
-            
+
             if not invitee_response.data or len(invitee_response.data) == 0:
+                print(f"[INVITE] User not found: {email}")
                 results.append({
                     "email": email,
                     "status": "error",
                     "message": "User not found with this email"
                 })
+                error_count += 1
                 continue
-            
+
             invitee = invitee_response.data[0]
+            print(f"[INVITE] Found user: {invitee['id']} ({invitee.get('email_address')}) for search: {email}")
             
             # Check if already invited (use service role to bypass RLS)
             existing_invitation_response = service_role_client.table("event_invitations")\
@@ -114,13 +155,16 @@ def send_invitations(event_uid: str, user_id):
             
             existing_invitation = existing_invitation_response.data[0] if existing_invitation_response.data else None
             
-            # If already invited and status is pending or accepted, don't re-invite
+            # If already invited and status is pending or accepted, return success (no re-invite needed)
             if existing_invitation and existing_invitation["status"] in ["pending", "accepted"]:
+                print(f"[INVITE] User already invited: {email} (status: {existing_invitation['status']})")
                 results.append({
                     "email": email,
-                    "status": "error",
-                    "message": f"Already invited (status: {existing_invitation['status']})"
+                    "status": "success",
+                    "message": "Invitation already sent",
+                    "invitation_id": existing_invitation["id"]
                 })
+                success_count += 1
                 continue
             
             # Check if already a participant (use service role)
@@ -131,11 +175,13 @@ def send_invitations(event_uid: str, user_id):
                 .execute()
             
             if participant_response.data and len(participant_response.data) > 0:
+                print(f"[INVITE] User already a participant: {email}")
                 results.append({
                     "email": email,
                     "status": "error",
                     "message": "Already a participant"
                 })
+                error_count += 1
                 continue
             
             # If user declined before, update the existing invitation to pending
@@ -210,27 +256,34 @@ def send_invitations(event_uid: str, user_id):
                 print(f"Event title used: {event_title}")
                 # Continue anyway since invitation was created successfully
             
+            print(f"[INVITE] Successfully created invitation for {email}")
             results.append({
                 "email": email,
                 "status": "success",
                 "message": "Invitation sent" if not existing_invitation else "Invitation resent",
                 "invitation_id": invitation["id"]
             })
-            
+            success_count += 1
+
         except Exception as e:
-            print(f"Error inviting {email}: {e}")
+            print(f"[INVITE] ERROR inviting {email}: {e}")
+            import traceback
+            traceback.print_exc()
             results.append({
                 "email": email,
                 "status": "error",
                 "message": str(e)
             })
-    
+            error_count += 1
+
+    print(f"[INVITE] Invitation process complete: {success_count} success, {error_count} failed")
+
     return jsonify({
         "results": results,
         "summary": {
             "total": len(invitee_emails),
-            "success": len([r for r in results if r["status"] == "success"]),
-            "failed": len([r for r in results if r["status"] == "error"])
+            "success": success_count,
+            "failed": error_count
         }
     }), 200
 
@@ -246,101 +299,146 @@ def handle_event_invitations(event_uid: str, user_id):
     
     if request.method == "POST":
         # POST: Send invitations
+        print(f"[INVITE] Starting invitation process for event UID: {event_uid}")
+        print(f"[INVITE] Coordinator user ID: {user_id}")
+
         data = request.get_json()
-        
+        print(f"[INVITE] Request data: {data}")
+
         # Get list of emails to invite
         invitee_emails = data.get("emails", [])
         if not invitee_emails:
+            print("[INVITE] ERROR: No emails provided")
             return jsonify({"error": "No emails provided"}), 400
-        
+
+        print(f"[INVITE] Inviting {len(invitee_emails)} users: {invitee_emails}")
+
         # Get event by UID (use service role to bypass RLS)
         if not service_role_client:
+            print("[INVITE] ERROR: Service role client not available")
             return jsonify({"error": "Server configuration error"}), 500
-        
+
         event_response = service_role_client.table("events")\
             .select("*")\
             .eq("uid", event_uid)\
             .execute()
-        
+
         if not event_response.data or len(event_response.data) == 0:
+            print(f"[INVITE] ERROR: Event not found with UID: {event_uid}")
             return jsonify({"error": "Event not found"}), 404
-        
+
         event = event_response.data[0]
-        
-        # Debug: Log event object to see what fields it has
-        print(f"DEBUG: Event object keys: {list(event.keys())}")
-        print(f"DEBUG: Event object: {event}")
-        
+
+        print(f"[INVITE] Found event: ID={event['id']}, Name={event.get('name')}")
+        print(f"[INVITE] Event coordinator_id: {event['coordinator_id']}")
+
         # Get event title with fallback (events table uses 'name' not 'title')
         event_title = event.get("name") or event.get("title") or "Untitled Event"
-        
-        # Verify user is coordinator
-        if event["coordinator_id"] != user_id:
-            return jsonify({"error": "Only coordinator can send invitations"}), 403
-        
+        print(f"[INVITE] Event title: {event_title}")
+
+        # Verify user is coordinator OR has can_invite permission
+        is_coordinator = event["coordinator_id"] == user_id
+
+        if not is_coordinator:
+            # Check if user is a participant with can_invite permission
+            print(f"[INVITE] User {user_id} is not coordinator, checking can_invite permission")
+            participant_response = service_role_client.table("event_participants")\
+                .select("can_invite")\
+                .eq("event_id", event["id"])\
+                .eq("user_id", user_id)\
+                .execute()
+
+            if not participant_response.data or len(participant_response.data) == 0:
+                print(f"[INVITE] ERROR: User {user_id} is not a participant")
+                return jsonify({"error": "You must be a participant to invite others"}), 403
+
+            participant = participant_response.data[0]
+            if not participant.get("can_invite"):
+                print(f"[INVITE] ERROR: User {user_id} does not have invite permission")
+                return jsonify({"error": "You don't have permission to invite users"}), 403
+
+            print(f"[INVITE] Authorization check passed - user has can_invite permission")
+        else:
+            print(f"[INVITE] Authorization check passed - user is coordinator")
+
         # Get coordinator profile (use service role to bypass RLS)
         coordinator_response = service_role_client.table("profiles")\
             .select("*")\
             .eq("id", user_id)\
             .execute()
-        
+
         if not coordinator_response.data:
             return jsonify({"error": "Coordinator profile not found"}), 404
-        
+
         coordinator = coordinator_response.data[0]
         coordinator_name = coordinator.get("full_name") or coordinator.get("email_address", "Someone")
-        
+
         results = []
+        success_count = 0
+        error_count = 0
         
         for email in invitee_emails:
+            print(f"[INVITE] Processing invitation for: {email}")
             try:
                 # Check if user exists with this email (use service role)
+                # Get both original and normalized email variants for lookup
+                email_variants = get_email_variants(email)
+                print(f"[INVITE] Searching for user with email variants: {email_variants}")
+
                 invitee_response = service_role_client.table("profiles")\
                     .select("*")\
-                    .eq("email_address", email)\
+                    .in_("email_address", email_variants)\
                     .execute()
-                
+
                 if not invitee_response.data or len(invitee_response.data) == 0:
+                    print(f"[INVITE] User not found: {email}")
                     results.append({
                         "email": email,
                         "status": "error",
                         "message": "User not found with this email"
                     })
+                    error_count += 1
                     continue
-                
+
                 invitee = invitee_response.data[0]
-                
+                print(f"[INVITE] Found user: {invitee['id']} ({invitee.get('email_address')}) for search: {email}")
+
                 # Check if already invited (use service role to bypass RLS)
                 existing_invitation_response = service_role_client.table("event_invitations")\
                     .select("*")\
                     .eq("event_id", event["id"])\
                     .eq("invitee_id", invitee["id"])\
                     .execute()
-                
+
                 existing_invitation = existing_invitation_response.data[0] if existing_invitation_response.data else None
-                
-                # If already invited and status is pending or accepted, don't re-invite
+
+                # If already invited and status is pending or accepted, return success (no re-invite needed)
                 if existing_invitation and existing_invitation["status"] in ["pending", "accepted"]:
+                    print(f"[INVITE] User already invited: {email} (status: {existing_invitation['status']})")
                     results.append({
                         "email": email,
-                        "status": "error",
-                        "message": f"Already invited (status: {existing_invitation['status']})"
+                        "status": "success",
+                        "message": "Invitation already sent",
+                        "invitation_id": existing_invitation["id"]
                     })
+                    success_count += 1
                     continue
-                
+
                 # Check if already a participant (use service role)
                 participant_response = service_role_client.table("event_participants")\
                     .select("*")\
                     .eq("event_id", event["id"])\
                     .eq("user_id", invitee["id"])\
                     .execute()
-                
+
                 if participant_response.data and len(participant_response.data) > 0:
+                    print(f"[INVITE] User already a participant: {email}")
                     results.append({
                         "email": email,
                         "status": "error",
                         "message": "Already a participant"
                     })
+                    error_count += 1
                     continue
                 
                 # If user declined before, update the existing invitation to pending
@@ -415,27 +513,34 @@ def handle_event_invitations(event_uid: str, user_id):
                     print(f"Event title used: {event_title}")
                     # Continue anyway since invitation was created successfully
                 
+                print(f"[INVITE] Successfully created invitation for {email}")
                 results.append({
                     "email": email,
                     "status": "success",
                     "message": "Invitation sent" if not existing_invitation else "Invitation resent",
                     "invitation_id": invitation["id"]
                 })
-                
+                success_count += 1
+
             except Exception as e:
-                print(f"Error inviting {email}: {e}")
+                print(f"[INVITE] ERROR inviting {email}: {e}")
+                import traceback
+                traceback.print_exc()
                 results.append({
                     "email": email,
                     "status": "error",
                     "message": str(e)
                 })
-        
+                error_count += 1
+
+        print(f"[INVITE] Invitation process complete: {success_count} success, {error_count} failed")
+
         return jsonify({
             "results": results,
             "summary": {
                 "total": len(invitee_emails),
-                "success": len([r for r in results if r["status"] == "success"]),
-                "failed": len([r for r in results if r["status"] == "error"])
+                "success": success_count,
+                "failed": error_count
             }
         }), 200
     

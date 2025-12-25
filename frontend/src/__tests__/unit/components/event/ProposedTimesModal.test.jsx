@@ -23,24 +23,24 @@ describe('ProposedTimesModal', () => {
   const mockTimeOptions = [
     {
       id: 'option-1',
-      start_time_utc: '2024-12-25T14:00:00.000Z',
-      end_time_utc: '2024-12-25T15:00:00.000Z',
+      start_time_utc: '2025-12-25T14:00:00.000Z',
+      end_time_utc: '2025-12-25T15:00:00.000Z',
       availableCount: 8,
       totalParticipants: 10,
       conflicts: 0,
     },
     {
       id: 'option-2',
-      start_time_utc: '2024-12-26T16:00:00.000Z',
-      end_time_utc: '2024-12-26T17:00:00.000Z',
+      start_time_utc: '2025-12-26T16:00:00.000Z',
+      end_time_utc: '2025-12-26T17:00:00.000Z',
       availableCount: 6,
       totalParticipants: 10,
       conflicts: 2,
     },
     {
       id: 'option-3',
-      start_time_utc: '2024-12-27T10:00:00.000Z',
-      end_time_utc: '2024-12-27T11:00:00.000Z',
+      start_time_utc: '2025-12-27T10:00:00.000Z',
+      end_time_utc: '2025-12-27T11:00:00.000Z',
       availableCount: 5,
       totalParticipants: 10,
       conflicts: 1,
@@ -159,7 +159,7 @@ describe('ProposedTimesModal', () => {
       });
       const modal = screen.getByRole('dialog');
 
-      // Should show full date like "Wednesday, December 25, 2024"
+      // Should show full date like "Wednesday, December 25, 2025"
       // Note: exact text depends on locale and timezone
       const dateElements = within(modal).getAllByText(/december/i);
       expect(dateElements.length).toBeGreaterThan(0);
@@ -526,8 +526,8 @@ describe('ProposedTimesModal', () => {
     it('has scrollable content area for many options', async () => {
       const manyOptions = Array.from({ length: 20 }, (_, i) => ({
         id: `option-${i}`,
-        start_time_utc: '2024-12-25T14:00:00.000Z',
-        end_time_utc: '2024-12-25T15:00:00.000Z',
+        start_time_utc: '2025-12-25T14:00:00.000Z',
+        end_time_utc: '2025-12-25T15:00:00.000Z',
         availableCount: 5,
         totalParticipants: 10,
         conflicts: 0,

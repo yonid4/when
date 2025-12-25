@@ -263,7 +263,7 @@ class TestGoogleConnect:
         connect_data = {
             "access_token": "access_token",
             "refresh_token": "refresh_token",
-            "expiry": "2024-12-31T23:59:59Z"
+            "expiry": "2025-12-31T23:59:59Z"
         }
 
         mock_profile = {"id": "user-1", "google_calendar_connected": True}

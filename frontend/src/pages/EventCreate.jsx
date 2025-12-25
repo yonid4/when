@@ -67,6 +67,9 @@ const EventCreate = () => {
   const { user } = useAuth();
   const { execute, loading } = useApiCall();
 
+  // Capture user timezone for UTC conversion
+  const [userTimezone] = useState(() => Intl.DateTimeFormat().resolvedOptions().timeZone);
+
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState({
     // Step 1: Basics
@@ -258,63 +261,119 @@ const EventCreate = () => {
 
   const handleSubmit = async () => {
     try {
-      // Format helpers
-      const formatDateForAPI = (dateString) => {
-        if (!dateString) return null;
-        if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) return dateString;
-        const date = new Date(dateString);
-        return date.toISOString().split('T')[0];
-      };
+      console.log("[EventCreate] Starting event creation...");
+      console.log("[EventCreate] User timezone:", userTimezone);
+      console.log("[EventCreate] Form data:", formData);
 
-      const formatTimeForAPI = (timeString) => {
-        if (!timeString) return null;
-        // If time is "09:00", convert to "09:00:00"
-        if (timeString.length === 5) return `${timeString}:00`;
-        // If it's just an hour number like "9" or 9
-        if (!isNaN(timeString) && timeString.toString().length <= 2) {
-          const hour = parseInt(timeString);
-          return `${hour.toString().padStart(2, '0')}:00:00`;
+      // Helper: Convert local date + time to UTC ISO string
+      const dateTimeToUTC = (dateStr, timeStr) => {
+        if (!dateStr || timeStr === null || timeStr === undefined) {
+          console.warn("[EventCreate] dateTimeToUTC called with missing data:", { dateStr, timeStr });
+          return null;
         }
-        return timeString;
+
+        // Handle hour-only format (e.g., "9" or 9)
+        let timeFormatted = timeStr;
+        if (!isNaN(timeStr) && timeStr.toString().length <= 2) {
+          const hour = parseInt(timeStr);
+          timeFormatted = `${hour.toString().padStart(2, '0')}:00`;
+        } else if (typeof timeStr === 'string' && timeStr.length === 5) {
+          // Already in HH:mm format, add :00 for seconds
+          timeFormatted = `${timeStr}:00`;
+        } else if (typeof timeStr === 'string' && timeStr.length >= 8) {
+          // Already has seconds (HH:mm:ss)
+          timeFormatted = timeStr;
+        } else {
+          // Default to 00:00:00 if format is unexpected
+          timeFormatted = "00:00:00";
+          console.warn("[EventCreate] Unexpected time format:", timeStr);
+        }
+
+        // Create local datetime string
+        const localDatetimeStr = `${dateStr}T${timeFormatted}`;
+        console.log(`[EventCreate] Converting local datetime: ${localDatetimeStr}`);
+
+        // Create Date object (browser interprets as local time)
+        const localDate = new Date(localDatetimeStr);
+
+        // Validate date is valid
+        if (isNaN(localDate.getTime())) {
+          console.error("[EventCreate] Invalid date created:", localDatetimeStr);
+          return null;
+        }
+
+        // Convert to UTC ISO string
+        const utcISO = localDate.toISOString();
+        console.log(`[EventCreate] Converted to UTC: ${utcISO}`);
+
+        return utcISO;
       };
 
-      // 1. Create Event with backend field names
+      // 1. Create Event payload with new UTC format
       const eventPayload = {
         name: formData.title,
         description: formData.description,
         event_type: formData.type,
         status: 'planning',
         location: formData.location,
-        is_virtual: formData.isVirtual,
-        google_meet_link: formData.videoLink,
+        video_call_link: formData.videoLink,
         duration_minutes: parseInt(formData.duration),
+        coordinator_timezone: userTimezone, // Include user's timezone
       };
 
-      // Add range fields based on mode
+      // 2. Add datetime fields based on mode
       if (formData.schedulingMode === "multiple") {
-        eventPayload.earliest_date = formatDateForAPI(formData.startDate);
-        eventPayload.latest_date = formatDateForAPI(formData.endDate);
-        eventPayload.earliest_hour = formatTimeForAPI(formData.earliestHour);
-        eventPayload.latest_hour = formatTimeForAPI(formData.latestHour);
-      } else {
-        // For single mode, use date as both earliest and latest
-        eventPayload.earliest_date = formatDateForAPI(formData.date);
-        eventPayload.latest_date = formatDateForAPI(formData.date);
-        eventPayload.earliest_hour = formatTimeForAPI(formData.time);
+        // Convert local date + time to UTC timestamps
+        const earliestUTC = dateTimeToUTC(formData.startDate, formData.earliestHour);
+        const latestUTC = dateTimeToUTC(formData.endDate, formData.latestHour);
 
-        // Calculate end time
-        const startHour = parseInt(formData.time.split(':')[0]);
-        const durationHours = Math.ceil(parseInt(formData.duration) / 60);
-        const endHour = startHour + durationHours;
-        eventPayload.latest_hour = formatTimeForAPI(`${endHour}:00`);
+        console.log("[EventCreate] Multiple mode - UTC conversion:");
+        console.log("  Earliest:", formData.startDate, formData.earliestHour, "->", earliestUTC);
+        console.log("  Latest:", formData.endDate, formData.latestHour, "->", latestUTC);
+
+        // NEW FORMAT: UTC timestamps
+        eventPayload.earliest_datetime_utc = earliestUTC;
+        eventPayload.latest_datetime_utc = latestUTC;
+      } else {
+        // Single mode
+        const startUTC = dateTimeToUTC(formData.date, formData.time);
+
+        // Calculate end time in UTC
+        const startDate = new Date(startUTC);
+        const endDate = new Date(startDate.getTime() + parseInt(formData.duration) * 60000);
+        const endUTC = endDate.toISOString();
+
+        console.log("[EventCreate] Single mode - UTC conversion:");
+        console.log("  Start:", formData.date, formData.time, "->", startUTC);
+        console.log("  End (calculated):", endUTC);
+
+        // NEW FORMAT: UTC timestamps
+        eventPayload.earliest_datetime_utc = startUTC;
+        eventPayload.latest_datetime_utc = endUTC;
       }
 
-      console.log('Sending event payload:', eventPayload);
+      console.log("[EventCreate] Final payload:", eventPayload);
+
+      // Validate UTC fields are present
+      if (!eventPayload.earliest_datetime_utc || !eventPayload.latest_datetime_utc) {
+        console.error("[EventCreate] ERROR: UTC fields missing from payload!");
+        console.error("  earliest_datetime_utc:", eventPayload.earliest_datetime_utc);
+        console.error("  latest_datetime_utc:", eventPayload.latest_datetime_utc);
+        throw new Error("Failed to convert datetime to UTC format");
+      }
+
+      if (!eventPayload.coordinator_timezone) {
+        console.error("[EventCreate] ERROR: coordinator_timezone missing!");
+        throw new Error("Failed to detect user timezone");
+      }
+
+      console.log("[EventCreate] ✓ Validation passed - UTC fields present");
+
       const createdEvent = await execute(() => eventsAPI.create(eventPayload));
 
       if (!createdEvent) throw new Error("Failed to create event");
 
-      console.log('Event created successfully:', createdEvent);
+      console.log("[EventCreate] Event created successfully:", createdEvent);
 
       // 2. Send invitations if guests were added
       if (formData.guests && formData.guests.length > 0) {

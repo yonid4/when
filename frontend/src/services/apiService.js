@@ -21,10 +21,14 @@ export const eventsAPI = {
     /**
      * Get event by UID (used in URLs)
      * @param {string} uid - 12-character UID
+     * @param {boolean} bustCache - Add timestamp to prevent caching (default: false)
      * @returns {Promise<Object>} Event with participants
      */
-    getByUid: async (uid) => {
-        const res = await api.get(`/api/events/${uid}`);
+    getByUid: async (uid, bustCache = false) => {
+        const url = bustCache
+            ? `/api/events/${uid}?_t=${Date.now()}`
+            : `/api/events/${uid}`;
+        const res = await api.get(url);
         return res.data;
     },
 
@@ -81,7 +85,8 @@ export const eventsAPI = {
     },
 
     /**
-     * Update participant status (RSVP)
+     * Update participant status (RSVP) - OLD ENDPOINT (invitation status)
+     * @deprecated Use updateRsvpStatus for attendance intent
      * @param {string} eventId - Event ID (UUID, not UID!)
      * @param {string} userId - User ID
      * @param {string} status - 'accepted' | 'declined' | 'invited'
@@ -89,6 +94,17 @@ export const eventsAPI = {
      */
     updateParticipantStatus: async (eventId, userId, status) => {
         const res = await api.put(`/api/events/${eventId}/participants/${userId}`, { status });
+        return res.data;
+    },
+
+    /**
+     * Update current user's RSVP status for an event (attendance intent)
+     * @param {string} eventUid - Event UID (12-character)
+     * @param {string} status - 'going' | 'maybe' | 'not_going'
+     * @returns {Promise<Object>} Updated participant with rsvp_status
+     */
+    updateRsvpStatus: async (eventUid, status) => {
+        const res = await api.put(`/api/events/${eventUid}/status`, { status });
         return res.data;
     },
 

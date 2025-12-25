@@ -205,25 +205,31 @@ class TimeProposalService:
         participants = data["participants"]
         all_busy_slots = data["all_busy_slots"]
         
-        # Parse event constraints and ensure timezone-aware (UTC)
+        # Parse event constraints from UTC timestamps
         from datetime import timezone
-        if event.get("earliest_date"):
-            earliest_date = datetime.fromisoformat(event["earliest_date"])
-            if earliest_date.tzinfo is None:
-                earliest_date = earliest_date.replace(tzinfo=timezone.utc)
+
+        # Get UTC datetime bounds from event
+        if event.get("earliest_datetime_utc"):
+            earliest_datetime = datetime.fromisoformat(event["earliest_datetime_utc"])
+            if earliest_datetime.tzinfo is None:
+                earliest_datetime = earliest_datetime.replace(tzinfo=timezone.utc)
         else:
-            earliest_date = datetime.now(timezone.utc)
-            
-        if event.get("latest_date"):
-            latest_date = datetime.fromisoformat(event["latest_date"])
-            if latest_date.tzinfo is None:
-                latest_date = latest_date.replace(tzinfo=timezone.utc)
+            earliest_datetime = datetime.now(timezone.utc)
+
+        if event.get("latest_datetime_utc"):
+            latest_datetime = datetime.fromisoformat(event["latest_datetime_utc"])
+            if latest_datetime.tzinfo is None:
+                latest_datetime = latest_datetime.replace(tzinfo=timezone.utc)
         else:
-            latest_date = earliest_date + timedelta(days=30)
-        
-        # Parse time constraints (hour:minute:second format)
-        earliest_hour_str = event.get("earliest_hour", "09:00:00")
-        latest_hour_str = event.get("latest_hour", "17:00:00")
+            latest_datetime = earliest_datetime + timedelta(days=30)
+
+        # Extract date range for iteration
+        earliest_date = earliest_datetime.replace(hour=0, minute=0, second=0, microsecond=0)
+        latest_date = latest_datetime.replace(hour=23, minute=59, second=59, microsecond=999999)
+
+        # Extract time constraints from UTC timestamps
+        earliest_hour_str = earliest_datetime.strftime("%H:%M:%S")
+        latest_hour_str = latest_datetime.strftime("%H:%M:%S")
         
         # Duration in minutes
         duration_minutes = event.get("duration_minutes", 60)
@@ -358,13 +364,17 @@ class TimeProposalService:
         has_conflict_free = data.get("has_conflict_free_slots", False)
         free_windows_count = len(data.get("free_windows", []))
 
+        # Format datetime ranges for prompt
+        earliest_dt = event.get('earliest_datetime_utc', 'N/A')
+        latest_dt = event.get('latest_datetime_utc', 'N/A')
+
         prompt = f"""You are an expert meeting scheduling assistant. Analyze the following data and suggest the best {num_suggestions} meeting times.
 
 EVENT DETAILS:
 - Event Name: {event['name']}
 - Duration: {event.get('duration_minutes', 60)} minutes
-- Date Range: {event.get('earliest_date', 'N/A')} to {event.get('latest_date', 'N/A')}
-- Time Range: {event.get('earliest_hour', '09:00')} to {event.get('latest_hour', '17:00')} UTC
+- Date/Time Range: {earliest_dt} to {latest_dt} (UTC)
+- Coordinator Timezone: {event.get('coordinator_timezone', 'UTC')}
 - Number of Participants: {len(participants)}
 - Primary Timezone(s): {timezone_info}
 - Conflict-free slots available: {"Yes" if has_conflict_free else "No"} ({free_windows_count} slots found)

@@ -47,8 +47,8 @@ def sample_invitation():
         "invitee_id": "user-invitee",
         "invitee_email": "invitee@example.com",
         "status": "pending",
-        "created_at": "2024-12-18T10:00:00Z",
-        "updated_at": "2024-12-18T10:00:00Z"
+        "created_at": "2025-12-18T10:00:00Z",
+        "updated_at": "2025-12-18T10:00:00Z"
     }
 
 

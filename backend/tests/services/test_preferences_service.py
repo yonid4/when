@@ -23,8 +23,8 @@ def test_add_and_get_and_delete(monkeypatch):
     created = service.add_preference({
         "event_id": "e",
         "user_id": "u",
-        "preferred_start_time_utc": "2024-01-01T10:00:00Z",
-        "preferred_end_time_utc": "2024-01-01T11:00:00Z",
+        "preferred_start_time_utc": "2025-01-01T10:00:00Z",
+        "preferred_end_time_utc": "2025-01-01T11:00:00Z",
     })
     assert created["id"] == "pref-1"
 

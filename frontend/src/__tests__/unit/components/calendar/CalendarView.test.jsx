@@ -18,14 +18,14 @@ describe('CalendarView', () => {
   const mockOnSelectSlot = jest.fn();
   const mockOnSelectEvent = jest.fn();
 
-  const baseDate = new Date('2024-12-25T10:00:00.000Z');
+  const baseDate = new Date('2025-12-25T10:00:00.000Z');
 
   const mockEvents = [
     {
       id: 'event-1',
       title: 'Team Meeting',
-      start: new Date('2024-12-25T14:00:00.000Z'),
-      end: new Date('2024-12-25T15:00:00.000Z'),
+      start: new Date('2025-12-25T14:00:00.000Z'),
+      end: new Date('2025-12-25T15:00:00.000Z'),
       type: 'preferred-slot',
       backgroundColor: '#be29ec',
       textColor: 'white',
@@ -33,16 +33,16 @@ describe('CalendarView', () => {
     {
       id: 'event-2',
       title: 'Busy - Doctor Appointment',
-      start: new Date('2024-12-25T16:00:00.000Z'),
-      end: new Date('2024-12-25T17:00:00.000Z'),
+      start: new Date('2025-12-25T16:00:00.000Z'),
+      end: new Date('2025-12-25T17:00:00.000Z'),
       type: 'busy',
       participantCount: 1,
     },
     {
       id: 'event-3',
       title: 'Finalized Event',
-      start: new Date('2024-12-26T14:00:00.000Z'),
-      end: new Date('2024-12-26T15:00:00.000Z'),
+      start: new Date('2025-12-26T14:00:00.000Z'),
+      end: new Date('2025-12-26T15:00:00.000Z'),
       type: 'finalized',
     },
   ];
@@ -141,20 +141,20 @@ describe('CalendarView', () => {
       const multipleEventsPerDay = [
         {
           id: '1',
-          start: new Date('2024-12-25T14:00:00.000Z'),
-          end: new Date('2024-12-25T15:00:00.000Z'),
+          start: new Date('2025-12-25T14:00:00.000Z'),
+          end: new Date('2025-12-25T15:00:00.000Z'),
           type: 'busy',
         },
         {
           id: '2',
-          start: new Date('2024-12-25T16:00:00.000Z'),
-          end: new Date('2024-12-25T17:00:00.000Z'),
+          start: new Date('2025-12-25T16:00:00.000Z'),
+          end: new Date('2025-12-25T17:00:00.000Z'),
           type: 'busy',
         },
         {
           id: '3',
-          start: new Date('2024-12-25T18:00:00.000Z'),
-          end: new Date('2024-12-25T19:00:00.000Z'),
+          start: new Date('2025-12-25T18:00:00.000Z'),
+          end: new Date('2025-12-25T19:00:00.000Z'),
           type: 'preferred-slot',
         },
       ];
@@ -488,8 +488,8 @@ describe('CalendarView', () => {
     it('adjusts busy event opacity based on participant count', () => {
       const multiParticipantBusy = {
         id: 'busy-multi',
-        start: new Date('2024-12-25T14:00:00.000Z'),
-        end: new Date('2024-12-25T15:00:00.000Z'),
+        start: new Date('2025-12-25T14:00:00.000Z'),
+        end: new Date('2025-12-25T15:00:00.000Z'),
         type: 'busy',
         participantCount: 5,
       };
@@ -580,8 +580,8 @@ describe('CalendarView', () => {
       const eventWithoutType = {
         id: 'no-type',
         title: 'No Type Event',
-        start: new Date('2024-12-25T14:00:00.000Z'),
-        end: new Date('2024-12-25T15:00:00.000Z'),
+        start: new Date('2025-12-25T14:00:00.000Z'),
+        end: new Date('2025-12-25T15:00:00.000Z'),
         // type missing
       };
 
@@ -615,8 +615,8 @@ describe('CalendarView', () => {
       const multiDayEvent = {
         id: 'multi-day',
         title: 'Multi-day Event',
-        start: new Date('2024-12-25T14:00:00.000Z'),
-        end: new Date('2024-12-27T15:00:00.000Z'),
+        start: new Date('2025-12-25T14:00:00.000Z'),
+        end: new Date('2025-12-27T15:00:00.000Z'),
         type: 'finalized',
       };
 

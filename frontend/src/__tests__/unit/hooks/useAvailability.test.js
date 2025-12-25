@@ -236,8 +236,8 @@ describe('useAvailability', () => {
 
       const newSlots = [
         {
-          start_time_utc: '2024-12-26T09:00:00Z',
-          end_time_utc: '2024-12-26T10:00:00Z',
+          start_time_utc: '2025-12-26T09:00:00Z',
+          end_time_utc: '2025-12-26T10:00:00Z',
           event_title: 'Morning Meeting'
         }
       ];
@@ -287,7 +287,7 @@ describe('useAvailability', () => {
       const error = new Error('Failed to add busy slots');
       addBusySlots.mockRejectedValue(error);
 
-      const newSlots = [{ start_time_utc: '2024-12-26T09:00:00Z', end_time_utc: '2024-12-26T10:00:00Z' }];
+      const newSlots = [{ start_time_utc: '2025-12-26T09:00:00Z', end_time_utc: '2025-12-26T10:00:00Z' }];
 
       await expect(
         act(async () => {
@@ -305,7 +305,7 @@ describe('useAvailability', () => {
         expect(result.current.loading).toBe(false);
       });
 
-      const newSlots = [{ start_time_utc: '2024-12-26T09:00:00Z', end_time_utc: '2024-12-26T10:00:00Z' }];
+      const newSlots = [{ start_time_utc: '2025-12-26T09:00:00Z', end_time_utc: '2025-12-26T10:00:00Z' }];
 
       addBusySlots.mockResolvedValue({ success: true });
       getUserBusySlots.mockRejectedValue(new Error('Refresh failed'));
@@ -434,8 +434,8 @@ describe('useAvailability', () => {
       addBusySlots.mockResolvedValue({ success: true });
       getUserBusySlots.mockResolvedValue(mockBusySlots);
 
-      const slot1 = [{ start_time_utc: '2024-12-26T09:00:00Z', end_time_utc: '2024-12-26T10:00:00Z' }];
-      const slot2 = [{ start_time_utc: '2024-12-27T14:00:00Z', end_time_utc: '2024-12-27T15:00:00Z' }];
+      const slot1 = [{ start_time_utc: '2025-12-26T09:00:00Z', end_time_utc: '2025-12-26T10:00:00Z' }];
+      const slot2 = [{ start_time_utc: '2025-12-27T14:00:00Z', end_time_utc: '2025-12-27T15:00:00Z' }];
 
       // Submit multiple slots concurrently
       await act(async () => {
@@ -453,8 +453,8 @@ describe('useAvailability', () => {
       const largeBusySlots = Array.from({ length: 1000 }, (_, i) => ({
         id: `slot-${i}`,
         user_id: mockUserId,
-        start_time_utc: `2024-12-${String((i % 28) + 1).padStart(2, '0')}T09:00:00Z`,
-        end_time_utc: `2024-12-${String((i % 28) + 1).padStart(2, '0')}T10:00:00Z`
+        start_time_utc: `2025-12-${String((i % 28) + 1).padStart(2, '0')}T09:00:00Z`,
+        end_time_utc: `2025-12-${String((i % 28) + 1).padStart(2, '0')}T10:00:00Z`
       }));
 
       getUserBusySlots.mockResolvedValue(largeBusySlots);

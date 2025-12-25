@@ -29,7 +29,7 @@ def test_get_user_busy_slots_success(monkeypatch):
     mock_table.order.return_value = mock_table
     mock_table.execute.return_value = result_obj
 
-    out = service.get_user_busy_slots("u", datetime(2024, 1, 1), datetime(2024, 1, 2))
+    out = service.get_user_busy_slots("u", datetime(2025, 1, 1), datetime(2025, 1, 2))
     assert out == [{"id": "1", "user_id": "u"}]
 
 
@@ -45,7 +45,7 @@ def test_get_participants_busy_slots_success(monkeypatch):
     mock_table.order.return_value = mock_table
     mock_table.execute.return_value = result_obj
 
-    out = service.get_participants_busy_slots(["u1", "u2"], datetime(2024, 1, 1), datetime(2024, 1, 2))
+    out = service.get_participants_busy_slots(["u1", "u2"], datetime(2025, 1, 1), datetime(2025, 1, 2))
     assert out == [{"id": "1", "user_id": "u1"}]
 
 
@@ -57,7 +57,7 @@ def test_store_and_upsert_busy_slot(monkeypatch):
     ins_exec = Mock(); ins_exec.data = [{"id": "new"}]
     mock_table.insert.return_value.execute.return_value = ins_exec
 
-    slot = BusySlot(user_id="u", start_time_utc=datetime(2024, 1, 1, 9), end_time_utc=datetime(2024, 1, 1, 10))
+    slot = BusySlot(user_id="u", start_time_utc=datetime(2025, 1, 1, 9), end_time_utc=datetime(2025, 1, 1, 10))
     out = service.upsert_busy_slot(slot)
     assert out == {"id": "new"}
 
@@ -79,7 +79,7 @@ def test_delete_user_busy_slots_in_range(monkeypatch):
     mock_table.gte.return_value = mock_table
     mock_table.lte.return_value = mock_table
     mock_table.execute.return_value = Mock()
-    ok = service.delete_user_busy_slots_in_range("u", datetime(2024,1,1), datetime(2024,1,2))
+    ok = service.delete_user_busy_slots_in_range("u", datetime(2025,1,1), datetime(2025,1,2))
     assert ok is True
 
 
@@ -88,7 +88,7 @@ def test_rpc_get_merged_busy_slots_success(monkeypatch):
     mock_rpc = mock_sb.rpc.return_value
     res = Mock(); res.data = [{"start_time": "s", "end_time": "e", "busy_participants_count": 1}]
     mock_rpc.execute.return_value = res
-    out = service.get_merged_busy_slots_for_event("event", datetime(2024,1,1), datetime(2024,1,2))
+    out = service.get_merged_busy_slots_for_event("event", datetime(2025,1,1), datetime(2025,1,2))
     assert out == res.data
 
 
@@ -106,8 +106,8 @@ def test_rpc_fallback_merge_logic(monkeypatch):
     # busy_slots table
     busy_table = Mock()
     busy_res = Mock(); busy_res.data = [
-        {"start_time_utc": "2024-01-01T09:00:00+00:00", "end_time_utc": "2024-01-01T10:00:00+00:00", "user_id": "u1"},
-        {"start_time_utc": "2024-01-01T09:30:00+00:00", "end_time_utc": "2024-01-01T10:30:00+00:00", "user_id": "u2"},
+        {"start_time_utc": "2025-01-01T09:00:00+00:00", "end_time_utc": "2025-01-01T10:00:00+00:00", "user_id": "u1"},
+        {"start_time_utc": "2025-01-01T09:30:00+00:00", "end_time_utc": "2025-01-01T10:30:00+00:00", "user_id": "u2"},
     ]
     busy_table.select.return_value.in_.return_value.gte.return_value.lte.return_value.order.return_value.execute.return_value = busy_res
 
@@ -120,7 +120,7 @@ def test_rpc_fallback_merge_logic(monkeypatch):
 
     mock_sb.table.side_effect = table_side
 
-    out = service.get_merged_busy_slots_for_event("event", datetime(2024,1,1), datetime(2024,1,2))
+    out = service.get_merged_busy_slots_for_event("event", datetime(2025,1,1), datetime(2025,1,2))
     # Expect merged segments list
     assert isinstance(out, list) and len(out) > 0
 

@@ -28,8 +28,8 @@ describe('eventService', () => {
         name: 'Team Meeting',
         description: 'Weekly sync',
         duration_minutes: 30,
-        earliest_date: '2024-12-25',
-        latest_date: '2024-12-31',
+        earliest_date: '2025-12-25',
+        latest_date: '2025-12-31',
         earliest_hour: '09:00:00',
         latest_hour: '17:00:00'
       };
@@ -191,8 +191,8 @@ describe('eventService', () => {
       api.put.mockRejectedValue(error);
 
       const invalidUpdates = {
-        earliest_date: '2024-12-31',
-        latest_date: '2024-12-25' // Invalid: later than earliest
+        earliest_date: '2025-12-31',
+        latest_date: '2025-12-25' // Invalid: later than earliest
       };
 
       await expect(updateEvent(mockEvent.id, invalidUpdates)).rejects.toThrow('Validation failed');

@@ -17,8 +17,8 @@ class TestCreateEvent:
         event_data = {
             "name": "Team Meeting",
             "description": "Quarterly review",
-            "earliest_date": "2024-01-15T00:00:00Z",
-            "latest_date": "2024-01-20T00:00:00Z",
+            "earliest_date": "2025-01-15T00:00:00Z",
+            "latest_date": "2025-01-20T00:00:00Z",
             "earliest_hour": "09:00:00",
             "latest_hour": "17:00:00",
             "duration_minutes": 60
@@ -70,7 +70,7 @@ class TestCreateEvent:
         event_data = {
             "name": "Test Event",
             "earliest_date": "invalid-date",
-            "latest_date": "2024-01-20T00:00:00Z"
+            "latest_date": "2025-01-20T00:00:00Z"
         }
 
         # Act

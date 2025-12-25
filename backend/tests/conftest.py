@@ -80,7 +80,7 @@ def runner(app):
 @pytest.fixture
 def fixed_datetime():
     """Provide a fixed datetime for consistent testing."""
-    return datetime(2024, 12, 18, 12, 0, 0, tzinfo=timezone.utc)
+    return datetime(2025, 12, 18, 12, 0, 0, tzinfo=timezone.utc)
 
 
 @pytest.fixture
@@ -105,7 +105,7 @@ def sample_user():
         "email": "coordinator@example.com",
         "full_name": "Test Coordinator",
         "avatar_url": "https://example.com/avatar.jpg",
-        "created_at": "2024-01-01T00:00:00Z"
+        "created_at": "2025-01-01T00:00:00Z"
     }
 
 
@@ -117,7 +117,7 @@ def sample_participant():
         "email": "participant@example.com",
         "full_name": "Test Participant",
         "avatar_url": "https://example.com/avatar2.jpg",
-        "created_at": "2024-01-01T00:00:00Z"
+        "created_at": "2025-01-01T00:00:00Z"
     }
 
 
@@ -194,8 +194,8 @@ def sample_event(sample_user):
         "name": "Test Event",
         "description": "A test event for testing",
         "coordinator_id": sample_user["id"],
-        "earliest_date": "2024-12-20T00:00:00+00:00",
-        "latest_date": "2024-12-25T23:59:59+00:00",
+        "earliest_date": "2025-12-20T00:00:00+00:00",
+        "latest_date": "2025-12-25T23:59:59+00:00",
         "earliest_hour": "09:00:00",
         "latest_hour": "17:00:00",
         "duration_minutes": 60,
@@ -207,8 +207,8 @@ def sample_event(sample_user):
         "google_calendar_event_id": None,
         "google_calendar_html_link": None,
         "finalized_at": None,
-        "created_at": "2024-12-18T12:00:00Z",
-        "updated_at": "2024-12-18T12:00:00Z"
+        "created_at": "2025-12-18T12:00:00Z",
+        "updated_at": "2025-12-18T12:00:00Z"
     }
 
 
@@ -221,21 +221,21 @@ def sample_finalized_event(sample_user):
         "name": "Finalized Event",
         "description": "A finalized event",
         "coordinator_id": sample_user["id"],
-        "earliest_date": "2024-12-20T00:00:00+00:00",
-        "latest_date": "2024-12-25T23:59:59+00:00",
+        "earliest_date": "2025-12-20T00:00:00+00:00",
+        "latest_date": "2025-12-25T23:59:59+00:00",
         "earliest_hour": "09:00:00",
         "latest_hour": "17:00:00",
         "duration_minutes": 60,
         "status": "confirmed",
-        "selected_start_time_utc": "2024-12-20T14:00:00Z",
-        "selected_end_time_utc": "2024-12-20T15:00:00Z",
-        "finalized_start_time_utc": "2024-12-20T14:00:00Z",
-        "finalized_end_time_utc": "2024-12-20T15:00:00Z",
+        "selected_start_time_utc": "2025-12-20T14:00:00Z",
+        "selected_end_time_utc": "2025-12-20T15:00:00Z",
+        "finalized_start_time_utc": "2025-12-20T14:00:00Z",
+        "finalized_end_time_utc": "2025-12-20T15:00:00Z",
         "google_calendar_event_id": "gcal-123",
         "google_calendar_html_link": "https://calendar.google.com/event?eid=gcal-123",
-        "finalized_at": "2024-12-18T12:00:00Z",
-        "created_at": "2024-12-18T12:00:00Z",
-        "updated_at": "2024-12-18T12:00:00Z"
+        "finalized_at": "2025-12-18T12:00:00Z",
+        "created_at": "2025-12-18T12:00:00Z",
+        "updated_at": "2025-12-18T12:00:00Z"
     }
 
 
@@ -247,8 +247,8 @@ def sample_event_participant(sample_user, sample_participant):
         "event_id": "event-123",
         "user_id": sample_participant["id"],
         "status": "accepted",
-        "joined_at": "2024-12-18T12:00:00Z",
-        "created_at": "2024-12-18T12:00:00Z"
+        "joined_at": "2025-12-18T12:00:00Z",
+        "created_at": "2025-12-18T12:00:00Z"
     }
 
 
@@ -394,8 +394,8 @@ def mock_google_calendar():
         "id": "gcal-event-123",
         "htmlLink": "https://calendar.google.com/event?eid=gcal-event-123",
         "summary": "Test Event",
-        "start": {"dateTime": "2024-12-20T14:00:00Z"},
-        "end": {"dateTime": "2024-12-20T15:00:00Z"}
+        "start": {"dateTime": "2025-12-20T14:00:00Z"},
+        "end": {"dateTime": "2025-12-20T15:00:00Z"}
     }
 
     # Mock event list
@@ -426,9 +426,9 @@ def mock_gemini_client():
     mock_response.text = """
     Based on the availability data, here are the recommended time slots:
 
-    1. December 20, 2024 at 2:00 PM - 3:00 PM (5 participants available)
-    2. December 21, 2024 at 10:00 AM - 11:00 AM (4 participants available)
-    3. December 22, 2024 at 3:00 PM - 4:00 PM (4 participants available)
+    1. December 20, 2025 at 2:00 PM - 3:00 PM (5 participants available)
+    2. December 21, 2025 at 10:00 AM - 11:00 AM (4 participants available)
+    3. December 22, 2025 at 3:00 PM - 4:00 PM (4 participants available)
     """
 
     mock_gemini.generate_content.return_value = mock_response

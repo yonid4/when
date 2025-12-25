@@ -56,7 +56,7 @@
 
 ### Busy Slots Failures (14 failures)
 
-**Root cause**: Routes call `datetime.fromisoformat(event["earliest_date"])` but `event["earliest_date"]` is `"2024-12-20"` (date-only), not a full ISO datetime string.
+**Root cause**: Routes call `datetime.fromisoformat(event["earliest_date"])` but `event["earliest_date"]` is `"2025-12-20"` (date-only), not a full ISO datetime string.
 
 **Failing tests** (all same issue):
 - `test_add_busy_slots_success`

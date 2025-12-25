@@ -1,4 +1,5 @@
 from ..utils.supabase_client import get_supabase
+from ..utils.email_utils import get_email_variants, normalize_email
 from typing import Optional, Dict, Any, List
 from supabase import create_client
 import os
@@ -244,13 +245,22 @@ class UsersService():
         return self.create_profile(user_id, defaults or {})
 
     def search_users(self, email: str) -> List[Dict[str, Any]]:
-        """Search users by email."""
+        """
+        Search users by email using normalized email variants.
+
+        This handles cases where the user searches for "johndoe@gmail.com"
+        but the stored email is "john.doe@gmail.com" (Gmail treats these as same).
+        """
         try:
-            # Use ilike for case-insensitive partial match
+            # Get normalized email for exact match
+            normalized = normalize_email(email)
+
+            # Search for users whose normalized email matches
+            # OR whose email contains the search term (for partial matches)
             result = (
                 self.supabase.table("profiles")
                 .select("id, email_address, full_name, avatar_url")
-                .ilike("email_address", f"%{email}%")
+                .or_(f"email_address.ilike.%{email}%,email_address.ilike.%{normalized}%")
                 .limit(10)
                 .execute()
             )

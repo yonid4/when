@@ -15,8 +15,8 @@ export const mockSession = {
     email: 'test@example.com',
     aud: 'authenticated',
     role: 'authenticated',
-    created_at: '2024-01-15T10:00:00Z',
-    updated_at: '2024-01-15T10:00:00Z',
+    created_at: '2025-01-15T10:00:00Z',
+    updated_at: '2025-01-15T10:00:00Z',
   },
 };
 
@@ -27,8 +27,8 @@ export const mockUser = {
   avatar_url: 'https://i.pravatar.cc/150?img=1',
   timezone: 'America/New_York',
   google_calendar_connected: false,
-  created_at: '2024-01-15T10:00:00Z',
-  updated_at: '2024-01-15T10:00:00Z',
+  created_at: '2025-01-15T10:00:00Z',
+  updated_at: '2025-01-15T10:00:00Z',
 };
 
 // Mock auth methods

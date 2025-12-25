@@ -48,11 +48,11 @@ def sample_busy_slot():
     return {
         "id": "busy-123",
         "user_id": "user-123",
-        "start_time_utc": "2024-12-20T14:00:00Z",
-        "end_time_utc": "2024-12-20T15:00:00Z",
+        "start_time_utc": "2025-12-20T14:00:00Z",
+        "end_time_utc": "2025-12-20T15:00:00Z",
         "event_title": "Team Meeting",
         "google_event_id": "gcal-event-123",
-        "created_at": "2024-12-18T10:00:00Z"
+        "created_at": "2025-12-18T10:00:00Z"
     }
 
 
@@ -60,8 +60,8 @@ def sample_busy_slot():
 def sample_date_range():
     """Create sample date range for queries."""
     return {
-        "start": datetime(2024, 12, 20, tzinfo=timezone.utc),
-        "end": datetime(2024, 12, 27, tzinfo=timezone.utc)
+        "start": datetime(2025, 12, 20, tzinfo=timezone.utc),
+        "end": datetime(2025, 12, 27, tzinfo=timezone.utc)
     }
 
 
@@ -161,8 +161,8 @@ class TestStoreBusySlot:
         # Arrange
         busy_slot = BusySlot(
             user_id="user-123",
-            start_time_utc=datetime(2024, 12, 20, 14, 0, tzinfo=timezone.utc),
-            end_time_utc=datetime(2024, 12, 20, 15, 0, tzinfo=timezone.utc),
+            start_time_utc=datetime(2025, 12, 20, 14, 0, tzinfo=timezone.utc),
+            end_time_utc=datetime(2025, 12, 20, 15, 0, tzinfo=timezone.utc),
             event_title="Meeting"
         )
 
@@ -182,8 +182,8 @@ class TestStoreBusySlot:
         # Arrange
         busy_slot = BusySlot(
             user_id="user-123",
-            start_time_utc=datetime(2024, 12, 20, 14, 0, tzinfo=timezone.utc),
-            end_time_utc=datetime(2024, 12, 20, 15, 0, tzinfo=timezone.utc)
+            start_time_utc=datetime(2025, 12, 20, 14, 0, tzinfo=timezone.utc),
+            end_time_utc=datetime(2025, 12, 20, 15, 0, tzinfo=timezone.utc)
         )
         mock_supabase.table.return_value.insert.return_value.execute.side_effect = Exception("DB Error")
 
@@ -206,8 +206,8 @@ class TestUpsertBusySlot:
         # Arrange
         busy_slot = BusySlot(
             user_id="user-123",
-            start_time_utc=datetime(2024, 12, 20, 14, 0, tzinfo=timezone.utc),
-            end_time_utc=datetime(2024, 12, 20, 15, 0, tzinfo=timezone.utc),
+            start_time_utc=datetime(2025, 12, 20, 14, 0, tzinfo=timezone.utc),
+            end_time_utc=datetime(2025, 12, 20, 15, 0, tzinfo=timezone.utc),
             google_event_id="gcal-new-123"
         )
 
@@ -234,8 +234,8 @@ class TestUpsertBusySlot:
         # Arrange
         busy_slot = BusySlot(
             user_id="user-123",
-            start_time_utc=datetime(2024, 12, 20, 14, 0, tzinfo=timezone.utc),
-            end_time_utc=datetime(2024, 12, 20, 15, 0, tzinfo=timezone.utc),
+            start_time_utc=datetime(2025, 12, 20, 14, 0, tzinfo=timezone.utc),
+            end_time_utc=datetime(2025, 12, 20, 15, 0, tzinfo=timezone.utc),
             google_event_id="gcal-existing-123",
             event_title="Updated Meeting"
         )
@@ -267,8 +267,8 @@ class TestUpsertBusySlot:
         # Arrange
         busy_slot = BusySlot(
             user_id="user-123",
-            start_time_utc=datetime(2024, 12, 20, 14, 0, tzinfo=timezone.utc),
-            end_time_utc=datetime(2024, 12, 20, 15, 0, tzinfo=timezone.utc)
+            start_time_utc=datetime(2025, 12, 20, 14, 0, tzinfo=timezone.utc),
+            end_time_utc=datetime(2025, 12, 20, 15, 0, tzinfo=timezone.utc)
         )
 
         insert_result = Mock()
@@ -330,13 +330,13 @@ class TestBulkStoreBusySlots:
         slots = [
             BusySlot(
                 user_id="user-123",
-                start_time_utc=datetime(2024, 12, 20, 14, 0, tzinfo=timezone.utc),
-                end_time_utc=datetime(2024, 12, 20, 15, 0, tzinfo=timezone.utc)
+                start_time_utc=datetime(2025, 12, 20, 14, 0, tzinfo=timezone.utc),
+                end_time_utc=datetime(2025, 12, 20, 15, 0, tzinfo=timezone.utc)
             ),
             BusySlot(
                 user_id="user-123",
-                start_time_utc=datetime(2024, 12, 21, 10, 0, tzinfo=timezone.utc),
-                end_time_utc=datetime(2024, 12, 21, 11, 0, tzinfo=timezone.utc)
+                start_time_utc=datetime(2025, 12, 21, 10, 0, tzinfo=timezone.utc),
+                end_time_utc=datetime(2025, 12, 21, 11, 0, tzinfo=timezone.utc)
             )
         ]
 
@@ -392,14 +392,14 @@ class TestSyncUserGoogleCalendar:
             "items": [
                 {
                     "id": "gcal-event-1",
-                    "start": {"dateTime": "2024-12-20T14:00:00Z"},
-                    "end": {"dateTime": "2024-12-20T15:00:00Z"},
+                    "start": {"dateTime": "2025-12-20T14:00:00Z"},
+                    "end": {"dateTime": "2025-12-20T15:00:00Z"},
                     "summary": "Meeting 1"
                 },
                 {
                     "id": "gcal-event-2",
-                    "start": {"dateTime": "2024-12-21T10:00:00Z"},
-                    "end": {"dateTime": "2024-12-21T11:00:00Z"},
+                    "start": {"dateTime": "2025-12-21T10:00:00Z"},
+                    "end": {"dateTime": "2025-12-21T11:00:00Z"},
                     "summary": "Meeting 2"
                 }
             ]
@@ -437,8 +437,8 @@ class TestGetMergedBusySlotsForEvent:
         mock_rpc_result = Mock()
         mock_rpc_result.data = [
             {
-                "start_time": "2024-12-20T14:00:00Z",
-                "end_time": "2024-12-20T15:00:00Z",
+                "start_time": "2025-12-20T14:00:00Z",
+                "end_time": "2025-12-20T15:00:00Z",
                 "busy_participants_count": 2
             }
         ]
@@ -467,8 +467,8 @@ class TestGetMergedBusySlotsForEvent:
         busy_slots_result.data = [
             {
                 "user_id": "user-123",
-                "start_time_utc": "2024-12-20T14:00:00Z",
-                "end_time_utc": "2024-12-20T15:00:00Z"
+                "start_time_utc": "2025-12-20T14:00:00Z",
+                "end_time_utc": "2025-12-20T15:00:00Z"
             }
         ]
 
@@ -506,8 +506,8 @@ class TestValidateBusySlotData:
         # Arrange
         slot_data = {
             "user_id": "user-123",
-            "start_time_utc": "2024-12-20T14:00:00Z",
-            "end_time_utc": "2024-12-20T15:00:00Z"
+            "start_time_utc": "2025-12-20T14:00:00Z",
+            "end_time_utc": "2025-12-20T15:00:00Z"
         }
 
         # Act
@@ -520,8 +520,8 @@ class TestValidateBusySlotData:
         """Test validation fails when user_id is missing."""
         # Arrange
         slot_data = {
-            "start_time_utc": "2024-12-20T14:00:00Z",
-            "end_time_utc": "2024-12-20T15:00:00Z"
+            "start_time_utc": "2025-12-20T14:00:00Z",
+            "end_time_utc": "2025-12-20T15:00:00Z"
         }
 
         # Act
@@ -535,7 +535,7 @@ class TestValidateBusySlotData:
         # Arrange
         slot_data = {
             "user_id": "user-123",
-            "end_time_utc": "2024-12-20T15:00:00Z"
+            "end_time_utc": "2025-12-20T15:00:00Z"
         }
 
         # Act
@@ -549,8 +549,8 @@ class TestValidateBusySlotData:
         # Arrange
         slot_data = {
             "user_id": "user-123",
-            "start_time_utc": "2024-12-20T15:00:00Z",
-            "end_time_utc": "2024-12-20T14:00:00Z"
+            "start_time_utc": "2025-12-20T15:00:00Z",
+            "end_time_utc": "2025-12-20T14:00:00Z"
         }
 
         # Act
@@ -565,7 +565,7 @@ class TestValidateBusySlotData:
         slot_data = {
             "user_id": "user-123",
             "start_time_utc": "invalid-date",
-            "end_time_utc": "2024-12-20T15:00:00Z"
+            "end_time_utc": "2025-12-20T15:00:00Z"
         }
 
         # Act

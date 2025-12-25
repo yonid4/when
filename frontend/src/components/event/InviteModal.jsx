@@ -14,7 +14,7 @@ import {
   useToast
 } from "@chakra-ui/react";
 import { EmailIcon } from "@chakra-ui/icons";
-import api from "../../services/api";
+import { eventsAPI } from "../../services/apiService";
 
 /**
  * Modal for inviting participants to an event
@@ -45,11 +45,11 @@ const InviteModal = ({ isOpen, onClose, eventUid, onSuccess }) => {
     setIsSending(true);
 
     try {
-      const response = await api.post(`/api/events/${eventUid}/invite`, {
-        emails: emailList
-      });
+      console.log(`[INVITE] Sending invitations to event ${eventUid}:`, emailList);
 
-      const result = response.data;
+      const result = await eventsAPI.sendInvitations(eventUid, emailList);
+
+      console.log("[INVITE] Result:", result);
 
       if (result.summary.success > 0) {
         toast({
@@ -74,22 +74,31 @@ const InviteModal = ({ isOpen, onClose, eventUid, onSuccess }) => {
       // Show detailed results in console for debugging
       result.results.forEach(r => {
         if (r.status === "error") {
-          console.log(`Failed to invite ${r.email}: ${r.message}`);
+          console.error(`[INVITE] Failed to invite ${r.email}: ${r.message}`);
+        } else {
+          console.log(`[INVITE] Successfully invited ${r.email}`);
         }
       });
 
       setEmails("");
       onClose();
-      
+
       if (onSuccess) {
         onSuccess();
       }
 
     } catch (error) {
-      console.error("Error sending invitations:", error);
+      console.error("[INVITE] Error sending invitations:", error);
+
+      // Extract more detailed error information
+      const errorMessage = error.response?.data?.error
+        || error.response?.data?.message
+        || error.message
+        || "An error occurred";
+
       toast({
         title: "Failed to send invitations",
-        description: error.message || "An error occurred",
+        description: errorMessage,
         status: "error",
         duration: 5000,
         isClosable: true,

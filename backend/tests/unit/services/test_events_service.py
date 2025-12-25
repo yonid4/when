@@ -147,8 +147,8 @@ class TestCreateEvent:
         """Test event creation fails when earliest_date > latest_date."""
         # Arrange
         event_data = create_valid_event_data(
-            earliest_date="2024-12-25",
-            latest_date="2024-12-20"
+            earliest_date="2025-12-25",
+            latest_date="2025-12-20"
         )
 
         # Act

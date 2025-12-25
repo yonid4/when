@@ -497,32 +497,32 @@ export const mockEvent = {
   uid: 'abc123def456',
   title: 'Team Meeting',
   description: 'Weekly sync',
-  start_time: '2024-12-20T10:00:00Z',
-  end_time: '2024-12-20T11:00:00Z',
+  start_time: '2025-12-20T10:00:00Z',
+  end_time: '2025-12-20T11:00:00Z',
   coordinator_id: 'user-123',
   status: 'active',
   is_finalized: false,
-  created_at: '2024-12-18T00:00:00Z'
+  created_at: '2025-12-18T00:00:00Z'
 };
 
 export const mockProposedTimes = [
   {
     id: 'prop-1',
     event_id: 'event-123',
-    start_time: '2024-12-20T14:00:00Z',
-    end_time: '2024-12-20T15:00:00Z',
+    start_time: '2025-12-20T14:00:00Z',
+    end_time: '2025-12-20T15:00:00Z',
     score: 0.95,
     reasoning: 'All participants are available',
-    created_at: '2024-12-18T00:00:00Z'
+    created_at: '2025-12-18T00:00:00Z'
   },
   {
     id: 'prop-2',
     event_id: 'event-123',
-    start_time: '2024-12-21T10:00:00Z',
-    end_time: '2024-12-21T11:00:00Z',
+    start_time: '2025-12-21T10:00:00Z',
+    end_time: '2025-12-21T11:00:00Z',
     score: 0.87,
     reasoning: 'Most participants prefer mornings',
-    created_at: '2024-12-18T00:00:00Z'
+    created_at: '2025-12-18T00:00:00Z'
   }
 ];
 

@@ -165,11 +165,30 @@ const Dashboard = () => {
   };
 
   // Compute stats from real data
+  const now = new Date();
+
   const stats = {
     eventsThisMonth: events.length,
-    upcomingEvents: events.filter(e => e.status !== "cancelled").length,
-    pendingInvitations: invitations.length,
-    friendsAvailable: 0 // This would need additional API
+    upcomingEvents: events.filter(e => {
+      // Skip cancelled events
+      if (e.status === "cancelled") return false;
+
+      // If event is finalized, check if finalized date is >= current date
+      if (e.status === "finalized" && e.finalized_end_time_utc) {
+        const finalizedDate = new Date(e.finalized_end_time_utc);
+        return finalizedDate >= now;
+      }
+
+      // If event is NOT finalized, check if end date of date range is >= current date
+      if (e.status !== "finalized" && e.latest_date) {
+        const latestDate = new Date(e.latest_date);
+        return latestDate >= now;
+      }
+
+      // If no date info available, include it in upcoming
+      return true;
+    }).length,
+    pendingInvitations: invitations.length
   };
 
   // Get user info
@@ -244,7 +263,7 @@ const Dashboard = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            <SimpleGrid columns={{ base: 2, md: 4 }} spacing={4}>
+            <SimpleGrid columns={{ base: 1, sm: 2, md: 3 }} spacing={4}>
               <Card bg={cardBg}>
                 <CardBody>
                   <Stat>
@@ -259,7 +278,7 @@ const Dashboard = () => {
                   <Stat>
                     <StatLabel>Upcoming</StatLabel>
                     <StatNumber color={colors.secondary}>{stats.upcomingEvents}</StatNumber>
-                    <StatHelpText>Next 30 days</StatHelpText>
+                    <StatHelpText>Not passed yet</StatHelpText>
                   </Stat>
                 </CardBody>
               </Card>
@@ -269,15 +288,6 @@ const Dashboard = () => {
                     <StatLabel>Pending</StatLabel>
                     <StatNumber color={colors.accent}>{stats.pendingInvitations}</StatNumber>
                     <StatHelpText>Need response</StatHelpText>
-                  </Stat>
-                </CardBody>
-              </Card>
-              <Card bg={cardBg}>
-                <CardBody>
-                  <Stat>
-                    <StatLabel>Friends Available</StatLabel>
-                    <StatNumber color={colors.info}>{stats.friendsAvailable}</StatNumber>
-                    <StatHelpText>This week</StatHelpText>
                   </Stat>
                 </CardBody>
               </Card>

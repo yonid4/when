@@ -72,8 +72,8 @@ def sample_event():
         "name": "Team Meeting",
         "description": "Quarterly planning",
         "duration_minutes": 60,
-        "earliest_date": "2024-12-20",
-        "latest_date": "2024-12-27",
+        "earliest_date": "2025-12-20",
+        "latest_date": "2025-12-27",
         "earliest_hour": "09:00:00",
         "latest_hour": "17:00:00",
         "coordinator_id": "user-coordinator"
@@ -104,15 +104,15 @@ def sample_gemini_response():
     """Sample Gemini API response."""
     return json.dumps([
         {
-            "start_time_utc": "2024-12-20T14:00:00Z",
-            "end_time_utc": "2024-12-20T15:00:00Z",
+            "start_time_utc": "2025-12-20T14:00:00Z",
+            "end_time_utc": "2025-12-20T15:00:00Z",
             "score": 95,
             "conflicts": 0,
             "reasoning": "Perfect time - all participants free"
         },
         {
-            "start_time_utc": "2024-12-21T10:00:00Z",
-            "end_time_utc": "2024-12-21T11:00:00Z",
+            "start_time_utc": "2025-12-21T10:00:00Z",
+            "end_time_utc": "2025-12-21T11:00:00Z",
             "score": 85,
             "conflicts": 0,
             "reasoning": "Good time in morning"
@@ -288,8 +288,8 @@ class TestParseGeminiResponse:
         # Arrange
         response_text = json.dumps([
             {
-                "start_time_utc": "2024-12-20T14:00:00Z",
-                "end_time_utc": "2024-12-20T15:00:00Z",
+                "start_time_utc": "2025-12-20T14:00:00Z",
+                "end_time_utc": "2025-12-20T15:00:00Z",
                 "score": 90,
                 "conflicts": 0,
                 "reasoning": "Good time"
@@ -309,8 +309,8 @@ class TestParseGeminiResponse:
         response_text = """```json
 [
     {
-        "start_time_utc": "2024-12-20T14:00:00Z",
-        "end_time_utc": "2024-12-20T15:00:00Z",
+        "start_time_utc": "2025-12-20T14:00:00Z",
+        "end_time_utc": "2025-12-20T15:00:00Z",
         "score": 90,
         "conflicts": 0,
         "reasoning": "Good time"
@@ -346,8 +346,8 @@ class TestValidateProposedTimes:
         # Arrange
         proposals = [
             {
-                "start_time_utc": "2024-12-20T14:00:00Z",
-                "end_time_utc": "2024-12-20T15:00:00Z",
+                "start_time_utc": "2025-12-20T14:00:00Z",
+                "end_time_utc": "2025-12-20T15:00:00Z",
                 "score": 90,
                 "conflicts": 0,
                 "reasoning": "Good time"
@@ -370,7 +370,7 @@ class TestValidateProposedTimes:
         # Arrange
         proposals = [
             {
-                "start_time_utc": "2024-12-20T14:00:00Z",
+                "start_time_utc": "2025-12-20T14:00:00Z",
                 # Missing end_time_utc, score, conflicts, reasoning
             }
         ]
@@ -391,8 +391,8 @@ class TestValidateProposedTimes:
         # Arrange
         proposals = [
             {
-                "start_time_utc": "2024-12-20T14:00:00Z",
-                "end_time_utc": "2024-12-20T14:30:00Z",  # 30 min instead of 60
+                "start_time_utc": "2025-12-20T14:00:00Z",
+                "end_time_utc": "2025-12-20T14:30:00Z",  # 30 min instead of 60
                 "score": 90,
                 "conflicts": 0,
                 "reasoning": "Good time"
@@ -427,8 +427,8 @@ class TestGetCachedProposals:
         proposed_times_result = Mock()
         proposed_times_result.data = [
             {
-                "start_time_utc": "2024-12-20T14:00:00",
-                "end_time_utc": "2024-12-20T15:00:00",
+                "start_time_utc": "2025-12-20T14:00:00",
+                "end_time_utc": "2025-12-20T15:00:00",
                 "score": 90,
                 "conflicts": 0,
                 "reasoning": "Good time",
@@ -491,8 +491,8 @@ class TestSaveProposalsToCache:
         event_id = "event-123"
         proposals = [
             {
-                "start_time_utc": "2024-12-20T14:00:00Z",
-                "end_time_utc": "2024-12-20T15:00:00Z",
+                "start_time_utc": "2025-12-20T14:00:00Z",
+                "end_time_utc": "2025-12-20T15:00:00Z",
                 "score": 90,
                 "conflicts": 0,
                 "reasoning": "Good time"
@@ -559,7 +559,7 @@ class TestShouldRegenerate:
         event_result = Mock()
         event_result.data = [{
             "proposals_needs_regeneration": False,
-            "proposals_last_generated_at": "2024-12-18T10:00:00Z"
+            "proposals_last_generated_at": "2025-12-18T10:00:00Z"
         }]
 
         proposals_result = Mock()
@@ -645,8 +645,8 @@ class TestCalculateFreeWindows:
             "all_busy_slots": [
                 {
                     "user_id": "user-1",
-                    "start_time_utc": "2024-12-20T00:00:00Z",
-                    "end_time_utc": "2024-12-27T23:59:59Z"
+                    "start_time_utc": "2025-12-20T00:00:00Z",
+                    "end_time_utc": "2025-12-27T23:59:59Z"
                 }
             ]
         }

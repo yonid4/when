@@ -13,8 +13,8 @@ export const mockUser = {
   avatar_url: 'https://i.pravatar.cc/150?img=1',
   timezone: 'America/New_York',
   google_calendar_connected: false,
-  created_at: '2024-01-15T10:00:00Z',
-  updated_at: '2024-01-15T10:00:00Z',
+  created_at: '2025-01-15T10:00:00Z',
+  updated_at: '2025-01-15T10:00:00Z',
 };
 
 /**
@@ -36,8 +36,8 @@ export const mockSession = {
       avatar_url: 'https://i.pravatar.cc/150?img=1',
     },
     app_metadata: {},
-    created_at: '2024-01-15T10:00:00Z',
-    updated_at: '2024-01-15T10:00:00Z',
+    created_at: '2025-01-15T10:00:00Z',
+    updated_at: '2025-01-15T10:00:00Z',
   },
 };
 
@@ -48,8 +48,8 @@ export const mockCoordinator = {
   avatar_url: 'https://i.pravatar.cc/150?img=5',
   timezone: 'America/Los_Angeles',
   google_calendar_connected: true,
-  created_at: '2024-01-10T10:00:00Z',
-  updated_at: '2024-01-10T10:00:00Z',
+  created_at: '2025-01-10T10:00:00Z',
+  updated_at: '2025-01-10T10:00:00Z',
 };
 
 export const mockParticipant = {
@@ -59,8 +59,8 @@ export const mockParticipant = {
   avatar_url: 'https://i.pravatar.cc/150?img=13',
   timezone: 'Europe/London',
   google_calendar_connected: false,
-  created_at: '2024-01-12T10:00:00Z',
-  updated_at: '2024-01-12T10:00:00Z',
+  created_at: '2025-01-12T10:00:00Z',
+  updated_at: '2025-01-12T10:00:00Z',
 };
 
 /**
@@ -73,8 +73,8 @@ export const mockEvent = {
   description: 'Weekly team standup meeting',
   coordinator_id: 'coord-uuid-1234',
   duration_minutes: 30,
-  earliest_date: '2024-12-25',
-  latest_date: '2024-12-31',
+  earliest_date: '2025-12-25',
+  latest_date: '2025-12-31',
   earliest_hour: '09:00:00',
   latest_hour: '17:00:00',
   status: 'planning', // planning, finalized, cancelled
@@ -85,8 +85,8 @@ export const mockEvent = {
   finalized_at: null,
   proposals_needs_regeneration: false,
   proposals_last_generated_at: null,
-  created_at: '2024-12-01T10:00:00Z',
-  updated_at: '2024-12-01T10:00:00Z',
+  created_at: '2025-12-01T10:00:00Z',
+  updated_at: '2025-12-01T10:00:00Z',
 };
 
 export const mockFinalizedEvent = {
@@ -95,11 +95,11 @@ export const mockFinalizedEvent = {
   uid: 'evt_finalized_99999',
   name: 'Product Demo',
   status: 'finalized',
-  finalized_start_time_utc: '2024-12-28T15:00:00Z',
-  finalized_end_time_utc: '2024-12-28T15:30:00Z',
+  finalized_start_time_utc: '2025-12-28T15:00:00Z',
+  finalized_end_time_utc: '2025-12-28T15:30:00Z',
   google_calendar_event_id: 'gcal_event_123',
   google_calendar_html_link: 'https://calendar.google.com/event?eid=abc123',
-  finalized_at: '2024-12-20T14:30:00Z',
+  finalized_at: '2025-12-20T14:30:00Z',
 };
 
 export const mockEvents = [
@@ -112,8 +112,8 @@ export const mockEvents = [
     description: 'Review new UI designs',
     coordinator_id: 'coord-uuid-1234',
     duration_minutes: 60,
-    earliest_date: '2024-12-26',
-    latest_date: '2024-12-30',
+    earliest_date: '2025-12-26',
+    latest_date: '2025-12-30',
     earliest_hour: '10:00:00',
     latest_hour: '16:00:00',
     status: 'planning',
@@ -123,9 +123,9 @@ export const mockEvents = [
     google_calendar_html_link: null,
     finalized_at: null,
     proposals_needs_regeneration: true,
-    proposals_last_generated_at: '2024-12-19T10:00:00Z',
-    created_at: '2024-12-02T14:00:00Z',
-    updated_at: '2024-12-02T14:00:00Z',
+    proposals_last_generated_at: '2025-12-19T10:00:00Z',
+    created_at: '2025-12-02T14:00:00Z',
+    updated_at: '2025-12-02T14:00:00Z',
   },
 ];
 
@@ -138,7 +138,7 @@ export const mockParticipants = [
     user_id: 'coord-uuid-1234',
     status: 'accepted', // pending, accepted, declined
     is_coordinator: true,
-    joined_at: '2024-12-01T10:00:00Z',
+    joined_at: '2025-12-01T10:00:00Z',
     name: 'Sarah Coordinator',
     email: 'coordinator@example.com',
     avatar_url: 'https://i.pravatar.cc/150?img=5',
@@ -148,7 +148,7 @@ export const mockParticipants = [
     user_id: 'part-uuid-5678',
     status: 'accepted',
     is_coordinator: false,
-    joined_at: '2024-12-01T11:00:00Z',
+    joined_at: '2025-12-01T11:00:00Z',
     name: 'John Participant',
     email: 'participant@example.com',
     avatar_url: 'https://i.pravatar.cc/150?img=13',
@@ -158,7 +158,7 @@ export const mockParticipants = [
     user_id: 'a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6',
     status: 'pending',
     is_coordinator: false,
-    joined_at: '2024-12-01T12:00:00Z',
+    joined_at: '2025-12-01T12:00:00Z',
     name: 'Test User',
     email: 'test@example.com',
     avatar_url: 'https://i.pravatar.cc/150?img=1',
@@ -172,38 +172,38 @@ export const mockProposedTimes = [
   {
     id: 'proposal-uuid-1',
     event_id: 'event-uuid-abc123',
-    start_time_utc: '2024-12-26T14:00:00Z',
-    end_time_utc: '2024-12-26T14:30:00Z',
+    start_time_utc: '2025-12-26T14:00:00Z',
+    end_time_utc: '2025-12-26T14:30:00Z',
     score: 95,
     conflicts: 0,
     reasoning: 'No conflicts, preferred time zone for most participants',
     availableCount: 3,
     totalParticipants: 3,
-    created_at: '2024-12-20T10:00:00Z',
+    created_at: '2025-12-20T10:00:00Z',
   },
   {
     id: 'proposal-uuid-2',
     event_id: 'event-uuid-abc123',
-    start_time_utc: '2024-12-27T10:00:00Z',
-    end_time_utc: '2024-12-27T10:30:00Z',
+    start_time_utc: '2025-12-27T10:00:00Z',
+    end_time_utc: '2025-12-27T10:30:00Z',
     score: 85,
     conflicts: 0,
     reasoning: 'Morning slot, good for international team',
     availableCount: 3,
     totalParticipants: 3,
-    created_at: '2024-12-20T10:00:00Z',
+    created_at: '2025-12-20T10:00:00Z',
   },
   {
     id: 'proposal-uuid-3',
     event_id: 'event-uuid-abc123',
-    start_time_utc: '2024-12-28T16:00:00Z',
-    end_time_utc: '2024-12-28T16:30:00Z',
+    start_time_utc: '2025-12-28T16:00:00Z',
+    end_time_utc: '2025-12-28T16:30:00Z',
     score: 75,
     conflicts: 1,
     reasoning: 'One participant has minor conflict',
     availableCount: 2,
     totalParticipants: 3,
-    created_at: '2024-12-20T10:00:00Z',
+    created_at: '2025-12-20T10:00:00Z',
   },
 ];
 
@@ -214,24 +214,24 @@ export const mockBusySlots = [
   {
     id: 'busy-uuid-1',
     user_id: 'a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6',
-    start_time_utc: '2024-12-26T09:00:00Z',
-    end_time_utc: '2024-12-26T10:00:00Z',
+    start_time_utc: '2025-12-26T09:00:00Z',
+    end_time_utc: '2025-12-26T10:00:00Z',
     source: 'google_calendar', // google_calendar, manual
     external_event_id: 'gcal_event_456',
     event_title: 'Morning Meeting',
-    created_at: '2024-12-20T08:00:00Z',
-    updated_at: '2024-12-20T08:00:00Z',
+    created_at: '2025-12-20T08:00:00Z',
+    updated_at: '2025-12-20T08:00:00Z',
   },
   {
     id: 'busy-uuid-2',
     user_id: 'a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6',
-    start_time_utc: '2024-12-27T13:00:00Z',
-    end_time_utc: '2024-12-27T14:00:00Z',
+    start_time_utc: '2025-12-27T13:00:00Z',
+    end_time_utc: '2025-12-27T14:00:00Z',
     source: 'manual',
     external_event_id: null,
     event_title: 'Lunch Break',
-    created_at: '2024-12-20T08:00:00Z',
-    updated_at: '2024-12-20T08:00:00Z',
+    created_at: '2025-12-20T08:00:00Z',
+    updated_at: '2025-12-20T08:00:00Z',
   },
 ];
 
@@ -243,17 +243,17 @@ export const mockPreferredSlots = [
     id: 'pref-uuid-1',
     user_id: 'a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6',
     event_id: 'event-uuid-abc123',
-    start_time_utc: '2024-12-26T14:00:00Z',
-    end_time_utc: '2024-12-26T14:30:00Z',
-    created_at: '2024-12-20T12:00:00Z',
+    start_time_utc: '2025-12-26T14:00:00Z',
+    end_time_utc: '2025-12-26T14:30:00Z',
+    created_at: '2025-12-20T12:00:00Z',
   },
   {
     id: 'pref-uuid-2',
     user_id: 'a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6',
     event_id: 'event-uuid-abc123',
-    start_time_utc: '2024-12-27T10:00:00Z',
-    end_time_utc: '2024-12-27T10:30:00Z',
-    created_at: '2024-12-20T12:00:00Z',
+    start_time_utc: '2025-12-27T10:00:00Z',
+    end_time_utc: '2025-12-27T10:30:00Z',
+    created_at: '2025-12-20T12:00:00Z',
   },
 ];
 
@@ -277,7 +277,7 @@ export const mockNotifications = [
     action_taken: false,
     action_type: null,
     action_at: null,
-    created_at: '2024-12-20T11:00:00Z',
+    created_at: '2025-12-20T11:00:00Z',
   },
   {
     id: 'notif-uuid-2',
@@ -285,17 +285,17 @@ export const mockNotifications = [
     event_id: 'event-uuid-xyz789',
     notification_type: 'event_finalized',
     title: 'Event Finalized: Product Demo',
-    message: 'The event "Product Demo" has been scheduled for Friday, December 28, 2024 at 03:00 PM UTC. Check your Google Calendar for details.',
+    message: 'The event "Product Demo" has been scheduled for Friday, December 28, 2025 at 03:00 PM UTC. Check your Google Calendar for details.',
     metadata: {
-      finalized_time: 'Friday, December 28, 2024 at 03:00 PM UTC',
+      finalized_time: 'Friday, December 28, 2025 at 03:00 PM UTC',
       google_calendar_link: 'https://calendar.google.com/event?eid=abc123',
     },
     is_read: true,
-    read_at: '2024-12-20T12:00:00Z',
+    read_at: '2025-12-20T12:00:00Z',
     action_taken: false,
     action_type: null,
     action_at: null,
-    created_at: '2024-12-20T14:30:00Z',
+    created_at: '2025-12-20T14:30:00Z',
   },
   {
     id: 'notif-uuid-3',
@@ -308,11 +308,11 @@ export const mockNotifications = [
       deleted_by: 'coord-uuid-1234',
     },
     is_read: true,
-    read_at: '2024-12-19T10:00:00Z',
+    read_at: '2025-12-19T10:00:00Z',
     action_taken: true,
     action_type: 'acknowledged',
-    action_at: '2024-12-19T10:01:00Z',
-    created_at: '2024-12-19T09:00:00Z',
+    action_at: '2025-12-19T10:01:00Z',
+    created_at: '2025-12-19T09:00:00Z',
   },
 ];
 
@@ -327,8 +327,8 @@ export const mockInvitations = [
     invitee_id: 'a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6',
     invitee_email: 'test@example.com',
     status: 'pending', // pending, accepted, declined
-    created_at: '2024-12-20T11:00:00Z',
-    updated_at: '2024-12-20T11:00:00Z',
+    created_at: '2025-12-20T11:00:00Z',
+    updated_at: '2025-12-20T11:00:00Z',
   },
   {
     id: 'inv-uuid-2',
@@ -337,8 +337,8 @@ export const mockInvitations = [
     invitee_id: 'a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6',
     invitee_email: 'test@example.com',
     status: 'accepted',
-    created_at: '2024-12-18T10:00:00Z',
-    updated_at: '2024-12-18T11:00:00Z',
+    created_at: '2025-12-18T10:00:00Z',
+    updated_at: '2025-12-18T11:00:00Z',
   },
 ];
 
@@ -389,7 +389,7 @@ export function createMockParticipants(count = 3, eventId = 'event-uuid-abc123')
     user_id: `user-uuid-${i}`,
     status: i === 0 ? 'accepted' : 'pending',
     is_coordinator: i === 0,
-    joined_at: `2024-12-${String(i + 1).padStart(2, '0')}T10:00:00Z`,
+    joined_at: `2025-12-${String(i + 1).padStart(2, '0')}T10:00:00Z`,
     name: `User ${i + 1}`,
     email: `user${i + 1}@example.com`,
     avatar_url: `https://i.pravatar.cc/150?img=${i + 1}`,

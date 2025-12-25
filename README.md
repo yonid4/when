@@ -2,7 +2,7 @@
 
 A full-stack application for coordinating events and managing availability across multiple calendars. Built with React, Flask, and Supabase.
 
-## 🎉 Recent Updates (December 2024)
+## 🎉 Recent Updates (December 2025)
 
 ### Major New Features
 - **🤖 AI-Powered Time Proposals**: Integrated Google Gemini AI to intelligently suggest optimal meeting times based on participant availability, preferences, and constraints
@@ -907,10 +907,10 @@ For support and questions:
 
 ## 📋 Documentation Updates
 
-**Last README Update:** December 21, 2024
-**Previous Update:** December 18, 2024
+**Last README Update:** December 21, 2025
+**Previous Update:** December 18, 2025
 
-### What Changed in This Update (December 21, 2024)
+### What Changed in This Update (December 21, 2025)
 
 #### Comprehensive Testing Suite ✅
 - **Backend API Tests**: Added comprehensive API endpoint tests covering all 6 route modules
@@ -957,7 +957,7 @@ For support and questions:
 - **Deployment Script**: Added `scripts/deploy.sh` for streamlined deployment workflow
 - **Enhanced .aimrules**: Updated timezone handling guidelines with clear examples for backend and frontend
 
-### Previous Update (December 18, 2024)
+### Previous Update (December 18, 2025)
 
 #### UX Improvements
 - ✅ **Invitation Redirect**: Accepting invitations now redirects to event page instead of reloading dashboard
@@ -970,8 +970,8 @@ For support and questions:
 - ✅ Frontend: `EventPage.jsx` shows calendar reconnect button to all users
 - ✅ Frontend: `ProposedTimesModal.jsx` converts UTC times to local timezone using browser's `Intl` API
 
-### Update from December 13, 2024
-This comprehensive update reflected all changes made between November 5 and December 13, 2024:
+### Update from December 13, 2025
+This comprehensive update reflected all changes made between November 5 and December 13, 2025:
 
 #### New Features Documented
 - ✅ AI-Powered Time Proposals with Google Gemini integration
@@ -1002,4 +1002,4 @@ This comprehensive update reflected all changes made between November 5 and Dece
 - ✅ Comprehensive API service consolidation
 - ✅ Design system and mock data utilities
 
-For detailed commit history, run: `git log --since="2024-11-05" --oneline`
+For detailed commit history, run: `git log --since="2025-11-05" --oneline`

@@ -35,8 +35,8 @@ def sample_busy_slot():
     """Create a sample BusySlot for testing."""
     return BusySlot(
         user_id="user-123",
-        start_time_utc=datetime(2024, 1, 1, 9, 0, 0),
-        end_time_utc=datetime(2024, 1, 1, 10, 0, 0),
+        start_time_utc=datetime(2025, 1, 1, 9, 0, 0),
+        end_time_utc=datetime(2025, 1, 1, 10, 0, 0),
         google_event_id="google-event-123",
         event_title="Test Meeting"
     )
@@ -49,15 +49,15 @@ def sample_busy_slots_data():
         {
             "id": "slot-1",
             "user_id": "user-1",
-            "start_time_utc": "2024-01-01T09:00:00Z",
-            "end_time_utc": "2024-01-01T10:00:00Z",
+            "start_time_utc": "2025-01-01T09:00:00Z",
+            "end_time_utc": "2025-01-01T10:00:00Z",
             "event_title": "Meeting 1"
         },
         {
             "id": "slot-2", 
             "user_id": "user-2",
-            "start_time_utc": "2024-01-01T09:30:00Z",
-            "end_time_utc": "2024-01-01T10:30:00Z",
+            "start_time_utc": "2025-01-01T09:30:00Z",
+            "end_time_utc": "2025-01-01T10:30:00Z",
             "event_title": "Meeting 2"
         }
     ]
@@ -75,8 +75,8 @@ class TestBusySlotServiceBasicOperations:
         mock_execute.execute.return_value.data = sample_busy_slots_data
         mock_table.select.return_value.eq.return_value.gte.return_value.lte.return_value.order.return_value = mock_execute
         
-        start_date = datetime(2024, 1, 1)
-        end_date = datetime(2024, 1, 2)
+        start_date = datetime(2025, 1, 1)
+        end_date = datetime(2025, 1, 2)
         
         result = service.get_user_busy_slots("user-1", start_date, end_date)
         
@@ -90,8 +90,8 @@ class TestBusySlotServiceBasicOperations:
         # Mock an exception
         mock_table.select.side_effect = Exception("Database error")
         
-        start_date = datetime(2024, 1, 1)
-        end_date = datetime(2024, 1, 2)
+        start_date = datetime(2025, 1, 1)
+        end_date = datetime(2025, 1, 2)
         
         result = service.get_user_busy_slots("user-1", start_date, end_date)
         
@@ -106,8 +106,8 @@ class TestBusySlotServiceBasicOperations:
         mock_execute.execute.return_value.data = sample_busy_slots_data
         mock_table.select.return_value.gte.return_value.lte.return_value.order.return_value = mock_execute
         
-        start_date = datetime(2024, 1, 1)
-        end_date = datetime(2024, 1, 2)
+        start_date = datetime(2025, 1, 1)
+        end_date = datetime(2025, 1, 2)
         
         result = service.get_busy_slots(start_date, end_date)
         
@@ -193,8 +193,8 @@ class TestBusySlotServiceAdvancedOperations:
         busy_slots = [
             BusySlot(
                 user_id=f"user-{i}",
-                start_time_utc=datetime(2024, 1, 1, 9 + i, 0, 0),
-                end_time_utc=datetime(2024, 1, 1, 10 + i, 0, 0)
+                start_time_utc=datetime(2025, 1, 1, 9 + i, 0, 0),
+                end_time_utc=datetime(2025, 1, 1, 10 + i, 0, 0)
             )
             for i in range(3)
         ]
@@ -220,8 +220,8 @@ class TestBusySlotServiceAdvancedOperations:
         mock_execute.execute.return_value = Mock()
         mock_table.delete.return_value.eq.return_value.gte.return_value.lte.return_value = mock_execute
         
-        start_date = datetime(2024, 1, 1)
-        end_date = datetime(2024, 1, 2)
+        start_date = datetime(2025, 1, 1)
+        end_date = datetime(2025, 1, 2)
         
         result = service.delete_user_busy_slots_in_range("user-123", start_date, end_date)
         
@@ -242,8 +242,8 @@ class TestBusySlotServiceParticipantOperations:
         mock_table.select.return_value.in_.return_value.gte.return_value.lte.return_value.order.return_value = mock_execute
         
         participant_ids = ["user-1", "user-2"]
-        start_date = datetime(2024, 1, 1)
-        end_date = datetime(2024, 1, 2)
+        start_date = datetime(2025, 1, 1)
+        end_date = datetime(2025, 1, 2)
         
         result = service.get_participants_busy_slots(participant_ids, start_date, end_date)
         
@@ -275,8 +275,8 @@ class TestBusySlotServiceParticipantOperations:
         
         service.supabase.table.side_effect = mock_table_side_effect
         
-        start_date = datetime(2024, 1, 1)
-        end_date = datetime(2024, 1, 2)
+        start_date = datetime(2025, 1, 1)
+        end_date = datetime(2025, 1, 2)
         
         result = service.get_event_participants_busy_slots("event-123", start_date, end_date)
         
@@ -291,8 +291,8 @@ class TestBusySlotServiceParticipantOperations:
         mock_execute.execute.return_value.data = []
         mock_table.select.return_value.eq.return_value = mock_execute
         
-        start_date = datetime(2024, 1, 1)
-        end_date = datetime(2024, 1, 2)
+        start_date = datetime(2025, 1, 1)
+        end_date = datetime(2025, 1, 2)
         
         result = service.get_event_participants_busy_slots("event-123", start_date, end_date)
         
@@ -320,8 +320,8 @@ class TestBusySlotServiceGoogleCalendarSync:
                 {
                     'id': 'google-event-1',
                     'summary': 'Test Event',
-                    'start': {'dateTime': '2024-01-01T09:00:00Z'},
-                    'end': {'dateTime': '2024-01-01T10:00:00Z'}
+                    'start': {'dateTime': '2025-01-01T09:00:00Z'},
+                    'end': {'dateTime': '2025-01-01T10:00:00Z'}
                 }
             ]
         }
@@ -330,8 +330,8 @@ class TestBusySlotServiceGoogleCalendarSync:
         
         # Mock upsert_busy_slot
         with patch.object(service, 'upsert_busy_slot', return_value={"id": "slot-1"}):
-            start_date = datetime(2024, 1, 1)
-            end_date = datetime(2024, 1, 2)
+            start_date = datetime(2025, 1, 1)
+            end_date = datetime(2025, 1, 2)
             
             result = service.sync_user_google_calendar("user-123", start_date, end_date)
             
@@ -345,8 +345,8 @@ class TestBusySlotServiceGoogleCalendarSync:
         # Mock no credentials
         mock_get_creds.return_value = None
         
-        start_date = datetime(2024, 1, 1)
-        end_date = datetime(2024, 1, 2)
+        start_date = datetime(2025, 1, 1)
+        end_date = datetime(2025, 1, 2)
         
         result = service.sync_user_google_calendar("user-123", start_date, end_date)
         
@@ -376,15 +376,15 @@ class TestBusySlotServiceMergedSlots:
         # Mock RPC response
         rpc_data = [
             {
-                "start_time": "2024-01-01T09:00:00Z",
-                "end_time": "2024-01-01T10:00:00Z",
+                "start_time": "2025-01-01T09:00:00Z",
+                "end_time": "2025-01-01T10:00:00Z",
                 "busy_participants_count": 2
             }
         ]
         mock_rpc.execute.return_value.data = rpc_data
         
-        start_date = datetime(2024, 1, 1)
-        end_date = datetime(2024, 1, 2)
+        start_date = datetime(2025, 1, 1)
+        end_date = datetime(2025, 1, 2)
         
         result = service.get_merged_busy_slots_for_event("event-123", start_date, end_date)
         
@@ -407,8 +407,8 @@ class TestBusySlotServiceMergedSlots:
         
         # Mock fallback method
         with patch.object(service, '_get_merged_busy_slots_fallback', return_value=[]) as mock_fallback:
-            start_date = datetime(2024, 1, 1)
-            end_date = datetime(2024, 1, 2)
+            start_date = datetime(2025, 1, 1)
+            end_date = datetime(2025, 1, 2)
             
             result = service.get_merged_busy_slots_for_event("event-123", start_date, end_date)
             
@@ -422,13 +422,13 @@ class TestBusySlotServiceMergedSlots:
         # Sample overlapping busy slots
         busy_slots = [
             {
-                "start_time_utc": datetime(2024, 1, 1, 9, 0, 0),
-                "end_time_utc": datetime(2024, 1, 1, 10, 0, 0),
+                "start_time_utc": datetime(2025, 1, 1, 9, 0, 0),
+                "end_time_utc": datetime(2025, 1, 1, 10, 0, 0),
                 "user_id": "user-1"
             },
             {
-                "start_time_utc": datetime(2024, 1, 1, 9, 30, 0),
-                "end_time_utc": datetime(2024, 1, 1, 10, 30, 0),
+                "start_time_utc": datetime(2025, 1, 1, 9, 30, 0),
+                "end_time_utc": datetime(2025, 1, 1, 10, 30, 0),
                 "user_id": "user-2"
             }
         ]
@@ -456,13 +456,13 @@ class TestBusySlotServiceMergedSlots:
         
         busy_slots = [
             {
-                "start_time_utc": datetime(2024, 1, 1, 9, 0, 0),
-                "end_time_utc": datetime(2024, 1, 1, 10, 0, 0),
+                "start_time_utc": datetime(2025, 1, 1, 9, 0, 0),
+                "end_time_utc": datetime(2025, 1, 1, 10, 0, 0),
                 "user_id": "user-1"
             },
             {
-                "start_time_utc": datetime(2024, 1, 1, 11, 0, 0),
-                "end_time_utc": datetime(2024, 1, 1, 12, 0, 0),
+                "start_time_utc": datetime(2025, 1, 1, 11, 0, 0),
+                "end_time_utc": datetime(2025, 1, 1, 12, 0, 0),
                 "user_id": "user-2"
             }
         ]
@@ -486,8 +486,8 @@ class TestBusySlotServiceErrorHandling:
         mock_table.insert.side_effect = Exception("Insert error")
         mock_table.delete.side_effect = Exception("Delete error")
         
-        start_date = datetime(2024, 1, 1)
-        end_date = datetime(2024, 1, 2)
+        start_date = datetime(2025, 1, 1)
+        end_date = datetime(2025, 1, 2)
         
         # All these should return empty/False/None instead of raising
         assert service.get_user_busy_slots("user-1", start_date, end_date) == []

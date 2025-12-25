@@ -34,8 +34,8 @@ class TestBusySlotRPCIntegration:
                 'get_merged_busy_slots_for_event',
                 {
                     'event_uuid': '00000000-0000-0000-0000-000000000000',
-                    'start_date': '2024-01-01T00:00:00Z',
-                    'end_date': '2024-01-01T23:59:59Z'
+                    'start_date': '2025-01-01T00:00:00Z',
+                    'end_date': '2025-01-01T23:59:59Z'
                 }
             ).execute()
 
@@ -68,8 +68,8 @@ class TestBusySlotRPCIntegration:
     
     def test_python_fallback_integration(self, service, test_event_id):
         """Test Python fallback method with real database."""
-        start_date = datetime(2024, 1, 1)
-        end_date = datetime(2024, 1, 2)
+        start_date = datetime(2025, 1, 1)
+        end_date = datetime(2025, 1, 2)
         
         # This should work even without RPC function
         result = service._get_merged_busy_slots_fallback(test_event_id, start_date, end_date)
@@ -83,13 +83,13 @@ class TestBusySlotRPCIntegration:
         # Test Case 1: Complete overlap
         busy_slots_overlap = [
             {
-                "start_time_utc": datetime(2024, 1, 1, 9, 0, 0),
-                "end_time_utc": datetime(2024, 1, 1, 10, 0, 0),
+                "start_time_utc": datetime(2025, 1, 1, 9, 0, 0),
+                "end_time_utc": datetime(2025, 1, 1, 10, 0, 0),
                 "user_id": "user-1"
             },
             {
-                "start_time_utc": datetime(2024, 1, 1, 9, 0, 0),
-                "end_time_utc": datetime(2024, 1, 1, 10, 0, 0),
+                "start_time_utc": datetime(2025, 1, 1, 9, 0, 0),
+                "end_time_utc": datetime(2025, 1, 1, 10, 0, 0),
                 "user_id": "user-2"
             }
         ]
@@ -101,13 +101,13 @@ class TestBusySlotRPCIntegration:
         # Test Case 2: Partial overlap
         busy_slots_partial = [
             {
-                "start_time_utc": datetime(2024, 1, 1, 9, 0, 0),
-                "end_time_utc": datetime(2024, 1, 1, 10, 0, 0),
+                "start_time_utc": datetime(2025, 1, 1, 9, 0, 0),
+                "end_time_utc": datetime(2025, 1, 1, 10, 0, 0),
                 "user_id": "user-1"
             },
             {
-                "start_time_utc": datetime(2024, 1, 1, 9, 30, 0),
-                "end_time_utc": datetime(2024, 1, 1, 10, 30, 0),
+                "start_time_utc": datetime(2025, 1, 1, 9, 30, 0),
+                "end_time_utc": datetime(2025, 1, 1, 10, 30, 0),
                 "user_id": "user-2"
             }
         ]
@@ -121,18 +121,18 @@ class TestBusySlotRPCIntegration:
         # Test Case 3: Multiple users with complex overlaps
         busy_slots_complex = [
             {
-                "start_time_utc": datetime(2024, 1, 1, 9, 0, 0),
-                "end_time_utc": datetime(2024, 1, 1, 11, 0, 0),
+                "start_time_utc": datetime(2025, 1, 1, 9, 0, 0),
+                "end_time_utc": datetime(2025, 1, 1, 11, 0, 0),
                 "user_id": "user-1"
             },
             {
-                "start_time_utc": datetime(2024, 1, 1, 9, 30, 0),
-                "end_time_utc": datetime(2024, 1, 1, 10, 30, 0),
+                "start_time_utc": datetime(2025, 1, 1, 9, 30, 0),
+                "end_time_utc": datetime(2025, 1, 1, 10, 30, 0),
                 "user_id": "user-2"
             },
             {
-                "start_time_utc": datetime(2024, 1, 1, 10, 0, 0),
-                "end_time_utc": datetime(2024, 1, 1, 12, 0, 0),
+                "start_time_utc": datetime(2025, 1, 1, 10, 0, 0),
+                "end_time_utc": datetime(2025, 1, 1, 12, 0, 0),
                 "user_id": "user-3"
             }
         ]
@@ -155,8 +155,8 @@ class TestBusySlotRPCIntegration:
         # Test Case 1: Same start and end times
         busy_slots_same_time = [
             {
-                "start_time_utc": datetime(2024, 1, 1, 9, 0, 0),
-                "end_time_utc": datetime(2024, 1, 1, 9, 0, 0),  # Zero duration
+                "start_time_utc": datetime(2025, 1, 1, 9, 0, 0),
+                "end_time_utc": datetime(2025, 1, 1, 9, 0, 0),  # Zero duration
                 "user_id": "user-1"
             }
         ]
@@ -168,13 +168,13 @@ class TestBusySlotRPCIntegration:
         # Test Case 2: Adjacent but not overlapping
         busy_slots_adjacent = [
             {
-                "start_time_utc": datetime(2024, 1, 1, 9, 0, 0),
-                "end_time_utc": datetime(2024, 1, 1, 10, 0, 0),
+                "start_time_utc": datetime(2025, 1, 1, 9, 0, 0),
+                "end_time_utc": datetime(2025, 1, 1, 10, 0, 0),
                 "user_id": "user-1"
             },
             {
-                "start_time_utc": datetime(2024, 1, 1, 10, 0, 0),  # Exactly when first ends
-                "end_time_utc": datetime(2024, 1, 1, 11, 0, 0),
+                "start_time_utc": datetime(2025, 1, 1, 10, 0, 0),  # Exactly when first ends
+                "end_time_utc": datetime(2025, 1, 1, 11, 0, 0),
                 "user_id": "user-2"
             }
         ]

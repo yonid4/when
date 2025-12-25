@@ -51,8 +51,8 @@ class TestAvailabilityCalc:
         event_data = {
             "id": "event-123",
             "name": "Team Meeting",
-            "earliest_date": "2024-03-01T00:00:00Z",
-            "latest_date": "2024-03-03T00:00:00Z",
+            "earliest_date": "2025-03-01T00:00:00Z",
+            "latest_date": "2025-03-03T00:00:00Z",
             "default_duration_minutes": 60,
             "working_hours_start": 9,
             "working_hours_end": 17
@@ -88,8 +88,8 @@ class TestAvailabilityCalc:
         event_data = {
             "id": "event-123",
             "name": "Team Meeting",
-            "earliest_date": "2024-03-01T00:00:00Z",
-            "latest_date": "2024-03-01T00:00:00Z",  # Same day for simplicity
+            "earliest_date": "2025-03-01T00:00:00Z",
+            "latest_date": "2025-03-01T00:00:00Z",  # Same day for simplicity
             "default_duration_minutes": 60,
             "working_hours_start": 9,
             "working_hours_end": 17
@@ -105,8 +105,8 @@ class TestAvailabilityCalc:
         busy_slots_data = [
             {
                 "user_id": "user-1",
-                "start_time_utc": "2024-03-01T10:00:00+00:00",
-                "end_time_utc": "2024-03-01T12:00:00+00:00"
+                "start_time_utc": "2025-03-01T10:00:00+00:00",
+                "end_time_utc": "2025-03-01T12:00:00+00:00"
             }
         ]
         
@@ -149,8 +149,8 @@ class TestAvailabilityCalc:
         minimal_event_data = {
             "id": "event-123",
             "name": "Team Meeting",
-            "earliest_date": "2024-03-01T00:00:00Z",
-            "latest_date": "2024-03-01T00:00:00Z"
+            "earliest_date": "2025-03-01T00:00:00Z",
+            "latest_date": "2025-03-01T00:00:00Z"
             # Missing default_duration_minutes, working_hours_start, working_hours_end
         }
         
@@ -191,8 +191,8 @@ class TestAvailabilityCalc:
         event_data = {
             "id": "event-123",
             "name": "Team Meeting",
-            "earliest_date": "2024-03-01T00:00:00Z",
-            "latest_date": "2024-03-03T00:00:00Z",
+            "earliest_date": "2025-03-01T00:00:00Z",
+            "latest_date": "2025-03-03T00:00:00Z",
             "default_duration_minutes": 60,
             "working_hours_start": 9,
             "working_hours_end": 17
@@ -226,8 +226,8 @@ class TestAvailabilityCalc:
         with patch.object(calc.busy_slot_service, 'calculate_free_slots') as mock_calc_free:
             mock_calc_free.return_value = [
                 {
-                    "start_time_utc": "2024-03-01T09:00:00+00:00",
-                    "end_time_utc": "2024-03-01T10:00:00+00:00",
+                    "start_time_utc": "2025-03-01T09:00:00+00:00",
+                    "end_time_utc": "2025-03-01T10:00:00+00:00",
                     "duration_minutes": 60
                 }
             ]

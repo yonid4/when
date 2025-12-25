@@ -112,8 +112,8 @@ class TestFinalizeEvent:
                                     result = finalization_service.finalize_event(
                                         event_id="event-123",
                                         coordinator_id="user-coordinator",
-                                        start_time_utc="2024-12-20T14:00:00Z",
-                                        end_time_utc="2024-12-20T15:00:00Z",
+                                        start_time_utc="2025-12-20T14:00:00Z",
+                                        end_time_utc="2025-12-20T15:00:00Z",
                                         participant_ids=["user-1", "user-2"]
                                     )
 
@@ -131,8 +131,8 @@ class TestFinalizeEvent:
                 finalization_service.finalize_event(
                     event_id="event-123",
                     coordinator_id="user-not-coordinator",
-                    start_time_utc="2024-12-20T14:00:00Z",
-                    end_time_utc="2024-12-20T15:00:00Z",
+                    start_time_utc="2025-12-20T14:00:00Z",
+                    end_time_utc="2025-12-20T15:00:00Z",
                     participant_ids=[]
                 )
 
@@ -151,8 +151,8 @@ class TestFinalizeEvent:
                 finalization_service.finalize_event(
                     event_id="event-123",
                     coordinator_id="user-coordinator",
-                    start_time_utc="2024-12-20T14:00:00Z",
-                    end_time_utc="2024-12-20T15:00:00Z",
+                    start_time_utc="2025-12-20T14:00:00Z",
+                    end_time_utc="2025-12-20T15:00:00Z",
                     participant_ids=[]
                 )
 
@@ -166,8 +166,8 @@ class TestFinalizeEvent:
                     finalization_service.finalize_event(
                         event_id="event-123",
                         coordinator_id="user-coordinator",
-                        start_time_utc="2024-12-20T14:00:00Z",
-                        end_time_utc="2024-12-20T15:00:00Z",
+                        start_time_utc="2025-12-20T14:00:00Z",
+                        end_time_utc="2025-12-20T15:00:00Z",
                         participant_ids=[]
                     )
 
@@ -184,8 +184,8 @@ class TestPrepareCalendarEvent:
         # Act
         result = finalization_service._prepare_calendar_event(
             event=sample_event,
-            start_time_utc="2024-12-20T14:00:00Z",
-            end_time_utc="2024-12-20T15:00:00Z",
+            start_time_utc="2025-12-20T14:00:00Z",
+            end_time_utc="2025-12-20T15:00:00Z",
             attendee_emails=["alice@example.com", "bob@example.com"],
             coordinator_timezone="America/New_York",
             include_google_meet=False,
@@ -202,8 +202,8 @@ class TestPrepareCalendarEvent:
         # Act
         result = finalization_service._prepare_calendar_event(
             event=sample_event,
-            start_time_utc="2024-12-20T14:00:00Z",
-            end_time_utc="2024-12-20T15:00:00Z",
+            start_time_utc="2025-12-20T14:00:00Z",
+            end_time_utc="2025-12-20T15:00:00Z",
             attendee_emails=["alice@example.com"],
             coordinator_timezone="America/New_York",
             include_google_meet=True,
@@ -346,8 +346,8 @@ class TestHelperMethods:
         # Act - Should not raise
         finalization_service._update_event_finalization(
             event_id="event-123",
-            start_time_utc="2024-12-20T14:00:00Z",
-            end_time_utc="2024-12-20T15:00:00Z",
+            start_time_utc="2025-12-20T14:00:00Z",
+            end_time_utc="2025-12-20T15:00:00Z",
             google_event_id="gcal-123",
             google_html_link="https://calendar.google.com/event"
         )

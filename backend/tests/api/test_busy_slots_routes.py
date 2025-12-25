@@ -18,19 +18,19 @@ class TestAddBusySlots:
         slots_data = {
             "slots": [
                 {
-                    "start_time_utc": "2024-01-15T10:00:00+00:00",
-                    "end_time_utc": "2024-01-15T11:00:00+00:00"
+                    "start_time_utc": "2025-01-15T10:00:00+00:00",
+                    "end_time_utc": "2025-01-15T11:00:00+00:00"
                 },
                 {
-                    "start_time_utc": "2024-01-15T14:00:00+00:00",
-                    "end_time_utc": "2024-01-15T15:00:00+00:00"
+                    "start_time_utc": "2025-01-15T14:00:00+00:00",
+                    "end_time_utc": "2025-01-15T15:00:00+00:00"
                 }
             ]
         }
 
         mock_slots = [
-            {"id": "slot-1", "user_id": "user-1", "start_time_utc": "2024-01-15T10:00:00+00:00"},
-            {"id": "slot-2", "user_id": "user-1", "start_time_utc": "2024-01-15T14:00:00+00:00"}
+            {"id": "slot-1", "user_id": "user-1", "start_time_utc": "2025-01-15T10:00:00+00:00"},
+            {"id": "slot-2", "user_id": "user-1", "start_time_utc": "2025-01-15T14:00:00+00:00"}
         ]
 
         with patch("app.routes.busy_slots.busy_slots_service") as mock_service:
@@ -71,7 +71,7 @@ class TestAddBusySlots:
         """Test add busy slots without authentication token."""
         # Arrange
         event_id = "event-123"
-        slots_data = {"slots": [{"start_time_utc": "2024-01-15T10:00:00+00:00", "end_time_utc": "2024-01-15T11:00:00+00:00"}]}
+        slots_data = {"slots": [{"start_time_utc": "2025-01-15T10:00:00+00:00", "end_time_utc": "2025-01-15T11:00:00+00:00"}]}
 
         # Act
         response = client.post(f"/api/busy_slots/{event_id}", json=slots_data)
@@ -90,13 +90,13 @@ class TestGetBusySlots:
 
         mock_event = {
             **sample_event,
-            "earliest_date": "2024-01-15T00:00:00+00:00",
-            "latest_date": "2024-01-20T00:00:00+00:00"
+            "earliest_date": "2025-01-15T00:00:00+00:00",
+            "latest_date": "2025-01-20T00:00:00+00:00"
         }
 
         mock_slots = [
-            {"id": "slot-1", "start_time_utc": "2024-01-15T10:00:00+00:00", "end_time_utc": "2024-01-15T11:00:00+00:00"},
-            {"id": "slot-2", "start_time_utc": "2024-01-16T14:00:00+00:00", "end_time_utc": "2024-01-16T15:00:00+00:00"}
+            {"id": "slot-1", "start_time_utc": "2025-01-15T10:00:00+00:00", "end_time_utc": "2025-01-15T11:00:00+00:00"},
+            {"id": "slot-2", "start_time_utc": "2025-01-16T14:00:00+00:00", "end_time_utc": "2025-01-16T15:00:00+00:00"}
         ]
 
         with patch("app.routes.busy_slots.EventsService") as mock_events_service, \
@@ -154,12 +154,12 @@ class TestGetUserBusySlots:
 
         mock_event = {
             **sample_event,
-            "earliest_date": "2024-01-15T00:00:00+00:00",
-            "latest_date": "2024-01-20T00:00:00+00:00"
+            "earliest_date": "2025-01-15T00:00:00+00:00",
+            "latest_date": "2025-01-20T00:00:00+00:00"
         }
 
         mock_slots = [
-            {"id": "slot-1", "user_id": target_user_id, "start_time_utc": "2024-01-15T10:00:00+00:00"}
+            {"id": "slot-1", "user_id": target_user_id, "start_time_utc": "2025-01-15T10:00:00+00:00"}
         ]
 
         with patch("app.routes.busy_slots.EventsService") as mock_events_service, \
@@ -216,8 +216,8 @@ class TestDeleteUserBusySlots:
 
         mock_event = {
             **sample_event,
-            "earliest_date": "2024-01-15T00:00:00+00:00",
-            "latest_date": "2024-01-20T00:00:00+00:00"
+            "earliest_date": "2025-01-15T00:00:00+00:00",
+            "latest_date": "2025-01-20T00:00:00+00:00"
         }
 
         with patch("app.routes.busy_slots.EventsService") as mock_events_service, \
@@ -278,8 +278,8 @@ class TestSyncGoogleCalendar:
         # Arrange
         target_user_id = "user-2"
         sync_data = {
-            "start_date": "2024-01-15T00:00:00+00:00",
-            "end_date": "2024-01-20T00:00:00+00:00"
+            "start_date": "2025-01-15T00:00:00+00:00",
+            "end_date": "2025-01-20T00:00:00+00:00"
         }
 
         with patch("app.routes.busy_slots.busy_slots_service") as mock_service:
@@ -301,7 +301,7 @@ class TestSyncGoogleCalendar:
         """Test Google Calendar sync without required dates."""
         # Arrange
         target_user_id = "user-2"
-        sync_data = {"start_date": "2024-01-15T00:00:00+00:00"}  # Missing end_date
+        sync_data = {"start_date": "2025-01-15T00:00:00+00:00"}  # Missing end_date
 
         # Act
         response = client.post(
@@ -321,8 +321,8 @@ class TestSyncGoogleCalendar:
         # Arrange
         target_user_id = "user-2"
         sync_data = {
-            "start_date": "2024-01-15T00:00:00+00:00",
-            "end_date": "2024-01-20T00:00:00+00:00"
+            "start_date": "2025-01-15T00:00:00+00:00",
+            "end_date": "2025-01-20T00:00:00+00:00"
         }
 
         with patch("app.routes.busy_slots.busy_slots_service") as mock_service:
@@ -346,8 +346,8 @@ class TestSyncGoogleCalendar:
         # Arrange
         target_user_id = "user-2"
         sync_data = {
-            "start_date": "2024-01-15T00:00:00+00:00",
-            "end_date": "2024-01-20T00:00:00+00:00"
+            "start_date": "2025-01-15T00:00:00+00:00",
+            "end_date": "2025-01-20T00:00:00+00:00"
         }
 
         # Act
@@ -367,16 +367,16 @@ class TestGetEventParticipantsBusySlots:
 
         mock_event = {
             **sample_event,
-            "earliest_date": "2024-01-15T00:00:00+00:00",
-            "latest_date": "2024-01-20T00:00:00+00:00"
+            "earliest_date": "2025-01-15T00:00:00+00:00",
+            "latest_date": "2025-01-20T00:00:00+00:00"
         }
 
         mock_slots = {
             "user-1": [
-                {"start_time_utc": "2024-01-15T10:00:00+00:00", "end_time_utc": "2024-01-15T11:00:00+00:00"}
+                {"start_time_utc": "2025-01-15T10:00:00+00:00", "end_time_utc": "2025-01-15T11:00:00+00:00"}
             ],
             "user-2": [
-                {"start_time_utc": "2024-01-15T14:00:00+00:00", "end_time_utc": "2024-01-15T15:00:00+00:00"}
+                {"start_time_utc": "2025-01-15T14:00:00+00:00", "end_time_utc": "2025-01-15T15:00:00+00:00"}
             ]
         }
 
@@ -442,13 +442,13 @@ class TestGetMergedBusySlots:
         mock_event = {
             **sample_event,
             "uid": "abc123xyz456",
-            "earliest_date": "2024-01-15T00:00:00+00:00",
-            "latest_date": "2024-01-20T00:00:00+00:00"
+            "earliest_date": "2025-01-15T00:00:00+00:00",
+            "latest_date": "2025-01-20T00:00:00+00:00"
         }
 
         mock_merged_slots = [
-            {"start_time_utc": "2024-01-15T10:00:00+00:00", "end_time_utc": "2024-01-15T11:00:00+00:00"},
-            {"start_time_utc": "2024-01-15T14:00:00+00:00", "end_time_utc": "2024-01-15T16:00:00+00:00"}
+            {"start_time_utc": "2025-01-15T10:00:00+00:00", "end_time_utc": "2025-01-15T11:00:00+00:00"},
+            {"start_time_utc": "2025-01-15T14:00:00+00:00", "end_time_utc": "2025-01-15T16:00:00+00:00"}
         ]
 
         with patch("app.routes.busy_slots.EventsService") as mock_events_service, \
@@ -482,8 +482,8 @@ class TestGetMergedBusySlots:
         mock_event = {
             **sample_event,
             "id": event_id,
-            "earliest_date": "2024-01-15T00:00:00+00:00",
-            "latest_date": "2024-01-20T00:00:00+00:00"
+            "earliest_date": "2025-01-15T00:00:00+00:00",
+            "latest_date": "2025-01-20T00:00:00+00:00"
         }
 
         mock_merged_slots = []

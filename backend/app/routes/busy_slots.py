@@ -67,8 +67,11 @@ def get_busy_slots(event_id, user_id):
                 'message': f'No event found with id {event_id}'
             }), 404
 
-        start_date = datetime.fromisoformat(event["earliest_date"])
-        latest_date = datetime.fromisoformat(event["latest_date"])
+        # Extract datetime from UTC timestamps
+        earliest_utc = event["earliest_datetime_utc"].replace('Z', '+00:00')
+        latest_utc = event["latest_datetime_utc"].replace('Z', '+00:00')
+        start_date = datetime.fromisoformat(earliest_utc)
+        latest_date = datetime.fromisoformat(latest_utc)
 
         slots = busy_slots_service.get_busy_slots(start_date, latest_date)
 
@@ -106,8 +109,11 @@ def get_user_busy_slots(target_user_id, user_id):
                 'message': f'No event found with id {event_id}'
             }), 404
 
-        start_date = datetime.fromisoformat(event["earliest_date"])
-        latest_date = datetime.fromisoformat(event["latest_date"])
+        # Extract datetime from UTC timestamps
+        earliest_utc = event["earliest_datetime_utc"].replace('Z', '+00:00')
+        latest_utc = event["latest_datetime_utc"].replace('Z', '+00:00')
+        start_date = datetime.fromisoformat(earliest_utc)
+        latest_date = datetime.fromisoformat(latest_utc)
 
         slots = busy_slots_service.get_user_busy_slots(target_user_id, start_date, latest_date)
 
@@ -137,8 +143,11 @@ def delete_user_busy_slots(event_id, target_user_id, user_id):
                 'message': f'No event found with id {event_id}'
             }), 404
 
-        start_date = datetime.fromisoformat(event["earliest_date"])
-        latest_date = datetime.fromisoformat(event["latest_date"])
+        # Extract datetime from UTC timestamps
+        earliest_utc = event["earliest_datetime_utc"].replace('Z', '+00:00')
+        latest_utc = event["latest_datetime_utc"].replace('Z', '+00:00')
+        start_date = datetime.fromisoformat(earliest_utc)
+        latest_date = datetime.fromisoformat(latest_utc)
 
         busy_slots_service.delete_user_busy_slots_in_range(target_user_id, start_date, latest_date)
 
@@ -209,13 +218,16 @@ def get_event_participants_busy_slots(event_id, user_id):
                 'message': f'No event found with id {event_id}'
             }), 404
 
-        start_date = datetime.fromisoformat(event["earliest_date"])
-        latest_date = datetime.fromisoformat(event["latest_date"])
+        # Extract datetime from UTC timestamps
+        earliest_utc = event["earliest_datetime_utc"].replace('Z', '+00:00')
+        latest_utc = event["latest_datetime_utc"].replace('Z', '+00:00')
+        start_date = datetime.fromisoformat(earliest_utc)
+        latest_date = datetime.fromisoformat(latest_utc)
 
         # Use database ID for service call
         slots = busy_slots_service.get_event_participants_busy_slots(
             event["id"],  # Use database ID instead of event_id parameter
-            start_date, 
+            start_date,
             latest_date
         )
 
@@ -252,13 +264,16 @@ def get_merged_busy_slots_for_event(event_id, user_id):
                 'message': f'No event found with uid or id {event_id}'
             }), 404
             
-        start_date = datetime.fromisoformat(event["earliest_date"])
-        latest_date = datetime.fromisoformat(event["latest_date"])
+        # Extract datetime from UTC timestamps
+        earliest_utc = event["earliest_datetime_utc"].replace('Z', '+00:00')
+        latest_utc = event["latest_datetime_utc"].replace('Z', '+00:00')
+        start_date = datetime.fromisoformat(earliest_utc)
+        latest_date = datetime.fromisoformat(latest_utc)
 
         # Get merged busy slots using RPC (pass the database ID to service)
         merged_slots = busy_slots_service.get_merged_busy_slots_for_event(
             event["id"],  # Use database ID for service call
-            start_date, 
+            start_date,
             latest_date
         )
         
