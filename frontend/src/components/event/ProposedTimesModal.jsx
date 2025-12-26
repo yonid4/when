@@ -19,8 +19,11 @@ import {
   Icon,
   useColorModeValue
 } from "@chakra-ui/react";
-import { FiRefreshCw } from "react-icons/fi";
+import { FiRefreshCw, FiClock, FiUsers } from "react-icons/fi";
+import { motion } from "framer-motion";
 import { colors } from "../../styles/designSystem";
+
+const MotionCard = motion(Card);
 
 const ProposedTimesModal = ({
   isOpen,
@@ -77,38 +80,71 @@ const ProposedTimesModal = ({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="3xl" isCentered>
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>
-          <Flex justify="space-between" align="center" mb={2}>
-            <Text>Proposed Times</Text>
-            {isCoordinator && timeOptions.length > 0 && (
-              <Button
-                leftIcon={<Icon as={FiRefreshCw} />}
-                size="sm"
-                variant="ghost"
-                onClick={onRefresh}
-                isLoading={isLoadingProposals}
-                colorScheme="purple"
+      <ModalOverlay backdropFilter="blur(4px)" />
+      <ModalContent borderRadius="xl" overflow="hidden">
+        {/* Gradient Header */}
+        <Box
+          bgGradient="linear(to-r, purple.600, blue.500)"
+          position="relative"
+          overflow="hidden"
+        >
+          {/* Background Pattern */}
+          <Box
+            position="absolute"
+            top={0}
+            left={0}
+            right={0}
+            bottom={0}
+            opacity={0.1}
+            bgImage="radial-gradient(circle at 20% 50%, rgba(255,255,255,0.3) 0%, transparent 50%)"
+          />
+          <ModalHeader color="white" position="relative" py={6}>
+            <Flex justify="space-between" align="center" mb={2}>
+              <HStack>
+                <Icon as={FiClock} boxSize={6} />
+                <Text>AI Proposed Times</Text>
+              </HStack>
+              {isCoordinator && timeOptions.length > 0 && (
+                <Button
+                  leftIcon={<Icon as={FiRefreshCw} />}
+                  size="sm"
+                  bg="whiteAlpha.200"
+                  color="white"
+                  onClick={onRefresh}
+                  isLoading={isLoadingProposals}
+                  _hover={{
+                    bg: "whiteAlpha.300",
+                    transform: "translateY(-2px)"
+                  }}
+                  transition="all 0.3s"
+                  backdropFilter="blur(10px)"
+                >
+                  Refresh
+                </Button>
+              )}
+            </Flex>
+            <Flex justify="space-between" align="center">
+              {proposalMetadata?.generatedAt && (
+                <Text fontSize="xs" color="whiteAlpha.800" fontWeight="normal">
+                  Generated {formatTimeAgo(proposalMetadata.generatedAt)}
+                </Text>
+              )}
+            </Flex>
+            {proposalMetadata?.needsUpdate && (
+              <Badge 
+                bgGradient="linear(to-r, orange.400, yellow.400)"
+                color="white"
+                fontSize="xs" 
+                mt={2}
+                px={3}
+                py={1}
               >
-                Refresh
-              </Button>
+                Updates available - Refresh to see latest proposals
+              </Badge>
             )}
-          </Flex>
-          <Flex justify="space-between" align="center">
-            {proposalMetadata?.generatedAt && (
-              <Text fontSize="xs" color="gray.500" fontWeight="normal">
-                Generated {formatTimeAgo(proposalMetadata.generatedAt)}
-              </Text>
-            )}
-          </Flex>
-          {proposalMetadata?.needsUpdate && (
-            <Badge colorScheme="yellow" fontSize="xs" mt={2}>
-              Updates available - Refresh to see latest proposals
-            </Badge>
-          )}
-        </ModalHeader>
-        <ModalCloseButton />
+          </ModalHeader>
+          <ModalCloseButton color="white" _hover={{ bg: "whiteAlpha.200" }} />
+        </Box>
         <ModalBody pb={6}>
           {timeOptions.length === 0 ? (
             <Box textAlign="center" py={8}>
@@ -131,16 +167,18 @@ const ProposedTimesModal = ({
                 const localTime = `${formatTime(option.start_time_utc)} - ${formatTime(option.end_time_utc)}`;
 
                 return (
-                  <Card
+                  <MotionCard
                     key={option.id}
                     w="full"
-                    variant="outline"
-                    size="sm"
-                    borderWidth={isWinner ? 2 : 1}
-                    borderColor={
-                      selectedTimeOption === option.id ? colors.primary :
-                        isWinner ? colors.secondary : borderColor
-                    }
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: index * 0.05 }}
+                    whileHover={{ y: -4, boxShadow: "xl" }}
+                    bg="white"
+                    borderRadius="xl"
+                    overflow="hidden"
+                    position="relative"
+                    boxShadow={selectedTimeOption === option.id ? "xl" : "md"}
                     cursor="pointer"
                     onClick={() => {
                       setSelectedTimeOption(option.id);
@@ -148,46 +186,109 @@ const ProposedTimesModal = ({
                         onSelectTime(option);
                       }
                     }}
-                    _hover={{ shadow: "md" }}
-                    transition="all 0.2s"
                   >
-                    <CardBody p={3}>
+                    {/* Gradient Top Border */}
+                    <Box
+                      position="absolute"
+                      top={0}
+                      left={0}
+                      right={0}
+                      h="4px"
+                      bgGradient={
+                        selectedTimeOption === option.id
+                          ? "linear(to-r, purple.500, blue.500)"
+                          : isWinner
+                          ? "linear(to-r, green.400, teal.500)"
+                          : "linear(to-r, gray.300, gray.400)"
+                      }
+                    />
+                    <CardBody p={4} pt={5}>
                       <Flex justify="space-between" align="center">
                         <Box flex={1}>
-                          <HStack mb={1}>
-                            <Text fontWeight="bold" fontSize="md">
-                              {localDate}
-                            </Text>
+                          <HStack mb={2}>
+                            <Box
+                              p={2}
+                              bgGradient={
+                                isWinner
+                                  ? "linear(to-r, green.400, teal.500)"
+                                  : "linear(to-r, purple.500, blue.500)"
+                              }
+                              borderRadius="lg"
+                            >
+                              <Icon as={FiClock} color="white" boxSize={4} />
+                            </Box>
+                            <VStack align="start" spacing={0}>
+                              <Text fontWeight="bold" fontSize="md">
+                                {localDate}
+                              </Text>
+                              <Text color="gray.600" fontSize="sm">{localTime}</Text>
+                            </VStack>
                             {isWinner && (
-                              <Badge colorScheme="green" fontSize="xs">Top Choice</Badge>
+                              <Badge 
+                                bgGradient="linear(to-r, green.400, teal.500)"
+                                color="white"
+                                fontSize="xs"
+                                px={2}
+                                py={1}
+                              >
+                                Top Choice
+                              </Badge>
                             )}
                           </HStack>
-                          <Text color="gray.600" fontSize="sm" mb={2}>{localTime}</Text>
-                          <HStack spacing={1}>
-                            <Text fontSize="xs" color="gray.500">
-                              {option.availableCount} of {option.totalParticipants} available
-                            </Text>
+                          <HStack spacing={2} mt={2}>
+                            <HStack spacing={1}>
+                              <Icon as={FiUsers} color="gray.500" boxSize={3} />
+                              <Text fontSize="xs" color="gray.600" fontWeight="medium">
+                                {option.availableCount} of {option.totalParticipants} available
+                              </Text>
+                            </HStack>
                             {option.conflicts > 0 && (
-                              <Badge colorScheme="orange" fontSize="xs">
+                              <Badge 
+                                bgGradient="linear(to-r, orange.400, yellow.400)"
+                                color="white"
+                                fontSize="xs"
+                              >
                                 {option.conflicts} conflict{option.conflicts > 1 ? "s" : ""}
                               </Badge>
                             )}
                           </HStack>
                         </Box>
                         <Box w="120px" ml={4}>
-                          <Text fontSize="sm" textAlign="right" mb={1} fontWeight="bold">
+                          <Text 
+                            fontSize="2xl" 
+                            textAlign="right" 
+                            mb={1} 
+                            fontWeight="bold"
+                            bgGradient={
+                              isWinner
+                                ? "linear(to-r, green.400, teal.500)"
+                                : "linear(to-r, purple.500, blue.500)"
+                            }
+                            bgClip="text"
+                          >
                             {Math.round(percentage)}%
                           </Text>
-                          <Progress
-                            value={percentage}
-                            size="sm"
-                            colorScheme={isWinner ? "green" : "blue"}
+                          <Box
+                            h="8px"
+                            bg="gray.100"
                             borderRadius="full"
-                          />
+                            overflow="hidden"
+                          >
+                            <Box
+                              h="full"
+                              w={`${percentage}%`}
+                              bgGradient={
+                                isWinner
+                                  ? "linear(to-r, green.400, teal.500)"
+                                  : "linear(to-r, purple.500, blue.500)"
+                              }
+                              transition="width 0.5s"
+                            />
+                          </Box>
                         </Box>
                       </Flex>
                     </CardBody>
-                  </Card>
+                  </MotionCard>
                 );
               })}
             </VStack>

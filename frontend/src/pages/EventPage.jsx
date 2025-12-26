@@ -413,11 +413,119 @@ const EventPage = () => {
     });
   }, []);
 
-  // Combine busy slots for calendar display
+  // Detect overlaps between busy and preferred slots and split them properly
+  const detectOverlaps = (busyEvents, preferredEvents) => {
+    const overlaps = [];
+    const splitBusy = [];
+    const splitPreferred = [];
+
+    // Process each busy slot
+    busyEvents.forEach(busySlot => {
+      const busyIntervals = [{ start: busySlot.start.getTime(), end: busySlot.end.getTime() }];
+
+      // Find all overlaps with preferred slots
+      preferredEvents.forEach(preferredSlot => {
+        const overlapStart = Math.max(busySlot.start.getTime(), preferredSlot.start.getTime());
+        const overlapEnd = Math.min(busySlot.end.getTime(), preferredSlot.end.getTime());
+
+        if (overlapStart < overlapEnd) {
+          // Create overlap slot
+          overlaps.push({
+            id: `overlap-${busySlot.id}-${preferredSlot.id}`,
+            title: `${busySlot.participantCount} busy, ${preferredSlot.density} prefer`,
+            start: new Date(overlapStart),
+            end: new Date(overlapEnd),
+            type: 'overlap',
+            className: 'overlap-event',
+            busyCount: busySlot.participantCount,
+            preferredCount: preferredSlot.density,
+            preferredBackgroundColor: preferredSlot.backgroundColor,
+            preferredTextColor: preferredSlot.textColor,
+            allDay: false
+          });
+
+          // Remove overlapping portion from busy intervals
+          const newIntervals = [];
+          busyIntervals.forEach(interval => {
+            if (interval.end <= overlapStart || interval.start >= overlapEnd) {
+              // No overlap with this interval
+              newIntervals.push(interval);
+            } else {
+              // Split the interval
+              if (interval.start < overlapStart) {
+                newIntervals.push({ start: interval.start, end: overlapStart });
+              }
+              if (interval.end > overlapEnd) {
+                newIntervals.push({ start: overlapEnd, end: interval.end });
+              }
+            }
+          });
+          busyIntervals.length = 0;
+          busyIntervals.push(...newIntervals);
+        }
+      });
+
+      // Add remaining non-overlapping busy intervals
+      busyIntervals.forEach((interval, idx) => {
+        splitBusy.push({
+          ...busySlot,
+          id: `${busySlot.id}-split-${idx}`,
+          start: new Date(interval.start),
+          end: new Date(interval.end),
+        });
+      });
+    });
+
+    // Process each preferred slot
+    preferredEvents.forEach(preferredSlot => {
+      const preferredIntervals = [{ start: preferredSlot.start.getTime(), end: preferredSlot.end.getTime() }];
+
+      // Remove overlapping portions
+      busyEvents.forEach(busySlot => {
+        const overlapStart = Math.max(busySlot.start.getTime(), preferredSlot.start.getTime());
+        const overlapEnd = Math.min(busySlot.end.getTime(), preferredSlot.end.getTime());
+
+        if (overlapStart < overlapEnd) {
+          const newIntervals = [];
+          preferredIntervals.forEach(interval => {
+            if (interval.end <= overlapStart || interval.start >= overlapEnd) {
+              newIntervals.push(interval);
+            } else {
+              if (interval.start < overlapStart) {
+                newIntervals.push({ start: interval.start, end: overlapStart });
+              }
+              if (interval.end > overlapEnd) {
+                newIntervals.push({ start: overlapEnd, end: interval.end });
+              }
+            }
+          });
+          preferredIntervals.length = 0;
+          preferredIntervals.push(...newIntervals);
+        }
+      });
+
+      // Add remaining non-overlapping preferred intervals
+      preferredIntervals.forEach((interval, idx) => {
+        splitPreferred.push({
+          ...preferredSlot,
+          id: `${preferredSlot.id}-split-${idx}`,
+          start: new Date(interval.start),
+          end: new Date(interval.end),
+        });
+      });
+    });
+
+    return { overlaps, nonOverlappingBusy: splitBusy, nonOverlappingPreferred: splitPreferred };
+  };
+
+  // Combine busy slots for calendar display with overlap detection
   const calendarEvents = React.useMemo(() => {
     const busy = transformBusySlotsForCalendar(busySlots);
     const preferred = transformPreferredSlotsForCalendar(preferredSlots);
-    return [...busy, ...preferred];
+
+    const { overlaps, nonOverlappingBusy, nonOverlappingPreferred } = detectOverlaps(busy, preferred);
+
+    return [...nonOverlappingBusy, ...nonOverlappingPreferred, ...overlaps];
   }, [busySlots, preferredSlots, transformBusySlotsForCalendar, transformPreferredSlotsForCalendar]);
 
   if (loading && !event) {

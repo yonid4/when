@@ -475,7 +475,9 @@ const Dashboard = () => {
                                 <HStack color="gray.600">
                                   <Icon as={FiCalendar} />
                                   <Text fontWeight="medium">
-                                    {event.earliest_date} - {event.latest_date}
+                                    {event.earliest_datetime_utc && event.latest_datetime_utc
+                                      ? `${new Date(event.earliest_datetime_utc).toLocaleDateString()} - ${new Date(event.latest_datetime_utc).toLocaleDateString()}`
+                                      : 'Date TBD'}
                                   </Text>
                                 </HStack>
                                 <HStack color="gray.600">

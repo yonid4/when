@@ -92,29 +92,62 @@ const DeleteEventModal = ({ isOpen, onClose, event }) => {
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} size="md">
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>
-          <HStack>
-            <WarningIcon color="red.500" />
-            <Text>Delete Event</Text>
-          </HStack>
-        </ModalHeader>
-        <ModalCloseButton isDisabled={isDeleting} />
+      <ModalOverlay backdropFilter="blur(4px)" />
+      <ModalContent borderRadius="xl" overflow="hidden">
+        {/* Gradient Header - Red theme for warning */}
+        <Box
+          bgGradient="linear(to-r, red.500, pink.500)"
+          position="relative"
+          overflow="hidden"
+        >
+          {/* Background Pattern */}
+          <Box
+            position="absolute"
+            top={0}
+            left={0}
+            right={0}
+            bottom={0}
+            opacity={0.1}
+            bgImage="radial-gradient(circle at 20% 50%, rgba(255,255,255,0.3) 0%, transparent 50%)"
+          />
+          <ModalHeader color="white" position="relative" py={6}>
+            <HStack>
+              <WarningIcon />
+              <Text>Delete Event</Text>
+            </HStack>
+          </ModalHeader>
+          <ModalCloseButton color="white" _hover={{ bg: "whiteAlpha.200" }} isDisabled={isDeleting} />
+        </Box>
         <ModalBody>
           <VStack align="stretch" spacing={4}>
-            <Alert status="error">
-              <AlertIcon />
-              <Box>
-                <AlertTitle>This action cannot be undone!</AlertTitle>
-                <AlertDescription>
-                  The event will be permanently deleted.
-                </AlertDescription>
-              </Box>
-            </Alert>
+            <Box
+              p={4}
+              bg="red.50"
+              borderRadius="lg"
+              borderLeft="4px"
+              borderColor="red.400"
+            >
+              <HStack align="start" spacing={3}>
+                <Box
+                  p={2}
+                  bgGradient="linear(to-r, red.400, pink.400)"
+                  borderRadius="lg"
+                >
+                  <WarningIcon color="white" />
+                </Box>
+                <Box>
+                  <Text fontWeight="bold" color="red.900" mb={1}>
+                    This action cannot be undone!
+                  </Text>
+                  <Text fontSize="sm" color="red.700">
+                    The event will be permanently deleted.
+                  </Text>
+                </Box>
+              </HStack>
+            </Box>
 
-            <Box p={3} bg="gray.50" borderRadius="md">
-              <Text fontWeight="semibold" mb={2}>Event Details:</Text>
+            <Box p={4} bg="gray.50" borderRadius="lg" borderWidth="1px" borderColor="gray.200">
+              <Text fontWeight="semibold" mb={3}>Event Details:</Text>
               <VStack align="stretch" spacing={1}>
                 <Text fontSize="sm">
                   <strong>Title:</strong> {event.title}
@@ -145,25 +178,58 @@ const DeleteEventModal = ({ isOpen, onClose, event }) => {
                 onChange={(e) => setConfirmText(e.target.value)}
                 autoFocus
                 isDisabled={isDeleting}
+                borderColor="red.200"
+                _focus={{
+                  borderColor: "red.400",
+                  boxShadow: "0 0 0 1px var(--chakra-colors-red-400)"
+                }}
+                _hover={{
+                  borderColor: "red.300"
+                }}
               />
             </Box>
 
-            <Text fontSize="xs" color="gray.600">
-              All participants will be notified that this event has been cancelled.
-              {event.is_finalized && " The event will also be removed from Google Calendar."}
-            </Text>
+            <Box
+              p={3}
+              bg="yellow.50"
+              borderRadius="md"
+              borderLeft="4px"
+              borderColor="yellow.400"
+            >
+              <Text fontSize="xs" color="gray.700" fontWeight="medium">
+                All participants will be notified that this event has been cancelled.
+                {event.is_finalized && " The event will also be removed from Google Calendar."}
+              </Text>
+            </Box>
           </VStack>
         </ModalBody>
-        <ModalFooter>
-          <Button variant="ghost" mr={3} onClick={handleClose} isDisabled={isDeleting}>
+        <ModalFooter bg="gray.50">
+          <Button 
+            variant="ghost" 
+            mr={3} 
+            onClick={handleClose} 
+            isDisabled={isDeleting}
+            _hover={{ bg: "gray.100" }}
+          >
             Cancel
           </Button>
           <Button
-            colorScheme="red"
+            bgGradient="linear(to-r, red.500, pink.500)"
+            color="white"
             onClick={handleDelete}
             isLoading={isDeleting}
             loadingText="Deleting..."
             isDisabled={confirmText !== event.title}
+            _hover={{
+              bgGradient: "linear(to-r, red.600, pink.600)",
+              transform: "translateY(-2px)",
+              boxShadow: "lg"
+            }}
+            _disabled={{
+              opacity: 0.6,
+              cursor: "not-allowed"
+            }}
+            transition="all 0.3s"
           >
             Delete Permanently
           </Button>

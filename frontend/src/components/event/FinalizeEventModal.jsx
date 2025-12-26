@@ -162,37 +162,80 @@ const FinalizeEventModal = ({
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} size="lg" isCentered>
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>
-          <HStack spacing={2}>
-            <FiCalendar />
-            <Text>Finalize Event</Text>
-          </HStack>
-        </ModalHeader>
-        <ModalCloseButton isDisabled={isLoading} />
+      <ModalOverlay backdropFilter="blur(4px)" />
+      <ModalContent borderRadius="xl" overflow="hidden">
+        {/* Gradient Header */}
+        <Box
+          bgGradient="linear(to-r, green.500, teal.500)"
+          position="relative"
+          overflow="hidden"
+        >
+          {/* Background Pattern */}
+          <Box
+            position="absolute"
+            top={0}
+            left={0}
+            right={0}
+            bottom={0}
+            opacity={0.1}
+            bgImage="radial-gradient(circle at 20% 50%, rgba(255,255,255,0.3) 0%, transparent 50%)"
+          />
+          <ModalHeader color="white" position="relative" py={6}>
+            <HStack spacing={2}>
+              <FiCalendar />
+              <Text>Finalize Event</Text>
+            </HStack>
+          </ModalHeader>
+          <ModalCloseButton color="white" _hover={{ bg: "whiteAlpha.200" }} isDisabled={isLoading} />
+        </Box>
         <ModalBody>
           <VStack align="stretch" spacing={4}>
-            {/* Selected Time Display */}
+            {/* Selected Time Display - Gradient Card */}
             <Box
-              p={3}
-              borderWidth={1}
-              borderRadius="md"
-              borderColor={borderColor}
-              bg={cardBg}
+              position="relative"
+              borderRadius="xl"
+              overflow="hidden"
+              bgGradient="linear(to-r, green.500, teal.500)"
+              p={4}
+              boxShadow="lg"
             >
-              <Text fontSize="sm" fontWeight="bold" mb={2} color="gray.600">
-                Selected Time
-              </Text>
-              <VStack align="start" spacing={1}>
-                <Text fontSize="md" fontWeight="medium">
+              {/* Background Pattern */}
+              <Box
+                position="absolute"
+                top={0}
+                left={0}
+                right={0}
+                bottom={0}
+                opacity={0.1}
+                bgImage="radial-gradient(circle at 20% 50%, rgba(255,255,255,0.3) 0%, transparent 50%)"
+              />
+              <VStack align="start" spacing={2} position="relative">
+                <HStack>
+                  <Box
+                    p={2}
+                    bg="whiteAlpha.300"
+                    borderRadius="lg"
+                    backdropFilter="blur(10px)"
+                  >
+                    <FiCalendar color="white" />
+                  </Box>
+                  <Text fontSize="sm" fontWeight="bold" color="white">
+                    Selected Time
+                  </Text>
+                </HStack>
+                <Text fontSize="lg" fontWeight="bold" color="white">
                   {formatDateTime(selectedTime.start_time)}
                 </Text>
-                <HStack spacing={2}>
-                  <Badge colorScheme="purple">
-                    {formatTime(selectedTime.start_time)} - {formatTime(selectedTime.end_time)}
-                  </Badge>
-                </HStack>
+                <Badge
+                  bg="whiteAlpha.300"
+                  color="white"
+                  backdropFilter="blur(10px)"
+                  px={3}
+                  py={1}
+                  fontSize="sm"
+                >
+                  {formatTime(selectedTime.start_time)} - {formatTime(selectedTime.end_time)}
+                </Badge>
               </VStack>
             </Box>
 
@@ -208,22 +251,36 @@ const FinalizeEventModal = ({
                 onChange={(e) => setEventName(e.target.value)}
                 placeholder="Enter event name"
                 isDisabled={isLoading}
+                borderColor="green.200"
+                _focus={{
+                  borderColor: "green.400",
+                  boxShadow: "0 0 0 1px var(--chakra-colors-green-400)"
+                }}
+                _hover={{
+                  borderColor: "green.300"
+                }}
               />
             </Box>
 
             <Divider />
 
             {/* Google Meet Option */}
-            <Box>
+            <Box
+              p={3}
+              bg="green.50"
+              borderRadius="md"
+              borderLeft="4px"
+              borderColor="green.400"
+            >
               <Checkbox
                 isChecked={includeGoogleMeet}
                 onChange={(e) => setIncludeGoogleMeet(e.target.checked)}
                 isDisabled={isLoading}
-                colorScheme="purple"
+                colorScheme="green"
               >
                 <HStack spacing={2}>
                   <FiVideo />
-                  <Text fontSize="sm">Include Google Meet link</Text>
+                  <Text fontSize="sm" fontWeight="medium">Include Google Meet link</Text>
                 </HStack>
               </Checkbox>
             </Box>
@@ -316,22 +373,30 @@ const FinalizeEventModal = ({
             </Box>
           </VStack>
         </ModalBody>
-        <ModalFooter>
+        <ModalFooter bg="gray.50">
           <Button
             variant="ghost"
             mr={3}
             onClick={handleClose}
             isDisabled={isLoading}
             leftIcon={<FiX />}
+            _hover={{ bg: "gray.100" }}
           >
             Cancel
           </Button>
           <Button
-            colorScheme="purple"
+            bgGradient="linear(to-r, green.500, teal.500)"
+            color="white"
             onClick={handleFinalize}
             isLoading={isLoading}
             loadingText="Finalizing..."
             leftIcon={<FiCheck />}
+            _hover={{
+              bgGradient: "linear(to-r, green.600, teal.600)",
+              transform: "translateY(-2px)",
+              boxShadow: "lg"
+            }}
+            transition="all 0.3s"
           >
             Finalize Event
           </Button>

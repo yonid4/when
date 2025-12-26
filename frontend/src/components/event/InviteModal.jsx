@@ -11,6 +11,7 @@ import {
   Textarea,
   Text,
   VStack,
+  Box,
   useToast
 } from "@chakra-ui/react";
 import { EmailIcon } from "@chakra-ui/icons";
@@ -117,15 +118,33 @@ const InviteModal = ({ isOpen, onClose, eventUid, onSuccess }) => {
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} size="md">
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>
-          <EmailIcon mr={2} />
-          Invite Participants
-        </ModalHeader>
-        <ModalCloseButton />
-        <ModalBody>
-          <VStack align="stretch" spacing={3}>
+      <ModalOverlay backdropFilter="blur(4px)" />
+      <ModalContent borderRadius="xl" overflow="hidden">
+        {/* Gradient Header */}
+        <Box
+          bgGradient="linear(to-r, purple.600, blue.500)"
+          position="relative"
+          overflow="hidden"
+        >
+          {/* Background Pattern */}
+          <Box
+            position="absolute"
+            top={0}
+            left={0}
+            right={0}
+            bottom={0}
+            opacity={0.1}
+            bgImage="radial-gradient(circle at 20% 50%, rgba(255,255,255,0.3) 0%, transparent 50%)"
+          />
+          <ModalHeader color="white" position="relative" py={6}>
+            <EmailIcon mr={2} />
+            Invite Participants
+          </ModalHeader>
+          <ModalCloseButton color="white" _hover={{ bg: "whiteAlpha.200" }} />
+        </Box>
+
+        <ModalBody py={6}>
+          <VStack align="stretch" spacing={4}>
             <Text fontSize="sm" color="gray.600">
               Enter email addresses of people you want to invite (one per line or comma-separated)
             </Text>
@@ -135,22 +154,52 @@ const InviteModal = ({ isOpen, onClose, eventUid, onSuccess }) => {
               placeholder="john@example.com&#10;jane@example.com"
               rows={6}
               isDisabled={isSending}
+              borderColor="purple.200"
+              _focus={{
+                borderColor: "purple.400",
+                boxShadow: "0 0 0 1px var(--chakra-colors-purple-400)"
+              }}
+              _hover={{
+                borderColor: "purple.300"
+              }}
             />
-            <Text fontSize="xs" color="gray.500">
-              <strong>Note:</strong> Users must have signed up with When using these email addresses
-            </Text>
+            <Box
+              p={3}
+              bg="purple.50"
+              borderRadius="md"
+              borderLeft="4px"
+              borderColor="purple.400"
+            >
+              <Text fontSize="xs" color="gray.700">
+                <strong>Note:</strong> Users must have signed up with When using these email addresses
+              </Text>
+            </Box>
           </VStack>
         </ModalBody>
-        <ModalFooter>
-          <Button variant="ghost" mr={3} onClick={handleClose} isDisabled={isSending}>
+
+        <ModalFooter bg="gray.50">
+          <Button 
+            variant="ghost" 
+            mr={3} 
+            onClick={handleClose} 
+            isDisabled={isSending}
+            _hover={{ bg: "gray.100" }}
+          >
             Cancel
           </Button>
           <Button
-            colorScheme="purple"
+            bgGradient="linear(to-r, purple.500, blue.500)"
+            color="white"
             onClick={handleSendInvites}
             isLoading={isSending}
             loadingText="Sending..."
             leftIcon={<EmailIcon />}
+            _hover={{
+              bgGradient: "linear(to-r, purple.600, blue.600)",
+              transform: "translateY(-2px)",
+              boxShadow: "lg"
+            }}
+            transition="all 0.3s"
           >
             Send Invitations
           </Button>

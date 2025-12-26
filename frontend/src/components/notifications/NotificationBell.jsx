@@ -137,15 +137,20 @@ const NotificationBell = ({ currentUserId, isAuthenticated }) => {
               variant="ghost"
               aria-label="Notifications"
               onClick={() => setIsOpen(!isOpen)}
-              color="gray.700"
-              _hover={{ bg: "gray.100" }}
+              color="white"
+              _hover={{ 
+                bg: "whiteAlpha.200",
+                transform: "scale(1.1)"
+              }}
+              transition="all 0.3s"
             />
             {unreadCount > 0 && (
               <Badge
                 position="absolute"
                 top="0"
                 right="0"
-                colorScheme="red"
+                bgGradient="linear(to-r, orange.400, red.400)"
+                color="white"
                 borderRadius="full"
                 fontSize="10px"
                 minW="18px"
@@ -153,6 +158,8 @@ const NotificationBell = ({ currentUserId, isAuthenticated }) => {
                 display="flex"
                 alignItems="center"
                 justifyContent="center"
+                boxShadow="lg"
+                animation={unreadCount > 0 ? "pulse 2s infinite" : "none"}
               >
                 {unreadCount > 9 ? "9+" : unreadCount}
               </Badge>
@@ -160,12 +167,35 @@ const NotificationBell = ({ currentUserId, isAuthenticated }) => {
           </Box>
         </PopoverTrigger>
 
-      <PopoverContent width="400px" maxH="600px" overflowY="auto">
-        <PopoverHeader>
+      <PopoverContent 
+        width="400px" 
+        maxH="600px" 
+        overflowY="auto"
+        borderRadius="xl"
+        boxShadow="2xl"
+        border="2px"
+        borderColor="purple.200"
+      >
+        <PopoverHeader
+          bgGradient="linear(to-r, purple.50, blue.50)"
+          borderTopRadius="xl"
+          borderBottom="1px"
+          borderColor="purple.100"
+        >
           <HStack justify="space-between">
-            <Text fontWeight="bold">Notifications</Text>
+            <Text fontWeight="bold" fontSize="md">Notifications</Text>
             {isAuthenticated && currentUserId && unreadCount > 0 && (
-              <Button size="xs" variant="ghost" onClick={handleMarkAllRead}>
+              <Button 
+                size="xs" 
+                variant="ghost"
+                color="purple.600"
+                _hover={{
+                  bgGradient: "linear(to-r, purple.500, blue.500)",
+                  color: "white"
+                }}
+                transition="all 0.3s"
+                onClick={handleMarkAllRead}
+              >
                 Mark all read
               </Button>
             )}

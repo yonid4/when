@@ -218,13 +218,30 @@ const EditEventModal = ({ isOpen, onClose, event, onSuccess }) => {
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} size="xl" scrollBehavior="inside">
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>
-          <EditIcon mr={2} />
-          Edit Event
-        </ModalHeader>
-        <ModalCloseButton />
+      <ModalOverlay backdropFilter="blur(4px)" />
+      <ModalContent borderRadius="xl" overflow="hidden">
+        {/* Gradient Header */}
+        <Box
+          bgGradient="linear(to-r, purple.600, blue.500)"
+          position="relative"
+          overflow="hidden"
+        >
+          {/* Background Pattern */}
+          <Box
+            position="absolute"
+            top={0}
+            left={0}
+            right={0}
+            bottom={0}
+            opacity={0.1}
+            bgImage="radial-gradient(circle at 20% 50%, rgba(255,255,255,0.3) 0%, transparent 50%)"
+          />
+          <ModalHeader color="white" position="relative" py={6}>
+            <EditIcon mr={2} />
+            Edit Event
+          </ModalHeader>
+          <ModalCloseButton color="white" _hover={{ bg: "whiteAlpha.200" }} />
+        </Box>
         <ModalBody>
           <VStack align="stretch" spacing={4}>
             {/* Event Name */}
@@ -346,16 +363,29 @@ const EditEventModal = ({ isOpen, onClose, event, onSuccess }) => {
             </FormControl>
           </VStack>
         </ModalBody>
-        <ModalFooter>
-          <Button variant="ghost" mr={3} onClick={handleClose} isDisabled={isSaving}>
+        <ModalFooter bg="gray.50">
+          <Button 
+            variant="ghost" 
+            mr={3} 
+            onClick={handleClose} 
+            isDisabled={isSaving}
+            _hover={{ bg: "gray.100" }}
+          >
             Cancel
           </Button>
           <Button
-            colorScheme="purple"
+            bgGradient="linear(to-r, purple.500, blue.500)"
+            color="white"
             onClick={handleSave}
             isLoading={isSaving}
             loadingText="Saving..."
             leftIcon={<EditIcon />}
+            _hover={{
+              bgGradient: "linear(to-r, purple.600, blue.600)",
+              transform: "translateY(-2px)",
+              boxShadow: "lg"
+            }}
+            transition="all 0.3s"
           >
             Save Changes
           </Button>

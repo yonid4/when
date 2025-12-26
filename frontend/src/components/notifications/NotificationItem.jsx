@@ -7,8 +7,10 @@ import {
   Button,
   IconButton,
   useToast,
+  Icon as ChakraIcon,
 } from "@chakra-ui/react";
 import { CloseIcon } from "@chakra-ui/icons";
+import { FiCalendar, FiCheckCircle, FiXCircle, FiRefreshCw, FiBell } from "react-icons/fi";
 import { formatDistanceToNow } from "date-fns";
 import { handleNotificationAction, deleteNotification } from "../../services/notificationsService";
 
@@ -81,35 +83,46 @@ const NotificationItem = ({ notification, onUpdate, onNavigate }) => {
   const getNotificationIcon = (type) => {
     switch (type) {
       case "event_invitation":
-        return "📬";
+        return { icon: FiCalendar, gradient: "linear(to-r, purple.500, blue.500)" };
       case "event_finalized":
-        return "✅";
+        return { icon: FiCheckCircle, gradient: "linear(to-r, green.400, teal.500)" };
       case "event_deleted":
-        return "❌";
+        return { icon: FiXCircle, gradient: "linear(to-r, red.400, pink.400)" };
       case "event_time_changed":
-        return "🔄";
+        return { icon: FiRefreshCw, gradient: "linear(to-r, orange.400, yellow.400)" };
       default:
-        return "📢";
+        return { icon: FiBell, gradient: "linear(to-r, blue.500, cyan.500)" };
     }
   };
+
+  const iconInfo = getNotificationIcon(notification.notification_type);
 
   return (
     <Box
       p={3}
-      bg={notification.is_read ? "white" : "blue.50"}
-      _hover={{ bg: "gray.50" }}
-      transition="background 0.2s"
+      bg={notification.is_read ? "white" : "purple.50"}
+      borderLeft="4px"
+      borderColor={notification.is_read ? "gray.200" : "purple.400"}
+      _hover={{ bg: "gray.50", transform: "translateX(4px)" }}
+      transition="all 0.3s"
+      position="relative"
     >
       <HStack align="start" spacing={3}>
-        {/* Icon */}
-        <Box fontSize="20px" flexShrink={0}>
-          {getNotificationIcon(notification.notification_type)}
+        {/* Icon with gradient background */}
+        <Box
+          p={2}
+          bgGradient={iconInfo.gradient}
+          borderRadius="lg"
+          flexShrink={0}
+          boxShadow="md"
+        >
+          <ChakraIcon as={iconInfo.icon} color="white" boxSize={4} />
         </Box>
 
         {/* Content */}
         <VStack align="stretch" flex="1" spacing={1}>
           {/* Title */}
-          <Text fontWeight={notification.is_read ? "normal" : "bold"} fontSize="sm">
+          <Text fontWeight={notification.is_read ? "medium" : "bold"} fontSize="sm">
             {notification.title}
           </Text>
 
@@ -128,7 +141,14 @@ const NotificationItem = ({ notification, onUpdate, onNavigate }) => {
             <HStack spacing={2} mt={2}>
               <Button
                 size="xs"
-                colorScheme="green"
+                bgGradient="linear(to-r, green.400, teal.500)"
+                color="white"
+                _hover={{
+                  bgGradient: "linear(to-r, green.500, teal.600)",
+                  transform: "translateY(-2px)",
+                  boxShadow: "md"
+                }}
+                transition="all 0.3s"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleAction("accept");
@@ -139,8 +159,13 @@ const NotificationItem = ({ notification, onUpdate, onNavigate }) => {
               </Button>
               <Button
                 size="xs"
-                colorScheme="red"
                 variant="outline"
+                borderColor="red.400"
+                color="red.600"
+                _hover={{
+                  bg: "red.50",
+                  borderColor: "red.500"
+                }}
                 onClick={(e) => {
                   e.stopPropagation();
                   handleAction("decline");
@@ -168,9 +193,14 @@ const NotificationItem = ({ notification, onUpdate, onNavigate }) => {
                 target="_blank"
                 rel="noopener noreferrer"
                 size="xs"
-                colorScheme="blue"
-                variant="link"
+                bgGradient="linear(to-r, blue.500, cyan.500)"
+                color="white"
                 mt={1}
+                _hover={{
+                  bgGradient: "linear(to-r, blue.600, cyan.600)",
+                  transform: "translateY(-2px)"
+                }}
+                transition="all 0.3s"
                 onClick={(e) => e.stopPropagation()}
               >
                 View in Google Calendar →
@@ -185,7 +215,12 @@ const NotificationItem = ({ notification, onUpdate, onNavigate }) => {
           variant="ghost"
           aria-label="Delete notification"
           onClick={handleDelete}
-          _hover={{ bg: "red.50", color: "red.600" }}
+          _hover={{ 
+            bg: "red.50", 
+            color: "red.600",
+            transform: "scale(1.1)"
+          }}
+          transition="all 0.2s"
         />
       </HStack>
     </Box>

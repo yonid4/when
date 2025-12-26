@@ -1,6 +1,6 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useRef, useEffect } from "react";
 import { Calendar, dateFnsLocalizer } from "react-big-calendar";
-import { Box, Button, ButtonGroup, Text, VStack } from "@chakra-ui/react";
+import { Box, Text, VStack, Flex } from "@chakra-ui/react";
 import format from "date-fns/format";
 import parse from "date-fns/parse";
 import startOfWeek from "date-fns/startOfWeek";
@@ -9,7 +9,6 @@ import startOfDay from "date-fns/startOfDay";
 import endOfDay from "date-fns/endOfDay";
 import isSameDay from "date-fns/isSameDay";
 import "react-big-calendar/lib/css/react-big-calendar.css";
-import "../../styles/calendar.css";
 
 const locales = {
   "en-US": require("date-fns/locale/en-US"),
@@ -28,91 +27,57 @@ const CalendarView = ({
   onSelectSlot,
   onSelectEvent,
   selectable = true,
-  minTime = new Date(0, 0, 0, 8, 0, 0),   // Default 8 AM
-  maxTime = new Date(0, 0, 0, 20, 0, 0),  // Default 8 PM
+  minTime = new Date(0, 0, 0, 8, 0, 0),
+  maxTime = new Date(0, 0, 0, 20, 0, 0),
 }) => {
   const [view, setView] = React.useState("week");
+  const calendarRef = useRef(null);
 
-  // Custom Month Date Header - shows just the date number, small and non-interactive
-  const MonthDateHeader = ({ date, label }) => {
-    return (
-      <Box
-        fontSize="0.875rem"
-        fontWeight="600"
-        color="#111827"
-        p={2}
-        textAlign="right"
-      >
-        {format(date, 'd')}
-      </Box>
-    );
-  };
+  // Scroll to top whenever view changes or events change
+  useEffect(() => {
+    if (calendarRef.current) {
+      const timeContent = calendarRef.current.querySelector('.rbc-time-content');
+      if (timeContent) {
+        timeContent.scrollTop = 0;
+      }
+    }
+  }, [view, events]);
 
-  // Custom Month Event - shows aggregated slot counts
+  // Month components (keeping your existing logic)
+  const MonthDateHeader = ({ date }) => (
+    <Box fontSize="0.875rem" fontWeight="600" color="#111827" p={2} textAlign="right">
+      {format(date, 'd')}
+    </Box>
+  );
+
   const MonthEvent = ({ event }) => {
     if (event.type === 'month-busy') {
       return (
-        <Box
-          bg="var(--salt-pepper-dark)"
-          color="white"
-          px={1.5}
-          py={0.5}
-          borderRadius="sm"
-          fontWeight="medium"
-          fontSize="10px"
-          lineHeight="1.2"
-          w="full"
-        >
+        <Box bg="#5f6368" color="white" px={1.5} py={0.5} borderRadius="sm" fontWeight="medium" fontSize="10px" w="full">
           {event.busyCount} busy slot{event.busyCount !== 1 ? 's' : ''}
         </Box>
       );
     }
-
     if (event.type === 'month-preferred') {
       return (
-        <Box
-          bg="#be29ec"
-          color="white"
-          px={1.5}
-          py={0.5}
-          borderRadius="sm"
-          fontWeight="medium"
-          fontSize="10px"
-          lineHeight="1.2"
-          w="full"
-        >
+        <Box bg="#a142f4" color="white" px={1.5} py={0.5} borderRadius="sm" fontWeight="medium" fontSize="10px" w="full">
           {event.preferredCount} preferred slot{event.preferredCount !== 1 ? 's' : ''}
         </Box>
       );
     }
-
     return <span>{event.title}</span>;
   };
 
-  // Process events for month view - aggregate by day
   const processedEvents = useMemo(() => {
-    if (view !== 'month') {
-      return events;
-    }
-
-    // Group events by day
+    if (view !== 'month') return events;
+    
     const eventsByDay = new Map();
-
     events.forEach(event => {
       const dayKey = startOfDay(event.start).getTime();
-
       if (!eventsByDay.has(dayKey)) {
-        eventsByDay.set(dayKey, {
-          date: startOfDay(event.start),
-          busyCount: 0,
-          preferredCount: 0,
-          busyEvents: [],
-          preferredEvents: []
-        });
+        eventsByDay.set(dayKey, { date: startOfDay(event.start), busyCount: 0, preferredCount: 0, busyEvents: [], preferredEvents: [] });
       }
-
       const dayData = eventsByDay.get(dayKey);
-
       if (event.type === 'busy') {
         dayData.busyCount++;
         dayData.busyEvents.push(event);
@@ -122,10 +87,8 @@ const CalendarView = ({
       }
     });
 
-    // Create separate events for busy and preferred slots
     const aggregated = [];
     eventsByDay.forEach((dayData, dayKey) => {
-      // Create busy event if there are busy slots (add first for proper ordering)
       if (dayData.busyCount > 0) {
         aggregated.push({
           id: `month-busy-${dayKey}`,
@@ -134,16 +97,10 @@ const CalendarView = ({
           end: endOfDay(dayData.date),
           allDay: true,
           type: 'month-busy',
-          className: 'month-busy-event',
-          sortOrder: 1, // Render first
           busyCount: dayData.busyCount,
-          resource: {
-            busyEvents: dayData.busyEvents
-          }
+          resource: { busyEvents: dayData.busyEvents }
         });
       }
-
-      // Create preferred event if there are preferred slots (add second)
       if (dayData.preferredCount > 0) {
         aggregated.push({
           id: `month-preferred-${dayKey}`,
@@ -152,294 +109,414 @@ const CalendarView = ({
           end: endOfDay(dayData.date),
           allDay: true,
           type: 'month-preferred',
-          className: 'month-preferred-event',
-          sortOrder: 2, // Render second
           preferredCount: dayData.preferredCount,
-          resource: {
-            preferredEvents: dayData.preferredEvents
-          }
+          resource: { preferredEvents: dayData.preferredEvents }
         });
       }
     });
-
     return aggregated;
   }, [events, view]);
 
-  // Calculate hour range based on events with reasonable defaults
-  // We use the passed minTime and maxTime props if provided, otherwise default logic (though logic is largely superseded by props now)
-  const hourRange = useMemo(() => {
-    // If props are provided, use them directly (this allows parent to control the view)
-    // Note: react-big-calendar expects Date objects for min/max
-    return { min: minTime, max: maxTime };
-  }, [minTime, maxTime]);
+  // Google Calendar-style date header - FIXED overflow
+  const GoogleStyleDateHeader = ({ date, label }) => {
+    const isToday = isSameDay(date, new Date());
+    const dayOfWeek = format(date, 'EEE').toUpperCase();
+    const dayNumber = format(date, 'd');
 
-  // Custom date header component with Chakra UI styling - plain text only
-  const CustomDateHeader = ({ date, label }) => {
     return (
-      <Box
-        as="div"
-        fontWeight="600"
-        fontSize="0.875rem"
-        color="#374151"
-        textAlign="center"
-        p={2}
-        letterSpacing="0.025em"
-      >
-        {label}
-      </Box>
+      <VStack spacing={0} py={2} px={2} h="70px" justify="center">
+        <Text fontSize="11px" fontWeight="500" color="#70757a" letterSpacing="0.8px">
+          {dayOfWeek}
+        </Text>
+        <Flex
+          mt={1}
+          w="46px"
+          h="46px"
+          align="center"
+          justify="center"
+          borderRadius="full"
+          bg={isToday ? "#1a73e8" : "transparent"}
+          color={isToday ? "white" : "#3c4043"}
+          fontWeight={isToday ? "500" : "400"}
+          fontSize="24px"
+          lineHeight="1"
+          transition="all 0.2s"
+          _hover={!isToday ? { bg: "#f1f3f4" } : {}}
+        >
+          {dayNumber}
+        </Flex>
+      </VStack>
     );
   };
 
-  // Custom toolbar component with Chakra UI buttons (temporarily disabled)
-  // const CustomToolbar = ({ date, view, views, label, onNavigate, onView }) => {
-  //   const navigate = (action) => {
-  //     onNavigate(action);
-  //   };
-  // };
+  // Google Calendar-style event component - FIXED time text centering
+  const GoogleStyleEvent = ({ event }) => {
+    // Overlap slot (split display) - TIME TEXT SPANS FULL WIDTH
+    if (event.type === 'overlap') {
+      const startTime = format(event.start, 'h:mm a');
+      const endTime = format(event.end, 'h:mm a');
+      const timeRange = `${startTime} - ${endTime}`;
+      const busyCount = event.busyCount || 1;
+      const baseOpacity = 0.4;
+      const opacityIncrement = 0.15;
+      const busyOpacity = Math.min(baseOpacity + (busyCount * opacityIncrement), 0.95);
 
-  // Custom event style getter with purple gradient for preferred slots
+      return (
+        <VStack spacing={0} h="100%" w="100%" align="stretch" borderRadius="4px" overflow="hidden" position="relative">
+          {/* FIXED: Time header spans full width with absolute positioning */}
+          <Box 
+            position="absolute"
+            top="0"
+            left="0"
+            right="0"
+            bg="white" 
+            px={2} 
+            py={1} 
+            borderBottom="1px solid #dadce0" 
+            zIndex={2}
+          >
+            <Text fontSize="11px" fontWeight="600" color="#3c4043" textAlign="center" whiteSpace="nowrap">
+              {timeRange}
+            </Text>
+          </Box>
+          {/* Split display with padding top for the header */}
+          <Flex flex="1" pt="28px" minH="0">
+            <Box flex="1" bg="#5f6368" opacity={busyOpacity} display="flex" alignItems="center" justifyContent="center" px={1}>
+              <Text fontSize="10px" color="white" fontWeight="500" textAlign="center">
+                {event.busyCount} busy
+              </Text>
+            </Box>
+            <Box flex="1" bg={event.preferredBackgroundColor || "#d7aefb"} display="flex" alignItems="center" justifyContent="center" px={1}>
+              <Text fontSize="10px" color={event.preferredTextColor || "#5f6368"} fontWeight="500" textAlign="center">
+                {event.preferredCount} available
+              </Text>
+            </Box>
+          </Flex>
+        </VStack>
+      );
+    }
+
+    // Preferred slot
+    if (event.type === "preferred-slot") {
+      const startTime = format(event.start, 'h:mm a');
+      return (
+        <Box px={2} py={1} h="100%" overflow="hidden">
+          <Text fontSize="11px" fontWeight="600" color={event.textColor || "#3c4043"} mb={0.5} whiteSpace="nowrap">
+            {startTime}
+          </Text>
+          <Text fontSize="11px" color={event.textColor || "#5f6368"} whiteSpace="nowrap">
+            Available
+          </Text>
+        </Box>
+      );
+    }
+
+    // Busy slot
+    if (event.type === "busy") {
+      const startTime = format(event.start, 'h:mm a');
+      return (
+        <Box px={2} py={1} h="100%" overflow="hidden">
+          <Text fontSize="11px" fontWeight="600" color="white" mb={0.5} whiteSpace="nowrap">
+            {startTime}
+          </Text>
+          <Text fontSize="11px" color="white" opacity={0.9} whiteSpace="nowrap">
+            Busy
+          </Text>
+        </Box>
+      );
+    }
+
+    // Finalized event
+    if (event.type === "finalized") {
+      const startTime = format(event.start, 'h:mm a');
+      return (
+        <Box px={2} py={1} h="100%" overflow="hidden">
+          <Text fontSize="11px" fontWeight="600" color="white" mb={0.5} whiteSpace="nowrap">
+            {startTime}
+          </Text>
+          <Text fontSize="11px" color="white" whiteSpace="nowrap">
+            {event.title}
+          </Text>
+        </Box>
+      );
+    }
+
+    return <span>{event.title}</span>;
+  };
+
+  // Google Calendar-style event styling
   const eventStyleGetter = (event) => {
-    // Preferred slots - purple gradient based on density
+    // Overlap - transparent wrapper
+    if (event.type === "overlap") {
+      return {
+        style: {
+          backgroundColor: "transparent",
+          border: "1px solid #dadce0",
+          borderRadius: "4px",
+          padding: 0,
+          overflow: "visible", // Changed to visible for absolute positioned header
+          cursor: "pointer",
+          boxShadow: "0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15)",
+        }
+      };
+    }
+
+    // Preferred slot - purple/lavender
     if (event.type === "preferred-slot") {
       return {
         style: {
-          backgroundColor: event.backgroundColor,
-          color: event.textColor,
+          backgroundColor: event.backgroundColor || "#d7aefb",
+          color: event.textColor || "#3c4043",
+          border: "1px solid #b794f6",
+          borderLeft: "4px solid #a142f4",
           borderRadius: "4px",
-          border: "none",
-          fontSize: "0.75rem",
-          fontWeight: "500",
-          cursor: "pointer"
+          cursor: "pointer",
+          boxShadow: "0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15)",
+          overflow: "hidden",
         }
       };
     }
 
-    // Busy slots - keep existing dark style with opacity
+    // Busy slot - gray with opacity
     if (event.type === "busy") {
       const participantCount = event.participantCount || 1;
-      // Adjust opacity based on number of busy participants (more busy = darker)
-      const baseOpacity = 0.3;
+      const baseOpacity = 0.4;
       const opacityIncrement = 0.15;
-      const opacity = Math.min(baseOpacity + (participantCount * opacityIncrement), 0.9);
+      const opacity = Math.min(baseOpacity + (participantCount * opacityIncrement), 0.95);
 
       return {
         style: {
-          backgroundColor: "var(--salt-pepper-dark)", // Keeping theme var but overriding opacity
+          backgroundColor: "#5f6368",
           opacity: opacity,
+          border: "1px solid #5f6368",
+          borderLeft: "4px solid #3c4043",
           borderRadius: "4px",
-          border: "none",
-          fontSize: "0.75rem",
           color: "white",
           cursor: "default",
-          pointerEvents: "none" // Busy slots shouldn't be interactive usually
+          pointerEvents: "none",
+          boxShadow: "0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15)",
+          overflow: "hidden",
         }
       };
     }
 
-    // Finalized events - distinct styling
+    // Finalized event - green
     if (event.type === "finalized") {
       return {
         style: {
-          backgroundColor: "#10b981", // Green for finalized
+          backgroundColor: "#1e8e3e",
+          border: "1px solid #188038",
+          borderLeft: "4px solid #137333",
           borderRadius: "4px",
-          border: "2px solid #059669",
-          fontSize: "0.75rem",
           color: "white",
-          fontWeight: "bold",
+          fontWeight: "500",
+          boxShadow: "0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15)",
+          overflow: "hidden",
         }
       };
     }
 
-    // Default styling for other event types
     return {
       style: {
-        backgroundColor: "var(--salt-pepper-dark)",
+        backgroundColor: "#039be5",
+        borderLeft: "4px solid #0288d1",
         borderRadius: "4px",
-        border: "none",
-        fontSize: "0.75rem",
+        border: "1px solid #0288d1",
+        boxShadow: "0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15)",
+        overflow: "hidden",
       }
     };
   };
 
   return (
     <Box
-      className="calendar-container"
+      ref={calendarRef}
       h="full"
       w="full"
       sx={{
-        // Modernize calendar styling with Chakra UI overrides
+        // Google Calendar base styling
         '.rbc-calendar': {
-          fontFamily: 'inherit',
-          borderRadius: '12px',
-          overflow: 'hidden',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+          fontFamily: "'Google Sans', 'Roboto', Arial, sans-serif",
+          height: '100%',
         },
 
-        // Header styling - day labels
+        // FIXED: Header row with reduced height
         '.rbc-header': {
-          borderBottom: '1px solid #e5e7eb',
-          padding: '12px 8px',
-          backgroundColor: '#f9fafb',
-          fontSize: '0.875rem',
-          fontWeight: '600',
-          color: '#374151',
-          letterSpacing: '0.025em',
-        },
-
-        // Today's column highlight
-        '.rbc-today': {
-          backgroundColor: '#f0f9ff',
-        },
-
-        // Time view container
-        '.rbc-time-view': {
-          border: '1px solid #e5e7eb',
-          borderRadius: '8px',
-          overflow: 'hidden',
-        },
-
-        // Time labels (9:00 AM, 10:00 AM, etc.)
-        '.rbc-time-slot': {
-          fontSize: '0.75rem',
-          color: '#6b7280',
+          borderBottom: '1px solid #dadce0',
+          padding: '0 !important',
           fontWeight: '500',
+          height: '70px',
+          minHeight: '70px',
+          overflow: 'visible',
         },
 
-        // Grid lines between time slots
+        // FIXED: Time header content
+        '.rbc-time-header-content': {
+          height: '70px',
+          minHeight: '70px',
+        },
+
+        // FIXED: Remove horizontal line from rbc-row-bg and reduce height
+        '.rbc-row-bg': {
+          display: 'none !important', // This removes the background row completely
+        },
+
+        // Today column
+        '.rbc-today': {
+          backgroundColor: '#e8f0fe',
+        },
+
+        // Time view
+        '.rbc-time-view': {
+          border: 'none',
+          borderTop: '1px solid #dadce0',
+        },
+
+        // Time slot labels
+        '.rbc-label': {
+          fontSize: '10px',
+          color: '#70757a',
+          fontWeight: '400',
+          paddingRight: '8px',
+        },
+
+        // Time slots
         '.rbc-timeslot-group': {
-          borderBottom: '1px solid #f3f4f6',
-          minHeight: '60px', // More spacious
+          minHeight: '48px',
+          borderBottom: '1px solid #f0f0f0',
         },
 
-        // Hour marks (stronger lines)
+        // Hour lines (darker)
+        '.rbc-time-slot': {
+          borderTop: 'none',
+        },
+
         '.rbc-time-slot:first-child': {
-          borderTop: '1px solid #e5e7eb',
+          borderTop: '1px solid #dadce0',
         },
 
-        // Time gutter (left side with time labels)
+        // Time gutter
+        '.rbc-time-gutter': {
+          backgroundColor: 'white',
+          width: '60px',
+        },
+
+        // FIXED: Time header gutter with reduced height
         '.rbc-time-header-gutter': {
-          backgroundColor: '#fafafa',
+          backgroundColor: 'white',
+          height: '70px',
+          minHeight: '70px',
         },
 
         // Day columns
         '.rbc-day-slot': {
-          position: 'relative',
+          borderLeft: '1px solid #dadce0',
         },
 
-        // Hover effect on time slots
-        '.rbc-day-slot:hover': {
-          backgroundColor: '#f9fafb',
-          transition: 'background-color 0.2s ease',
+        '.rbc-day-slot .rbc-time-slot': {
+          borderTop: 'none',
         },
 
-        // Month view improvements
-        '.rbc-month-view': {
-          border: '1px solid #e5e7eb',
-          borderRadius: '12px',
+        // Events container
+        '.rbc-events-container': {
+          marginRight: '0px',
+        },
+
+        // Event wrapper
+        '.rbc-event': {
+          padding: 0,
+        },
+
+        '.rbc-event-content': {
           overflow: 'hidden',
         },
 
-        '.rbc-month-row': {
-          border: 'none',
-          borderTop: '1px solid #f3f4f6',
+        '.rbc-event:focus': {
+          outline: 'none',
         },
 
-        '.rbc-day-bg': {
-          borderLeft: '1px solid #f3f4f6',
+        '.rbc-selected': {
+          transform: 'scale(1.01)',
+          transition: 'transform 0.1s ease',
+          zIndex: 4,
         },
 
-        '.rbc-off-range-bg': {
-          backgroundColor: '#fafafa',
+        // Current time indicator
+        '.rbc-current-time-indicator': {
+          backgroundColor: '#ea4335',
+          height: '2px',
+          zIndex: 10,
         },
 
-        // Date numbers in month view
-        '.rbc-date-cell': {
-          padding: '8px',
+        // Add red dot at current time
+        '.rbc-current-time-indicator::before': {
+          content: '""',
+          position: 'absolute',
+          left: '-6px',
+          top: '-5px',
+          width: '12px',
+          height: '12px',
+          borderRadius: '50%',
+          backgroundColor: '#ea4335',
+          border: '2px solid white',
         },
 
-        '.rbc-date-cell a': {
-          fontWeight: '600',
-          fontSize: '0.875rem',
-          color: '#111827',
-        },
-
-        // Toolbar (navigation controls)
+        // Toolbar
         '.rbc-toolbar': {
-          padding: '16px 0',
-          marginBottom: '16px',
+          padding: '12px 0',
+          marginBottom: '12px',
         },
 
         '.rbc-toolbar button': {
           backgroundColor: 'white',
-          border: '1px solid #e5e7eb',
-          color: '#374151',
+          border: '1px solid #dadce0',
+          color: '#3c4043',
           padding: '8px 16px',
-          borderRadius: '8px',
+          borderRadius: '4px',
           fontWeight: '500',
-          fontSize: '0.875rem',
-          transition: 'all 0.2s ease',
-          boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
+          fontSize: '14px',
+          transition: 'all 0.2s',
         },
 
         '.rbc-toolbar button:hover': {
-          borderColor: '#d1d5db',
-          backgroundColor: '#f9fafb',
-          transform: 'translateY(-1px)',
-          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+          borderColor: '#d2d3d4',
+          backgroundColor: '#f8f9fa',
+          boxShadow: '0 1px 1px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15)',
         },
 
         '.rbc-toolbar button.rbc-active': {
-          backgroundColor: '#7C3AED', // Using purple to match modern theme
-          borderColor: '#7C3AED',
+          backgroundColor: '#1a73e8',
+          borderColor: '#1a73e8',
           color: 'white',
-          boxShadow: '0 2px 4px rgba(124, 58, 237, 0.3)',
         },
 
         '.rbc-toolbar button.rbc-active:hover': {
-          backgroundColor: '#6D28D9',
-          borderColor: '#6D28D9',
+          backgroundColor: '#1765cc',
+          borderColor: '#1765cc',
         },
 
-        // Current time indicator (red line)
-        '.rbc-current-time-indicator': {
-          backgroundColor: '#EF4444',
-          height: '2px',
-          boxShadow: '0 1px 3px rgba(239, 68, 68, 0.5)',
+        // Month view
+        '.rbc-month-view': {
+          border: '1px solid #dadce0',
+          borderRadius: '8px',
         },
 
-        // Scrollbar styling for time view
-        '.rbc-time-content::-webkit-scrollbar': {
-          width: '8px',
+        '.rbc-month-row': {
+          borderTop: '1px solid #dadce0',
         },
 
-        '.rbc-time-content::-webkit-scrollbar-track': {
-          background: '#f3f4f6',
+        '.rbc-day-bg': {
+          borderLeft: '1px solid #dadce0',
         },
 
-        '.rbc-time-content::-webkit-scrollbar-thumb': {
-          background: '#d1d5db',
-          borderRadius: '4px',
+        '.rbc-off-range-bg': {
+          backgroundColor: '#f8f9fa',
         },
 
-        '.rbc-time-content::-webkit-scrollbar-thumb:hover': {
-          background: '#9ca3af',
+        // Smooth scroll behavior
+        '.rbc-time-content': {
+          scrollBehavior: 'smooth',
         },
-
-        // Event styling
-        '.rbc-event': {
-          borderRadius: '4px',
-          border: 'none',
-          boxShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
-        },
-
-        // Selected event styling
-        '.rbc-event.rbc-selected': {
-          opacity: 1,
-          transform: 'scale(1.02)',
-          zIndex: 10,
-          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-          transition: 'all 0.2s ease',
-        }
       }}
     >
       <Calendar
@@ -455,15 +532,17 @@ const CalendarView = ({
         onView={setView}
         views={["month", "week", "day"]}
         defaultView="week"
-        min={hourRange.min}
-        max={hourRange.max}
+        min={minTime}
+        max={maxTime}
         eventPropGetter={eventStyleGetter}
         components={{
           week: {
-            header: CustomDateHeader,
+            header: GoogleStyleDateHeader,
+            event: GoogleStyleEvent,
           },
           day: {
-            header: CustomDateHeader,
+            header: GoogleStyleDateHeader,
+            event: GoogleStyleEvent,
           },
           month: {
             header: MonthDateHeader,
@@ -476,4 +555,4 @@ const CalendarView = ({
   );
 };
 
-export default CalendarView; 
+export default CalendarView;
