@@ -182,7 +182,7 @@ const Landing = () => {
                 >
                   Sign in with Google
                 </Button>
-                <Button
+                {/* <Button
                   size="lg"
                   variant="outline"
                   borderColor="white"
@@ -198,7 +198,7 @@ const Landing = () => {
                   transition="all 0.3s"
                 >
                   Watch Demo
-                </Button>
+                </Button> */}
               </HStack>
             </MotionBox>
 
@@ -525,7 +525,7 @@ const Landing = () => {
                           <Text fontWeight="bold" fontSize="sm">Outlook Calendar</Text>
                           <Text fontSize="xs" color="gray.600">Connected</Text>
                         </VStack>
-                        <Badge colorScheme="green">Active</Badge>
+                        <Badge colorScheme="yellow">will be added soon</Badge>
                       </HStack>
                       <HStack w="full" p={4} bg="gray.50" borderRadius="lg">
                         <Box w={8} h={8} bg="gray.400" borderRadius="md" />
@@ -533,7 +533,7 @@ const Landing = () => {
                           <Text fontWeight="bold" fontSize="sm">Apple Calendar</Text>
                           <Text fontSize="xs" color="gray.600">Not connected</Text>
                         </VStack>
-                        <Button size="xs" colorScheme="blue">Connect</Button>
+                        <Badge colorScheme="yellow">will be added soon</Badge>
                       </HStack>
                     </VStack>
                   </Box>
