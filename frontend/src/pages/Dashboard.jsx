@@ -167,36 +167,47 @@ const Dashboard = () => {
   // Compute stats from real data
   const now = new Date();
 
+  // Filter events into three categories
+  // Completed & Upcoming: finalized events where end time hasn't passed
+  const completedUpcomingEvents = events.filter(e => {
+    if (e.status !== "finalized") return false;
+    if (!e.finalized_end_time_utc) return false;
+    return new Date(e.finalized_end_time_utc) >= now;
+  });
+
+  // In Progress: planning events where date range hasn't passed
+  const inProgressEvents = events.filter(e => {
+    if (e.status === "cancelled") return false;
+    if (e.status === "finalized") return false;
+    if (!e.latest_datetime_utc) return true; // Include if no date set
+    return new Date(e.latest_datetime_utc) >= now;
+  });
+
+  // Past Events: either finalized date passed OR planning date range passed
+  const pastEvents = events.filter(e => {
+    if (e.status === "cancelled") return false;
+    
+    if (e.status === "finalized" && e.finalized_end_time_utc) {
+      return new Date(e.finalized_end_time_utc) < now;
+    }
+    
+    if (e.status !== "finalized" && e.latest_datetime_utc) {
+      return new Date(e.latest_datetime_utc) < now;
+    }
+    
+    return false;
+  });
+
   const stats = {
-    eventsThisMonth: events.length,
-    upcomingEvents: events.filter(e => {
-      // Skip cancelled events
-      if (e.status === "cancelled") return false;
-
-      // If event is finalized, check if finalized date is >= current date
-      if (e.status === "finalized" && e.finalized_end_time_utc) {
-        const finalizedDate = new Date(e.finalized_end_time_utc);
-        return finalizedDate >= now;
-      }
-
-      // If event is NOT finalized, check if end date of date range is >= current date
-      if (e.status !== "finalized" && e.latest_date) {
-        const latestDate = new Date(e.latest_date);
-        return latestDate >= now;
-      }
-
-      // If no date info available, include it in upcoming
-      return true;
-    }).length,
+    completedUpcoming: completedUpcomingEvents.length,
+    inProgress: inProgressEvents.length,
+    pastEvents: pastEvents.length,
     pendingInvitations: invitations.length
   };
 
   // Get user info
   const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || "User";
   const userAvatar = user?.user_metadata?.avatar_url;
-
-  // Filter events for display
-  const upcomingEvents = events.filter(e => e.status !== "cancelled").slice(0, 6);
 
   // Show loading state
   if (loading || authLoading) {
@@ -263,29 +274,38 @@ const Dashboard = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            <SimpleGrid columns={{ base: 1, sm: 2, md: 3 }} spacing={4}>
+            <SimpleGrid columns={{ base: 1, sm: 2, md: 4 }} spacing={4}>
               <Card bg={cardBg}>
                 <CardBody>
                   <Stat>
-                    <StatLabel>Events This Month</StatLabel>
-                    <StatNumber color={colors.primary}>{stats.eventsThisMonth}</StatNumber>
-                    <StatHelpText>Active events</StatHelpText>
+                    <StatLabel>Completed & Upcoming</StatLabel>
+                    <StatNumber color={colors.primary}>{stats.completedUpcoming}</StatNumber>
+                    <StatHelpText>Finalized events</StatHelpText>
                   </Stat>
                 </CardBody>
               </Card>
               <Card bg={cardBg}>
                 <CardBody>
                   <Stat>
-                    <StatLabel>Upcoming</StatLabel>
-                    <StatNumber color={colors.secondary}>{stats.upcomingEvents}</StatNumber>
-                    <StatHelpText>Not passed yet</StatHelpText>
+                    <StatLabel>In Progress</StatLabel>
+                    <StatNumber color={colors.secondary}>{stats.inProgress}</StatNumber>
+                    <StatHelpText>Being planned</StatHelpText>
                   </Stat>
                 </CardBody>
               </Card>
               <Card bg={cardBg}>
                 <CardBody>
                   <Stat>
-                    <StatLabel>Pending</StatLabel>
+                    <StatLabel>Past Events</StatLabel>
+                    <StatNumber color="gray.600">{stats.pastEvents}</StatNumber>
+                    <StatHelpText>Completed</StatHelpText>
+                  </Stat>
+                </CardBody>
+              </Card>
+              <Card bg={cardBg}>
+                <CardBody>
+                  <Stat>
+                    <StatLabel>Pending Invitations</StatLabel>
                     <StatNumber color={colors.accent}>{stats.pendingInvitations}</StatNumber>
                     <StatHelpText>Need response</StatHelpText>
                   </Stat>
@@ -383,167 +403,510 @@ const Dashboard = () => {
             </MotionBox>
           )}
 
-          {/* Upcoming Events Section */}
+          {/* Completed & Upcoming Events Section */}
           <MotionBox
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.5 }}
           >
             <VStack align="stretch" spacing={4}>
-              <Heading size="md">Upcoming Events</Heading>
+              <Flex align="center" justify="space-between">
+                <HStack>
+                  <Heading size="md">Completed & Upcoming</Heading>
+                  <Badge colorScheme="green" borderRadius="full" px={2}>
+                    {completedUpcomingEvents.length}
+                  </Badge>
+                </HStack>
+              </Flex>
 
-              {upcomingEvents.length > 0 ? (
-                <Grid
-                  templateColumns={{
-                    base: "1fr",
-                    md: "repeat(2, 1fr)",
-                    lg: "repeat(3, 1fr)"
+              {completedUpcomingEvents.length > 0 ? (
+                <Box
+                  maxHeight="600px"
+                  overflowY="auto"
+                  css={{
+                    '&::-webkit-scrollbar': { width: '8px' },
+                    '&::-webkit-scrollbar-track': { background: 'transparent' },
+                    '&::-webkit-scrollbar-thumb': { background: colors.primary, borderRadius: '4px' }
                   }}
-                  gap={6}
                 >
-                  {upcomingEvents.map((event, index) => (
-                    <MotionCard
-                      key={event.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: 0.6 + index * 0.1 }}
-                      bg={cardBg}
-                      cursor="pointer"
-                      onClick={() => handleViewEvent(event.uid)}
-                      onMouseEnter={() => setHoveredCard(event.id)}
-                      onMouseLeave={() => setHoveredCard(null)}
-                      _hover={{ shadow: "lg", transform: "translateY(-4px)" }}
-                    >
-                      <CardBody>
-                        <VStack align="stretch" spacing={3}>
-                          {/* Header */}
-                          <Flex justify="space-between" align="start">
-                            <HStack>
-                              <Icon
-                                as={FiCalendar}
-                                color={colors.primary}
-                                boxSize={5}
-                              />
-                              <Badge colorScheme={event.status === "finalized" ? "green" : "blue"}>
-                                {event.status}
-                              </Badge>
-                              {event.role && (
-                                <Badge colorScheme={event.role === "coordinator" ? "purple" : "gray"}>
-                                  {event.role}
+                  <Grid
+                    templateColumns={{
+                      base: "1fr",
+                      md: "repeat(2, 1fr)",
+                      lg: "repeat(3, 1fr)"
+                    }}
+                    gap={6}
+                  >
+                    {completedUpcomingEvents.map((event, index) => (
+                      <MotionCard
+                        key={event.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: 0.6 + index * 0.1 }}
+                        bg={cardBg}
+                        cursor="pointer"
+                        onClick={() => handleViewEvent(event.uid)}
+                        onMouseEnter={() => setHoveredCard(event.id)}
+                        onMouseLeave={() => setHoveredCard(null)}
+                        _hover={{ shadow: "lg", transform: "translateY(-4px)" }}
+                      >
+                        <CardBody>
+                          <VStack align="stretch" spacing={3}>
+                            {/* Header */}
+                            <Flex justify="space-between" align="start">
+                              <HStack>
+                                <Icon
+                                  as={FiCalendar}
+                                  color={colors.primary}
+                                  boxSize={5}
+                                />
+                                <Badge colorScheme="green">
+                                  {event.status}
                                 </Badge>
+                                {event.role && (
+                                  <Badge colorScheme={event.role === "coordinator" ? "purple" : "gray"}>
+                                    {event.role}
+                                  </Badge>
+                                )}
+                              </HStack>
+                              <Menu>
+                                <MenuButton
+                                  as={IconButton}
+                                  icon={<FiMoreVertical />}
+                                  variant="ghost"
+                                  size="sm"
+                                  aria-label="Options"
+                                />
+                                <MenuList>
+                                  <MenuItem icon={<FiEdit />}>Edit</MenuItem>
+                                  <MenuItem icon={<FiShare2 />}>Share</MenuItem>
+                                </MenuList>
+                              </Menu>
+                            </Flex>
+
+                            {/* Title */}
+                            <Heading size="sm" noOfLines={2}>
+                              {event.name}
+                            </Heading>
+
+                            {/* Date Range */}
+                            <VStack align="stretch" spacing={2} fontSize="sm">
+                              <HStack color="gray.600">
+                                <Icon as={FiCalendar} />
+                                <Text fontWeight="medium">
+                                  {new Date(event.finalized_start_time_utc).toLocaleDateString()}
+                                </Text>
+                              </HStack>
+                              <HStack color="gray.600">
+                                <Icon as={FiClock} />
+                                <Text>
+                                  {new Date(event.finalized_start_time_utc).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </Text>
+                              </HStack>
+                            </VStack>
+
+                            <Divider />
+
+                            {/* Event Info */}
+                            <VStack align="stretch" spacing={2} fontSize="sm">
+                              {event.description && (
+                                <Text color="gray.600" noOfLines={2}>
+                                  {event.description}
+                                </Text>
                               )}
-                            </HStack>
-                            <Menu>
-                              <MenuButton
-                                as={IconButton}
-                                icon={<FiMoreVertical />}
-                                variant="ghost"
-                                size="sm"
-                                aria-label="Options"
-                              />
-                              <MenuList>
-                                <MenuItem icon={<FiEdit />}>Edit</MenuItem>
-                                <MenuItem icon={<FiShare2 />}>Share</MenuItem>
-                              </MenuList>
-                            </Menu>
-                          </Flex>
-
-                          {/* Title */}
-                          <Heading size="sm" noOfLines={2}>
-                            {event.name}
-                          </Heading>
-
-                          {/* Date Range */}
-                          <VStack align="stretch" spacing={2} fontSize="sm">
-                            {event.status === "finalized" && event.finalized_start_time_utc ? (
-                              <>
-                                <HStack color="gray.600">
-                                  <Icon as={FiCalendar} />
-                                  <Text fontWeight="medium">
-                                    {new Date(event.finalized_start_time_utc).toLocaleDateString()}
-                                  </Text>
+                              {event.google_calendar_html_link && (
+                                <HStack color="blue.500">
+                                  <Icon as={FiVideo} />
+                                  <Text fontSize="xs">Calendar Link Available</Text>
                                 </HStack>
-                                <HStack color="gray.600">
-                                  <Icon as={FiClock} />
-                                  <Text>
-                                    {new Date(event.finalized_start_time_utc).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                  </Text>
-                                </HStack>
-                              </>
-                            ) : (
-                              <>
-                                <HStack color="gray.600">
-                                  <Icon as={FiCalendar} />
-                                  <Text fontWeight="medium">
-                                    {event.earliest_datetime_utc && event.latest_datetime_utc
-                                      ? `${new Date(event.earliest_datetime_utc).toLocaleDateString()} - ${new Date(event.latest_datetime_utc).toLocaleDateString()}`
-                                      : 'Date TBD'}
-                                  </Text>
-                                </HStack>
-                                <HStack color="gray.600">
-                                  <Icon as={FiClock} />
-                                  <Text>{event.duration_minutes} min</Text>
-                                </HStack>
-                              </>
-                            )}
-                          </VStack>
+                              )}
+                            </VStack>
 
-                          <Divider />
-
-                          {/* Event Info */}
-                          <VStack align="stretch" spacing={2} fontSize="sm">
-                            {event.description && (
-                              <Text color="gray.600" noOfLines={2}>
-                                {event.description}
-                              </Text>
-                            )}
-                            {event.google_calendar_html_link && (
-                              <HStack color="blue.500">
-                                <Icon as={FiVideo} />
-                                <Text fontSize="xs">Calendar Link Available</Text>
+                            {/* Quick Actions */}
+                            {hoveredCard === event.id && (
+                              <HStack spacing={2} pt={2}>
+                                <Button
+                                  size="sm"
+                                  colorScheme="blue"
+                                  flex={1}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleViewEvent(event.uid);
+                                  }}
+                                >
+                                  View
+                                </Button>
+                                <IconButton
+                                  icon={<FiShare2 />}
+                                  size="sm"
+                                  variant="outline"
+                                  aria-label="Share"
+                                  onClick={(e) => e.stopPropagation()}
+                                />
                               </HStack>
                             )}
                           </VStack>
-
-                          {/* Quick Actions */}
-                          {hoveredCard === event.id && (
-                            <HStack spacing={2} pt={2}>
-                              <Button
-                                size="sm"
-                                colorScheme="blue"
-                                flex={1}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleViewEvent(event.uid);
-                                }}
-                              >
-                                View
-                              </Button>
-                              <IconButton
-                                icon={<FiShare2 />}
-                                size="sm"
-                                variant="outline"
-                                aria-label="Share"
-                                onClick={(e) => e.stopPropagation()}
-                              />
-                            </HStack>
-                          )}
-                        </VStack>
-                      </CardBody>
-                    </MotionCard>
-                  ))}
-                </Grid>
+                        </CardBody>
+                      </MotionCard>
+                    ))}
+                  </Grid>
+                </Box>
               ) : (
                 <Card bg={cardBg}>
                   <CardBody>
                     <VStack spacing={4} py={8}>
-                      <Icon as={FiCalendar} boxSize={12} color="gray.400" />
+                      <Icon as={FiCheck} boxSize={12} color="gray.400" />
                       <Text color="gray.500" fontSize="lg">
-                        No upcoming events. Create one!
+                        No confirmed events yet
+                      </Text>
+                    </VStack>
+                  </CardBody>
+                </Card>
+              )}
+            </VStack>
+          </MotionBox>
+
+          {/* In Progress Events Section */}
+          <MotionBox
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.6 }}
+          >
+            <VStack align="stretch" spacing={4}>
+              <Flex align="center" justify="space-between">
+                <HStack>
+                  <Heading size="md">In Progress</Heading>
+                  <Badge colorScheme="blue" borderRadius="full" px={2}>
+                    {inProgressEvents.length}
+                  </Badge>
+                </HStack>
+              </Flex>
+
+              {inProgressEvents.length > 0 ? (
+                <Box
+                  maxHeight="600px"
+                  overflowY="auto"
+                  css={{
+                    '&::-webkit-scrollbar': { width: '8px' },
+                    '&::-webkit-scrollbar-track': { background: 'transparent' },
+                    '&::-webkit-scrollbar-thumb': { background: colors.primary, borderRadius: '4px' }
+                  }}
+                >
+                  <Grid
+                    templateColumns={{
+                      base: "1fr",
+                      md: "repeat(2, 1fr)",
+                      lg: "repeat(3, 1fr)"
+                    }}
+                    gap={6}
+                  >
+                    {inProgressEvents.map((event, index) => (
+                      <MotionCard
+                        key={event.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: 0.7 + index * 0.1 }}
+                        bg={cardBg}
+                        cursor="pointer"
+                        onClick={() => handleViewEvent(event.uid)}
+                        onMouseEnter={() => setHoveredCard(event.id)}
+                        onMouseLeave={() => setHoveredCard(null)}
+                        _hover={{ shadow: "lg", transform: "translateY(-4px)" }}
+                      >
+                        <CardBody>
+                          <VStack align="stretch" spacing={3}>
+                            {/* Header */}
+                            <Flex justify="space-between" align="start">
+                              <HStack>
+                                <Icon
+                                  as={FiCalendar}
+                                  color={colors.primary}
+                                  boxSize={5}
+                                />
+                                <Badge colorScheme="blue">
+                                  {event.status}
+                                </Badge>
+                                {event.role && (
+                                  <Badge colorScheme={event.role === "coordinator" ? "purple" : "gray"}>
+                                    {event.role}
+                                  </Badge>
+                                )}
+                              </HStack>
+                              <Menu>
+                                <MenuButton
+                                  as={IconButton}
+                                  icon={<FiMoreVertical />}
+                                  variant="ghost"
+                                  size="sm"
+                                  aria-label="Options"
+                                />
+                                <MenuList>
+                                  <MenuItem icon={<FiEdit />}>Edit</MenuItem>
+                                  <MenuItem icon={<FiShare2 />}>Share</MenuItem>
+                                </MenuList>
+                              </Menu>
+                            </Flex>
+
+                            {/* Title */}
+                            <Heading size="sm" noOfLines={2}>
+                              {event.name}
+                            </Heading>
+
+                            {/* Date Range */}
+                            <VStack align="stretch" spacing={2} fontSize="sm">
+                              <HStack color="gray.600">
+                                <Icon as={FiCalendar} />
+                                <Text fontWeight="medium">
+                                  {event.earliest_datetime_utc && event.latest_datetime_utc
+                                    ? `${new Date(event.earliest_datetime_utc).toLocaleDateString()} - ${new Date(event.latest_datetime_utc).toLocaleDateString()}`
+                                    : 'Date TBD'}
+                                </Text>
+                              </HStack>
+                              <HStack color="gray.600">
+                                <Icon as={FiClock} />
+                                <Text>{event.duration_minutes} min</Text>
+                              </HStack>
+                            </VStack>
+
+                            <Divider />
+
+                            {/* Event Info */}
+                            <VStack align="stretch" spacing={2} fontSize="sm">
+                              {event.description && (
+                                <Text color="gray.600" noOfLines={2}>
+                                  {event.description}
+                                </Text>
+                              )}
+                              {event.google_calendar_html_link && (
+                                <HStack color="blue.500">
+                                  <Icon as={FiVideo} />
+                                  <Text fontSize="xs">Calendar Link Available</Text>
+                                </HStack>
+                              )}
+                            </VStack>
+
+                            {/* Quick Actions */}
+                            {hoveredCard === event.id && (
+                              <HStack spacing={2} pt={2}>
+                                <Button
+                                  size="sm"
+                                  colorScheme="blue"
+                                  flex={1}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleViewEvent(event.uid);
+                                  }}
+                                >
+                                  View
+                                </Button>
+                                <IconButton
+                                  icon={<FiShare2 />}
+                                  size="sm"
+                                  variant="outline"
+                                  aria-label="Share"
+                                  onClick={(e) => e.stopPropagation()}
+                                />
+                              </HStack>
+                            )}
+                          </VStack>
+                        </CardBody>
+                      </MotionCard>
+                    ))}
+                  </Grid>
+                </Box>
+              ) : (
+                <Card bg={cardBg}>
+                  <CardBody>
+                    <VStack spacing={4} py={8}>
+                      <Icon as={FiClock} boxSize={12} color="gray.400" />
+                      <Text color="gray.500" fontSize="lg">
+                        No events being planned. Create one!
                       </Text>
                       <Button colorScheme="blue" onClick={handleCreateEvent}>
                         Create Event
                       </Button>
+                    </VStack>
+                  </CardBody>
+                </Card>
+              )}
+            </VStack>
+          </MotionBox>
+
+          {/* Past Events Section */}
+          <MotionBox
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.7 }}
+          >
+            <VStack align="stretch" spacing={4}>
+              <Flex align="center" justify="space-between">
+                <HStack>
+                  <Heading size="md">Past Events</Heading>
+                  <Badge colorScheme="gray" borderRadius="full" px={2}>
+                    {pastEvents.length}
+                  </Badge>
+                </HStack>
+              </Flex>
+
+              {pastEvents.length > 0 ? (
+                <Box
+                  maxHeight="280px"
+                  overflowY="auto"
+                  css={{
+                    '&::-webkit-scrollbar': { width: '8px' },
+                    '&::-webkit-scrollbar-track': { background: 'transparent' },
+                    '&::-webkit-scrollbar-thumb': { background: colors.primary, borderRadius: '4px' }
+                  }}
+                >
+                  <Grid
+                    templateColumns={{
+                      base: "1fr",
+                      md: "repeat(2, 1fr)",
+                      lg: "repeat(3, 1fr)"
+                    }}
+                    gap={6}
+                  >
+                    {pastEvents.map((event, index) => (
+                      <MotionCard
+                        key={event.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: 0.8 + index * 0.1 }}
+                        bg={cardBg}
+                        cursor="pointer"
+                        onClick={() => handleViewEvent(event.uid)}
+                        onMouseEnter={() => setHoveredCard(event.id)}
+                        onMouseLeave={() => setHoveredCard(null)}
+                        _hover={{ shadow: "lg", transform: "translateY(-4px)" }}
+                      >
+                        <CardBody>
+                          <VStack align="stretch" spacing={3}>
+                            {/* Header */}
+                            <Flex justify="space-between" align="start">
+                              <HStack>
+                                <Icon
+                                  as={FiCalendar}
+                                  color="gray.400"
+                                  boxSize={5}
+                                />
+                                <Badge colorScheme="gray">
+                                  {event.status}
+                                </Badge>
+                                {event.role && (
+                                  <Badge colorScheme={event.role === "coordinator" ? "purple" : "gray"}>
+                                    {event.role}
+                                  </Badge>
+                                )}
+                              </HStack>
+                              <Menu>
+                                <MenuButton
+                                  as={IconButton}
+                                  icon={<FiMoreVertical />}
+                                  variant="ghost"
+                                  size="sm"
+                                  aria-label="Options"
+                                />
+                                <MenuList>
+                                  <MenuItem icon={<FiEdit />}>Edit</MenuItem>
+                                  <MenuItem icon={<FiShare2 />}>Share</MenuItem>
+                                </MenuList>
+                              </Menu>
+                            </Flex>
+
+                            {/* Title */}
+                            <Heading size="sm" noOfLines={2}>
+                              {event.name}
+                            </Heading>
+
+                            {/* Date Range */}
+                            <VStack align="stretch" spacing={2} fontSize="sm">
+                              {event.status === "finalized" && event.finalized_start_time_utc ? (
+                                <>
+                                  <HStack color="gray.600">
+                                    <Icon as={FiCalendar} />
+                                    <Text fontWeight="medium">
+                                      {new Date(event.finalized_start_time_utc).toLocaleDateString()}
+                                    </Text>
+                                  </HStack>
+                                  <HStack color="gray.600">
+                                    <Icon as={FiClock} />
+                                    <Text>
+                                      {new Date(event.finalized_start_time_utc).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    </Text>
+                                  </HStack>
+                                </>
+                              ) : (
+                                <>
+                                  <HStack color="gray.600">
+                                    <Icon as={FiCalendar} />
+                                    <Text fontWeight="medium">
+                                      {event.earliest_datetime_utc && event.latest_datetime_utc
+                                        ? `${new Date(event.earliest_datetime_utc).toLocaleDateString()} - ${new Date(event.latest_datetime_utc).toLocaleDateString()}`
+                                        : 'Date TBD'}
+                                    </Text>
+                                  </HStack>
+                                  <HStack color="gray.600">
+                                    <Icon as={FiClock} />
+                                    <Text>{event.duration_minutes} min</Text>
+                                  </HStack>
+                                </>
+                              )}
+                            </VStack>
+
+                            <Divider />
+
+                            {/* Event Info */}
+                            <VStack align="stretch" spacing={2} fontSize="sm">
+                              {event.description && (
+                                <Text color="gray.600" noOfLines={2}>
+                                  {event.description}
+                                </Text>
+                              )}
+                              {event.google_calendar_html_link && (
+                                <HStack color="blue.500">
+                                  <Icon as={FiVideo} />
+                                  <Text fontSize="xs">Calendar Link Available</Text>
+                                </HStack>
+                              )}
+                            </VStack>
+
+                            {/* Quick Actions */}
+                            {hoveredCard === event.id && (
+                              <HStack spacing={2} pt={2}>
+                                <Button
+                                  size="sm"
+                                  colorScheme="blue"
+                                  flex={1}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleViewEvent(event.uid);
+                                  }}
+                                >
+                                  View
+                                </Button>
+                                <IconButton
+                                  icon={<FiShare2 />}
+                                  size="sm"
+                                  variant="outline"
+                                  aria-label="Share"
+                                  onClick={(e) => e.stopPropagation()}
+                                />
+                              </HStack>
+                            )}
+                          </VStack>
+                        </CardBody>
+                      </MotionCard>
+                    ))}
+                  </Grid>
+                </Box>
+              ) : (
+                <Card bg={cardBg}>
+                  <CardBody>
+                    <VStack spacing={4} py={8}>
+                      <Icon as={FiMinus} boxSize={12} color="gray.400" />
+                      <Text color="gray.500" fontSize="lg">
+                        No past events to show
+                      </Text>
                     </VStack>
                   </CardBody>
                 </Card>
