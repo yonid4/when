@@ -4,7 +4,8 @@ set -e
 echo "Starting deployment process..."
 
 # Configuration
-EC2_HOST="ubuntu@54.189.130.216"
+# EC2_HOST="ubuntu@54.189.130.216"
+EC2_HOST="ubuntu@44.249.146.152"
 SSH_KEY="/Users/yoni/Downloads/when-keypair-2.pem"
 PROJECT_DIR="/Users/yoni/Desktop/Projects/when"
 
