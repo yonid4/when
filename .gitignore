@@ -384,3 +384,5 @@ Thumbs.db
 # Deployment script
 when-backend.tar
 when-frontend.tar
+
+.claude

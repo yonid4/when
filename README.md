@@ -164,9 +164,44 @@ npm install
 
 5. **Start the application:**
 
-   **Option A: Using Docker (Recommended)**
+   **Option A: Using Docker - Local Development (Recommended for local testing)**
+   
+   For local development without SSL certificates:
    ```bash
-   # Build and start all services
+   # Using the helper script (recommended)
+   chmod +x docker-commands.sh
+   ./docker-commands.sh start --local
+   
+   # Or using docker-compose directly
+   docker-compose -f docker-compose.local.yml up --build -d
+   
+   # View logs
+   ./docker-commands.sh logs --local
+   # or: docker-compose -f docker-compose.local.yml logs -f
+   
+   # Stop services
+   ./docker-commands.sh stop --local
+   # or: docker-compose -f docker-compose.local.yml down
+   ```
+   
+   The application will be available at:
+   - Frontend: **http://localhost** (port 80, HTTP-only)
+   - Backend API: http://localhost:5050 (or via Nginx proxy at http://localhost/api)
+   
+   **Key features of local setup:**
+   - ✅ HTTP-only (no SSL certificates required)
+   - ✅ No HTTPS redirect
+   - ✅ Same as production except for SSL
+   - ✅ Uses `Dockerfile.backend.local` and `Dockerfile.frontend.local`
+
+   **Option B: Using Docker - Production**
+   
+   For production deployment with HTTPS:
+   ```bash
+   # Using the helper script
+   ./docker-commands.sh start
+   
+   # Or using docker-compose directly
    docker-compose up --build -d
    
    # View logs
@@ -177,10 +212,12 @@ npm install
    ```
    
    The application will be available at:
-   - Frontend: http://localhost
-   - Backend API: http://localhost:5000 (or via Nginx proxy at http://localhost/api)
+   - Frontend: https://your-domain.com (requires SSL certificates)
+   - Backend API: https://your-domain.com/api (proxied through Nginx)
+   
+   **Note:** Production setup requires SSL certificates in `/etc/letsencrypt/`
 
-   **Option B: Local Development**
+   **Option C: Local Development (without Docker)**
    ```bash
    # Terminal 1 (Backend)
    cd backend
@@ -610,33 +647,91 @@ Tests cover:
 
 ### Using Docker Compose (Recommended)
 
-The application includes optimized Docker configuration for production deployment:
+The application includes optimized Docker configuration for both local development and production deployment.
+
+#### Local Development (HTTP-only)
+
+For local testing without SSL certificates:
 
 ```bash
-# Quick start
-docker-compose up --build -d
+# Using the helper script (recommended)
+chmod +x docker-commands.sh
+./docker-commands.sh start --local
 
-# Or use the helper scripts
+# View logs
+./docker-commands.sh logs --local
+
+# View specific service logs
+./docker-commands.sh logs backend --local
+
+# Rebuild a service
+./docker-commands.sh rebuild frontend --local
+
+# Open shell in container
+./docker-commands.sh shell backend --local
+
+# Check status
+./docker-commands.sh status --local
+
+# Stop services
+./docker-commands.sh stop --local
+```
+
+**Local Development Files:**
+- `Dockerfile.backend.local` - Backend container (same as production)
+- `Dockerfile.frontend.local` - Frontend with HTTP-only Nginx (no SSL)
+- `docker-compose.local.yml` - Local orchestration configuration
+
+#### Production Deployment (HTTPS with SSL)
+
+For production with SSL certificates:
+
+```bash
+# Using the helper script
 chmod +x docker-commands.sh
 ./docker-commands.sh start
+
+# Or use docker-compose directly
+docker-compose up --build -d
 
 # Or use the deployment script
 chmod +x scripts/deploy.sh
 ./scripts/deploy.sh
 
 # View logs
-docker-compose logs -f
+./docker-commands.sh logs
+# or: docker-compose logs -f
 
 # Stop services
-docker-compose down
+./docker-commands.sh stop
+# or: docker-compose down
 ```
 
-**What's included:**
+**Production Files:**
 - `Dockerfile.backend` - Optimized Flask + Gunicorn container (Python 3.10)
-- `Dockerfile.frontend` - Multi-stage React + Nginx build
-- `docker-compose.yml` - Orchestration with health checks
-- `.dockerignore` - Build optimization
-- `docker-commands.sh` - Helper script for common operations
+- `Dockerfile.frontend` - Multi-stage React + Nginx build with HTTPS
+- `docker-compose.yml` - Production orchestration with health checks
+
+#### Docker Helper Script Commands
+
+The `docker-commands.sh` script provides convenient commands for managing Docker containers:
+
+| Command | Description | Example |
+|---------|-------------|---------|
+| `start` | Build and start all services | `./docker-commands.sh start --local` |
+| `stop` | Stop all services | `./docker-commands.sh stop --local` |
+| `restart` | Restart all services | `./docker-commands.sh restart --local` |
+| `logs [service]` | View logs (all or specific service) | `./docker-commands.sh logs backend --local` |
+| `status` | Show service status and health | `./docker-commands.sh status --local` |
+| `rebuild [service]` | Rebuild a specific service | `./docker-commands.sh rebuild frontend --local` |
+| `shell [service]` | Open shell in container | `./docker-commands.sh shell backend --local` |
+| `clean` | Remove all containers, images, volumes | `./docker-commands.sh clean --local` |
+| `stats` | Show resource usage | `./docker-commands.sh stats` |
+| `pull` | Pull latest base images | `./docker-commands.sh pull --local` |
+
+**Flags:**
+- `--local` - Use local development configuration (HTTP-only, no SSL)
+- No flag - Use production configuration (HTTPS with SSL)
 
 **Important Notes:**
 - Backend runs on Gunicorn with 4 workers
@@ -644,6 +739,23 @@ docker-compose down
 - Nginx proxies `/api/*` requests to the backend
 - Environment variables must be in the **root `.env` file**
 - Use `run.py` for Docker, `run_manually.py` for local development
+- Local setup uses HTTP-only (no SSL certificates required)
+- Production setup requires SSL certificates in `/etc/letsencrypt/`
+
+#### Configuration Comparison
+
+| Feature | Local Development | Production |
+|---------|------------------|------------|
+| **Protocol** | HTTP only | HTTPS + HTTP redirect |
+| **SSL Certificates** | Not required | Required in `/etc/letsencrypt/` |
+| **Port 80** | Serves HTTP | Redirects to HTTPS |
+| **Port 443** | Not exposed | Serves HTTPS |
+| **Compose File** | `docker-compose.local.yml` | `docker-compose.yml` |
+| **Frontend Dockerfile** | `Dockerfile.frontend.local` | `Dockerfile.frontend` |
+| **Backend Dockerfile** | `Dockerfile.backend.local` | `Dockerfile.backend` |
+| **Container Names** | `when-*-local` | `when-*` |
+| **Network** | `when-network-local` | `when-network` |
+| **Access URL** | http://localhost | https://your-domain.com |
 
 For detailed Docker deployment instructions, see [DOCKER_DEPLOYMENT.md](DOCKER_DEPLOYMENT.md).
 
