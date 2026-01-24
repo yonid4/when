@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@chakra-ui/react";
+import { Button, Icon } from "@chakra-ui/react";
+import { FiPlus } from "react-icons/fi";
 import { supabase } from "../services/supabaseClient";
 import NotificationBell from "./notifications/NotificationBell";
 
@@ -95,13 +96,27 @@ const Header = () => {
                 />
             </button>
 
-            {/* Right side: Notification Bell + Login/Logout */}
+            {/* Right side: Create Event + Notification Bell + Login/Logout */}
             <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
                 {isAuthenticated && (
-                    <NotificationBell
-                        currentUserId={currentUserId}
-                        isAuthenticated={isAuthenticated}
-                    />
+                    <>
+                        <Button
+                            onClick={() => navigate("/event/create")}
+                            size="sm"
+                            bg="white"
+                            color="#7C3AED"
+                            fontWeight="600"
+                            leftIcon={<Icon as={FiPlus} />}
+                            _hover={{ bg: "#EDE9FE" }}
+                            borderRadius="8px"
+                        >
+                            Create Event
+                        </Button>
+                        <NotificationBell
+                            currentUserId={currentUserId}
+                            isAuthenticated={isAuthenticated}
+                        />
+                    </>
                 )}
 
                 {isAuthenticated ? (
@@ -110,9 +125,9 @@ const Header = () => {
                         variant="outline"
                         colorScheme="gray"
                         size="sm"
-                        borderColor="var(--salt-pepper-medium-gray)"
-                        color="var(--secondary-color)"
-                        _hover={{ bg: "gray.50" }}
+                        borderColor="rgba(255,255,255,0.3)"
+                        color="white"
+                        _hover={{ bg: "rgba(255,255,255,0.1)" }}
                     >
                         Logout
                     </Button>
@@ -123,9 +138,9 @@ const Header = () => {
                         loadingText="Signing in..."
                         variant="solid"
                         size="sm"
-                        bg="var(--secondary-color)"
-                        color="white"
-                        _hover={{ bg: "#3d3d3d" }}
+                        bg="white"
+                        color="#7C3AED"
+                        _hover={{ bg: "#EDE9FE" }}
                     >
                         Sign in with Google
                     </Button>

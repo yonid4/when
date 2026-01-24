@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Box,
   Button,
@@ -27,7 +27,11 @@ import {
   useToast,
   SimpleGrid,
   Spinner,
-  Center
+  Center,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem
 } from "@chakra-ui/react";
 import { motion } from "framer-motion";
 import {
@@ -49,13 +53,14 @@ import {
   FiUsers,
   FiCoffee,
   FiGift,
-  FiMoreHorizontal
+  FiMoreHorizontal,
+  FiMoreVertical
 } from "react-icons/fi";
 import { eventsAPI, preferredSlotsAPI, busySlotsAPI } from "../services/apiService";
 import api from "../services/api";
 import { useApiCall } from "../hooks/useApiCall";
 import { useAuth } from "../hooks/useAuth";
-import { colors } from "../styles/designSystem";
+import { colors, shadows } from "../styles/designSystem";
 import InviteModal from "../components/event/InviteModal";
 import EditEventModal from "../components/event/EditEventModal";
 import CalendarView from "../components/calendar/CalendarView";
@@ -72,6 +77,47 @@ const parseTimeForCalendar = (timeString) => {
 
 const MotionBox = motion(Box);
 const MotionCard = motion(Card);
+
+// Demo data for local testing (add ?demo=true to URL)
+const DEMO_EVENT = {
+  id: 1,
+  uid: "demo-event-1",
+  name: "Team Planning Meeting",
+  description: "Quarterly planning session to discuss roadmap, priorities, and resource allocation for the upcoming quarter. Please come prepared with your team's updates and proposals.",
+  status: "planning",
+  event_type: "meeting",
+  coordinator_id: "demo-user-1",
+  coordinator_timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+  earliest_datetime_utc: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString(),
+  latest_datetime_utc: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+  duration_minutes: 60,
+  location: "Conference Room A / Zoom",
+  video_call_link: "https://zoom.us/j/123456789",
+  created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
+};
+
+const DEMO_PARTICIPANTS = [
+  { id: 1, user_id: "demo-user-1", name: "You (Demo)", email: "demo@example.com", rsvp_status: "going", avatar_url: null },
+  { id: 2, user_id: "demo-user-2", name: "Sarah Chen", email: "sarah@example.com", rsvp_status: "going", avatar_url: null },
+  { id: 3, user_id: "demo-user-3", name: "Mike Johnson", email: "mike@example.com", rsvp_status: "maybe", avatar_url: null },
+  { id: 4, user_id: "demo-user-4", name: "Emily Davis", email: "emily@example.com", rsvp_status: "not_going", avatar_url: null },
+  { id: 5, user_id: "demo-user-5", name: "Alex Kim", email: "alex@example.com", rsvp_status: null, avatar_url: null },
+  { id: 6, user_id: "demo-user-6", name: "Jordan Lee", email: "jordan@example.com", rsvp_status: "going", avatar_url: null }
+];
+
+const DEMO_PREFERRED_SLOTS = [
+  { id: 1, user_id: "demo-user-1", user_name: "You", start_time_utc: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000 + 10 * 60 * 60 * 1000).toISOString(), end_time_utc: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000 + 12 * 60 * 60 * 1000).toISOString() },
+  { id: 2, user_id: "demo-user-2", user_name: "Sarah", start_time_utc: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000 + 10 * 60 * 60 * 1000).toISOString(), end_time_utc: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000 + 14 * 60 * 60 * 1000).toISOString() },
+  { id: 3, user_id: "demo-user-3", user_name: "Mike", start_time_utc: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000 + 11 * 60 * 60 * 1000).toISOString(), end_time_utc: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000 + 13 * 60 * 60 * 1000).toISOString() },
+  { id: 4, user_id: "demo-user-1", user_name: "You", start_time_utc: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000 + 14 * 60 * 60 * 1000).toISOString(), end_time_utc: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000 + 17 * 60 * 60 * 1000).toISOString() },
+  { id: 5, user_id: "demo-user-2", user_name: "Sarah", start_time_utc: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000 + 15 * 60 * 60 * 1000).toISOString(), end_time_utc: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000 + 18 * 60 * 60 * 1000).toISOString() },
+  { id: 6, user_id: "demo-user-6", user_name: "Jordan", start_time_utc: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000 + 14 * 60 * 60 * 1000).toISOString(), end_time_utc: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000 + 16 * 60 * 60 * 1000).toISOString() }
+];
+
+const DEMO_BUSY_SLOTS = [
+  { start_time: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000 + 9 * 60 * 60 * 1000).toISOString(), end_time: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000 + 10 * 60 * 60 * 1000).toISOString(), busy_participants_count: 2 },
+  { start_time: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000 + 12 * 60 * 60 * 1000).toISOString(), end_time: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000 + 14 * 60 * 60 * 1000).toISOString(), busy_participants_count: 3 }
+];
 
 const EventPage = () => {
   // Helper to format UTC datetime in user's local timezone
@@ -127,18 +173,21 @@ const EventPage = () => {
 
   const { eventUid } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isDemo = searchParams.get("demo") === "true";
   const toast = useToast();
   const { user, loading: authLoading } = useAuth();
   const { execute, loading } = useApiCall();
 
-  const [event, setEvent] = useState(null);
-  const [participants, setParticipants] = useState([]);
-  const [preferredSlots, setPreferredSlots] = useState([]);
-  const [preferredSlotsLoading, setPreferredSlotsLoading] = useState(true);
-  const [busySlots, setBusySlots] = useState([]);
+  // Initialize with demo data if in demo mode
+  const [event, setEvent] = useState(isDemo ? DEMO_EVENT : null);
+  const [participants, setParticipants] = useState(isDemo ? DEMO_PARTICIPANTS : []);
+  const [preferredSlots, setPreferredSlots] = useState(isDemo ? DEMO_PREFERRED_SLOTS : []);
+  const [preferredSlotsLoading, setPreferredSlotsLoading] = useState(!isDemo);
+  const [busySlots, setBusySlots] = useState(isDemo ? DEMO_BUSY_SLOTS : []);
   const [busySlotsLoading, setBusySlotsLoading] = useState(false);
-  const [userRsvp, setUserRsvp] = useState(null);
-  const [canInvite, setCanInvite] = useState(false);
+  const [userRsvp, setUserRsvp] = useState(isDemo ? "going" : null);
+  const [canInvite, setCanInvite] = useState(isDemo ? true : false);
   const [selectedTimeOption, setSelectedTimeOption] = useState(null);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -165,11 +214,21 @@ const EventPage = () => {
   };
 
   useEffect(() => {
-    // Wait for auth to load before fetching event data
-    if (eventUid && !authLoading) {
+    if (isDemo) {
+      // Load demo data
+      setEvent(DEMO_EVENT);
+      setParticipants(DEMO_PARTICIPANTS);
+      setPreferredSlots(DEMO_PREFERRED_SLOTS);
+      setBusySlots(DEMO_BUSY_SLOTS);
+      setUserRsvp("going");
+      setCanInvite(true);
+      setPreferredSlotsLoading(false);
+      setBusySlotsLoading(false);
+    } else if (eventUid && !authLoading) {
+      // Wait for auth to load before fetching event data
       loadEventData();
     }
-  }, [eventUid, authLoading]);
+  }, [eventUid, authLoading, isDemo]);
 
   const loadEventData = async (bustCache = false) => {
     try {
@@ -253,10 +312,27 @@ const EventPage = () => {
 
   // Fetch AI proposals when event and participants are loaded
   useEffect(() => {
-    if (event && participants.length > 0 && !preferredSlotsLoading && !busySlotsLoading) {
+    if (isDemo) {
+      // Set demo AI proposals
+      setAiProposals([
+        {
+          start_time_utc: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000 + 11 * 60 * 60 * 1000).toISOString(),
+          end_time_utc: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000 + 12 * 60 * 60 * 1000).toISOString(),
+          score: 95,
+          available_count: 4
+        },
+        {
+          start_time_utc: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000 + 15 * 60 * 60 * 1000).toISOString(),
+          end_time_utc: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000 + 16 * 60 * 60 * 1000).toISOString(),
+          score: 88,
+          available_count: 3
+        }
+      ]);
+      setIsLoadingProposals(false);
+    } else if (event && participants.length > 0 && !preferredSlotsLoading && !busySlotsLoading) {
       fetchAIProposals();
     }
-  }, [event, participants, preferredSlotsLoading, busySlotsLoading]);
+  }, [event, participants, preferredSlotsLoading, busySlotsLoading, isDemo]);
 
   // Transform busy slots for calendar display (must be before early returns)
   const transformBusySlotsForCalendar = React.useCallback((busySlots) => {
@@ -554,6 +630,23 @@ const EventPage = () => {
     const previousStatus = userRsvp;
     setUserRsvp(status);
 
+    // Demo mode - just show toast
+    if (isDemo) {
+      const statusMessages = {
+        'going': 'confirmed your attendance',
+        'maybe': 'marked yourself as tentative',
+        'not_going': 'declined'
+      };
+      toast({
+        title: "RSVP Updated (Demo)",
+        description: `You have ${statusMessages[status]} for this event.`,
+        status: "success",
+        duration: 3000,
+        isClosable: true
+      });
+      return;
+    }
+
     try {
       if (!user) {
         toast({
@@ -605,6 +698,18 @@ const EventPage = () => {
 
 
   const handleReconnectGoogleCalendar = async () => {
+    // Demo mode
+    if (isDemo) {
+      toast({
+        title: "Google Calendar (Demo)",
+        description: "Calendar reconnection simulated successfully",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
     try {
       // Get the OAuth URL from the backend
       const response = await execute(() => api.get(`/api/auth/google?return_url=/events/${eventUid}`), {
@@ -667,6 +772,18 @@ const EventPage = () => {
   };
 
   const handleSyncCalendars = async () => {
+    // Demo mode
+    if (isDemo) {
+      toast({
+        title: "Calendars synced (Demo)",
+        description: "Synced: 4, Failed: 0, Skipped: 2",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
     try {
       setBusySlotsLoading(true);
 
@@ -735,7 +852,8 @@ const EventPage = () => {
   };
 
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(window.location.href);
+    const link = isDemo ? "https://when-now.com/events/demo-event (Demo Link)" : window.location.href;
+    navigator.clipboard.writeText(link);
     toast({
       title: "Link copied!",
       status: "success",
@@ -795,7 +913,7 @@ const EventPage = () => {
 
   // Find host
   const host = participants.find(p => p.user_id === event.coordinator_id) || { name: 'Coordinator', avatar: null };
-  const isCoordinator = user?.id === event.coordinator_id;
+  const isCoordinator = isDemo ? true : (user?.id === event.coordinator_id);
 
   // Get event type icon and label
   const getEventTypeInfo = (eventType) => {
@@ -833,6 +951,18 @@ const EventPage = () => {
         description: "Minimum slot duration is 30 minutes",
         status: "error",
         duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    // Demo mode - just show toast
+    if (isDemo) {
+      toast({
+        title: "Time slot added (Demo)",
+        description: "Your preferred time has been saved",
+        status: "success",
+        duration: 2000,
         isClosable: true,
       });
       return;
@@ -1172,81 +1302,105 @@ const EventPage = () => {
           }
         `}
       </style>
-      <Container maxW="95%" h="full" py={4}>
-        <Grid templateColumns={{ base: "1fr", lg: "1fr 400px" }} gap={6} h="full">
+
+      {/* Compact Header Bar */}
+      <Flex
+        px={4}
+        py={3}
+        borderBottom="1px"
+        borderColor="gray.200"
+        align="center"
+        bg="white"
+        shadow={shadows.card}
+      >
+        <IconButton
+          icon={<FiArrowLeft />}
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate("/dashboard")}
+          aria-label="Back to Dashboard"
+        />
+        <Heading size="md" flex={1} ml={2} noOfLines={1} color="gray.800">
+          {event.name}
+        </Heading>
+        <Badge
+          colorScheme={event.status === "finalized" ? "green" : "blue"}
+          mr={2}
+          px={2}
+          py={0.5}
+          borderRadius="full"
+          fontSize="xs"
+        >
+          {event.status?.toUpperCase()}
+        </Badge>
+        <Menu>
+          <MenuButton
+            as={IconButton}
+            icon={<FiMoreVertical />}
+            variant="ghost"
+            size="sm"
+            aria-label="More options"
+          />
+          <MenuList>
+            {isCoordinator && (
+              <MenuItem icon={<FiEdit />} onClick={() => setIsEditModalOpen(true)}>
+                Edit Event
+              </MenuItem>
+            )}
+            <MenuItem icon={<FiCopy />} onClick={handleCopyLink}>
+              Copy Link
+            </MenuItem>
+            {event.google_calendar_html_link && (
+              <MenuItem
+                icon={<FiExternalLink />}
+                as="a"
+                href={event.google_calendar_html_link}
+                target="_blank"
+              >
+                View in Google Calendar
+              </MenuItem>
+            )}
+          </MenuList>
+        </Menu>
+      </Flex>
+
+      <Container maxW="95%" h="calc(100vh - 57px)" py={4}>
+        <Grid templateColumns={{ base: "1fr", lg: "65fr 35fr" }} gap={6} h="full">
 
           {/* Left Column */}
           <Flex direction="column" h="full" overflow="hidden">
-            
-            {/* Event Header Info - Fixed Height */}
-            <Box mb={4} flexShrink={0}>
-              <Heading size="xl" mb={1}>{event.name}</Heading>
-              <HStack spacing={4} mt={1} flexWrap="wrap">
-                <Badge colorScheme={event.status === "finalized" ? "green" : "blue"} fontSize="sm" px={2} py={0.5} borderRadius="full">
-                  {event.status?.toUpperCase()}
-                </Badge>
-                <Text color="gray.600" fontSize="sm">
-                  {event.status === 'finalized' && event.finalized_start_time_utc
-                    ? formatEventDateTime(event.finalized_start_time_utc, event.coordinator_timezone)
-                    : event.earliest_datetime_utc && event.latest_datetime_utc
-                    ? `${formatEventDateOnly(event.earliest_datetime_utc, event.coordinator_timezone)} - ${formatEventDateOnly(event.latest_datetime_utc, event.coordinator_timezone)}`
-                    : `${formatDateForDisplay(event.earliest_date)} - ${formatDateForDisplay(event.latest_date)}`}
-                </Text>
-                {event.status === "finalized" && event.google_calendar_html_link && (
-                  <Button
-                    as="a"
-                    href={event.google_calendar_html_link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    size="xs"
-                    leftIcon={<FiExternalLink />}
-                    colorScheme="blue"
-                    variant="outline"
-                  >
-                    View in Google Calendar
-                  </Button>
-                )}
-              </HStack>
-              {event.location && (
-                <HStack mt={1} color="gray.600">
-                  <Icon as={FiMapPin} size="sm" />
-                  <Text fontSize="sm">{event.location}</Text>
-                </HStack>
-              )}
-            </Box>
+
 
             {/* Calendar Section - Flexible Height */}
             <Box
               borderWidth="1px"
-              borderRadius="lg"
+              borderRadius="xl"
               p={4}
               bg={cardBg}
-              shadow="sm"
+              shadow={shadows.card}
               flex="1"
               display="flex"
               flexDirection="column"
-              minH="0" // Crucial for flex scrolling
+              minH="0"
             >
-              <Flex justify="space-between" align="center" mb={2} flexShrink={0}>
-                <Heading size="sm">Calendar</Heading>
-
-                {/* Compact Legend */}
-                <HStack spacing={3}>
+              {/* Compact inline legend at top */}
+              <Flex justify="flex-end" align="center" mb={2} flexShrink={0}>
+                <HStack spacing={4} fontSize="xs" color="gray.500">
                   <HStack spacing={1.5}>
-                    <Box w="12px" h="12px" bg="var(--salt-pepper-dark)" opacity={0.5} borderRadius="sm" />
-                    <Text fontSize="xs" color="gray.500">Busy</Text>
+                    <Box w="10px" h="10px" bg="gray.400" opacity={0.6} borderRadius="sm" />
+                    <Text>Busy</Text>
                   </HStack>
                   <HStack spacing={1.5}>
-                    <Box w="12px" h="12px" bg="#efbbff" borderRadius="sm" />
-                    <Text fontSize="xs" color="gray.500">1-2</Text>
+                    <Box w="10px" h="10px" bg="#efbbff" borderRadius="sm" />
+                    <Text>1-2</Text>
                   </HStack>
                   <HStack spacing={1.5}>
-                    <Box w="12px" h="12px" bg="#be29ec" borderRadius="sm" />
-                    <Text fontSize="xs" color="gray.500">5-6</Text>
+                    <Box w="10px" h="10px" bg="#be29ec" borderRadius="sm" />
+                    <Text>5-6</Text>
                   </HStack>
                   <HStack spacing={1.5}>
-                    <Box w="12px" h="12px" bg="#660066" borderRadius="sm" />
-                    <Text fontSize="xs" color="gray.500">10+</Text>
+                    <Box w="10px" h="10px" bg="#660066" borderRadius="sm" />
+                    <Text>10+</Text>
                   </HStack>
                 </HStack>
               </Flex>
@@ -1275,312 +1429,312 @@ const EventPage = () => {
 
           {/* Right Column - Sidebar */}
           <Box h="full" overflowY="auto" pb={4}>
-            <VStack align="stretch" spacing={3}>
+            <VStack align="stretch" spacing={4}>
 
-              {/* RSVP Section */}
-              <Box borderWidth="1px" borderRadius="lg" p={3} bg={cardBg} shadow="sm">
-                <Heading size="sm" mb={3}>Your Response</Heading>
-                <VStack spacing={3}>
-                  <HStack spacing={2} w="full">
-                    <Button
-                      leftIcon={<FiCheck />}
-                      colorScheme="green"
-                      flex={1}
-                      size="sm"
-                      variant={userRsvp === "going" ? "solid" : "outline"}
-                      onClick={() => handleRsvp("going")}
-                    >
-                      Going
-                    </Button>
-                    <Button
-                      leftIcon={<FiMinus />}
-                      colorScheme="yellow"
-                      flex={1}
-                      size="sm"
-                      variant={userRsvp === "maybe" ? "solid" : "outline"}
-                      onClick={() => handleRsvp("maybe")}
-                    >
-                      Maybe
-                    </Button>
-                    <Button
-                      leftIcon={<FiX />}
-                      colorScheme="red"
-                      flex={1}
-                      size="sm"
-                      variant={userRsvp === "not_going" ? "solid" : "outline"}
-                      onClick={() => handleRsvp("not_going")}
-                    >
-                      Can't
-                    </Button>
-                  </HStack>
-
-                  <Divider />
-
-                  <VStack w="full" spacing={2}>
-                    <HStack w="full" justify="space-between" fontSize="xs" fontWeight="bold">
-                      <Text>{rsvpStats.going} going</Text>
-                      <Text color="gray.500">{rsvpStats.maybe} maybe</Text>
-                      <Text color="gray.400">{rsvpStats.declined} declined</Text>
-                    </HStack>
-
-                    <Box w="full" h={1.5} bg="gray.200" borderRadius="full" overflow="hidden">
-                      <Flex h="full">
-                        <Box w={`${rsvpPercentages.going}%`} bg="green.500" />
-                        <Box w={`${rsvpPercentages.maybe}%`} bg="yellow.400" />
-                        <Box w={`${rsvpPercentages.declined}%`} bg="red.400" />
-                      </Flex>
-                    </Box>
-                  </VStack>
-                </VStack>
-              </Box>
-
-              {/* Event Info Card */}
-              <Box borderWidth="1px" borderRadius="lg" p={3} bg={cardBg} shadow="sm">
-                <Heading size="sm" mb={3}>Event Info</Heading>
+              {/* Event Details Section */}
+              <Box borderWidth="1px" borderRadius="xl" p={4} bg={cardBg} shadow={shadows.card}>
+                <Text
+                  fontSize="xs"
+                  fontWeight="semibold"
+                  textTransform="uppercase"
+                  letterSpacing="0.5px"
+                  color="gray.500"
+                  mb={3}
+                >
+                  Event Details
+                </Text>
                 <VStack align="stretch" spacing={3}>
-                  <HStack spacing={2}>
-                    <Avatar size="xs" name={host.name || "Coordinator"} src={host.avatar_url} />
-                    <VStack align="start" spacing={0}>
-                      <Text fontSize="xs" color="gray.600">Hosted by</Text>
-                      <Text fontWeight="bold" fontSize="xs">{host.name || "Coordinator"}</Text>
+                  <Flex justify="space-between" align="center" gap={3}>
+                    <HStack spacing={3} flex={1}>
+                      <Avatar size="sm" name={host.name || "Coordinator"} src={host.avatar_url} />
+                      <VStack align="start" spacing={0}>
+                        <Text fontSize="xs" color="gray.500">Host</Text>
+                        <Text fontWeight="medium" fontSize="sm">{host.name || "Coordinator"}</Text>
+                      </VStack>
+                    </HStack>
+                    
+                    <VStack align="end" spacing={1}>
+                      <HStack spacing={2}>
+                        <Button
+                          size="xs"
+                          colorScheme="green"
+                          variant={userRsvp === "going" ? "solid" : "outline"}
+                          borderRadius="full"
+                          onClick={() => handleRsvp("going")}
+                          leftIcon={<FiCheck />}
+                        >
+                          Going
+                        </Button>
+                        <Button
+                          size="xs"
+                          colorScheme="yellow"
+                          variant={userRsvp === "maybe" ? "solid" : "outline"}
+                          borderRadius="full"
+                          onClick={() => handleRsvp("maybe")}
+                          leftIcon={<FiMinus />}
+                        >
+                          Maybe
+                        </Button>
+                        <Button
+                          size="xs"
+                          colorScheme="red"
+                          variant={userRsvp === "not_going" ? "solid" : "outline"}
+                          borderRadius="full"
+                          onClick={() => handleRsvp("not_going")}
+                          leftIcon={<FiX />}
+                        >
+                          Can't
+                        </Button>
+                      </HStack>
+                      <Text fontSize="2xs" color="gray.600">
+                        {rsvpStats.going} going · {rsvpStats.maybe} maybe · {rsvpStats.declined} can't
+                      </Text>
                     </VStack>
-                  </HStack>
+                  </Flex>
 
                   <Divider />
 
-                  {event.description && (
-                    <Box>
-                      <Text fontWeight="bold" fontSize="xs" mb={1}>Description</Text>
-                      <Text color="gray.700" fontSize="xs" noOfLines={3}>{event.description}</Text>
-                    </Box>
-                  )}
+                  {/* Date info */}
+                  <Box>
+                    <HStack spacing={2} color="gray.700">
+                      <Icon as={FiCalendar} boxSize={4} color="gray.500" />
+                      <Text fontSize="sm">
+                        {event.status === 'finalized' && event.finalized_start_time_utc
+                          ? formatEventDateTime(event.finalized_start_time_utc, event.coordinator_timezone)
+                          : event.earliest_datetime_utc && event.latest_datetime_utc
+                          ? `${formatEventDateOnly(event.earliest_datetime_utc, event.coordinator_timezone)} - ${formatEventDateOnly(event.latest_datetime_utc, event.coordinator_timezone)}`
+                          : 'Date TBD'}
+                      </Text>
+                    </HStack>
+                  </Box>
 
-                  {/* Event Type */}
-                  {event.event_type && getEventTypeInfo(event.event_type) && (
+                  {/* Duration */}
+                  <Box>
+                    <HStack spacing={2} color="gray.700">
+                      <Icon as={FiClock} boxSize={4} color="gray.500" />
+                      <Text fontSize="sm">{event.duration_minutes} minutes</Text>
+                    </HStack>
+                  </Box>
+
+                  {/* Location */}
+                  {event.location && (
                     <Box>
-                      <Text fontWeight="bold" fontSize="xs" mb={1}>Event Type</Text>
-                      <HStack spacing={1.5}>
-                        <Icon
-                          as={getEventTypeInfo(event.event_type).icon}
-                          boxSize={3}
-                          color={`${getEventTypeInfo(event.event_type).color}.500`}
-                        />
-                        <Text color="gray.700" fontSize="xs">
-                          {getEventTypeInfo(event.event_type).label}
-                        </Text>
+                      <HStack spacing={2} color="gray.700">
+                        <Icon as={FiMapPin} boxSize={4} color="gray.500" />
+                        <Text fontSize="sm" noOfLines={2}>{event.location}</Text>
                       </HStack>
                     </Box>
                   )}
 
                   {/* Video Call Link */}
                   {event.video_call_link && (
-                    <Box>
-                      <Text fontWeight="bold" fontSize="xs" mb={1}>Video Call</Text>
-                      <Link href={event.video_call_link} isExternal>
-                        <HStack spacing={1.5} color="blue.500" _hover={{ color: "blue.600" }}>
-                          <Icon as={FiVideo} boxSize={3} />
-                          <Text fontSize="xs" noOfLines={1} textDecoration="underline">
-                            Join Meeting
-                          </Text>
-                          <Icon as={FiExternalLink} boxSize={2.5} />
-                        </HStack>
-                      </Link>
-                    </Box>
-                  )}
-
-                  {/* Location */}
-                  {event.location && (
-                    <Box>
-                      <Text fontWeight="bold" fontSize="xs" mb={1}>Location</Text>
-                      <HStack spacing={1.5}>
-                        <Icon as={FiMapPin} boxSize={3} color="red.500" />
-                        <Text color="gray.700" fontSize="xs" noOfLines={2}>
-                          {event.location}
-                        </Text>
+                    <Link href={event.video_call_link} isExternal>
+                      <HStack spacing={2} color="blue.500" _hover={{ color: "blue.600" }}>
+                        <Icon as={FiVideo} boxSize={4} />
+                        <Text fontSize="sm">Join Meeting</Text>
+                        <Icon as={FiExternalLink} boxSize={3} />
                       </HStack>
-                    </Box>
-                  )}
-
-                  <SimpleGrid columns={2} spacing={2}>
-                    <Box>
-                      <Text fontWeight="bold" fontSize="xs" mb={0.5}>Duration</Text>
-                      <Text color="gray.700" fontSize="xs">{event.duration_minutes} min</Text>
-                    </Box>
-                    <Box>
-                      <Text fontWeight="bold" fontSize="xs" mb={0.5}>Created</Text>
-                      <Text color="gray.700" fontSize="xs">{new Date(event.created_at).toLocaleDateString()}</Text>
-                    </Box>
-                  </SimpleGrid>
-
-                  {event.google_calendar_html_link && (
-                    <Link href={event.google_calendar_html_link} isExternal>
-                      <Button
-                        leftIcon={<FiExternalLink />}
-                        colorScheme="blue"
-                        variant="link"
-                        size="xs"
-                      >
-                        View in Google Calendar
-                      </Button>
                     </Link>
                   )}
 
+                  <Divider />
+
+                  {event.description && (
+                    <Text color="gray.600" fontSize="sm" lineHeight="tall">
+                      {event.description}
+                    </Text>
+                  )}
+
+                  {/* Event Type Badge */}
+                  {event.event_type && getEventTypeInfo(event.event_type) && (
+                    <Badge
+                      colorScheme={getEventTypeInfo(event.event_type).color}
+                      variant="subtle"
+                      px={2}
+                      py={1}
+                      borderRadius="md"
+                    >
+                      <HStack spacing={1}>
+                        <Icon as={getEventTypeInfo(event.event_type).icon} boxSize={3} />
+                        <Text fontSize="xs">{getEventTypeInfo(event.event_type).label}</Text>
+                      </HStack>
+                    </Badge>
+                  )}
+
                   {event.attachments && event.attachments.length > 0 && (
-                    <Box>
-                      <Text fontWeight="bold" fontSize="xs" mb={1}>Attachments</Text>
-                      <VStack align="stretch" spacing={1}>
-                        {event.attachments.map((file) => (
-                          <HStack
-                            key={file.id}
-                            p={1.5}
-                            borderWidth={1}
-                            borderRadius="md"
-                            justify="space-between"
-                          >
-                            <HStack>
-                              <Icon as={FiPaperclip} boxSize={3} />
-                              <Text fontSize="xs" fontWeight="medium" noOfLines={1}>{file.name}</Text>
+                    <>
+                      <Divider />
+                      <Box>
+                        <Text fontSize="xs" color="gray.500" mb={2}>Attachments</Text>
+                        <VStack align="stretch" spacing={1}>
+                          {event.attachments.map((file) => (
+                            <HStack
+                              key={file.id}
+                              p={2}
+                              bg="gray.50"
+                              borderRadius="md"
+                              justify="space-between"
+                            >
+                              <HStack>
+                                <Icon as={FiPaperclip} boxSize={3} color="gray.500" />
+                                <Text fontSize="xs" fontWeight="medium" noOfLines={1}>{file.name}</Text>
+                              </HStack>
+                              <IconButton
+                                icon={<FiDownload />}
+                                size="xs"
+                                variant="ghost"
+                                aria-label="Download"
+                              />
                             </HStack>
-                            <IconButton
-                              icon={<FiDownload />}
-                              size="xs"
-                              variant="ghost"
-                              aria-label="Download"
-                              h={6}
-                              minW={6}
-                            />
-                          </HStack>
-                        ))}
-                      </VStack>
-                    </Box>
+                          ))}
+                        </VStack>
+                      </Box>
+                    </>
                   )}
                 </VStack>
               </Box>
 
-              {/* Actions */}
-              <Box borderWidth="1px" borderRadius="lg" p={3} bg={cardBg} shadow="sm">
-                <Heading size="sm" mb={3}>Actions</Heading>
-                <VStack spacing={2}>
-                  {/* Copy Link - Available to all */}
-                  <Button
-                    leftIcon={<FiCopy />}
-                    w="full"
-                    size="sm"
-                    variant="outline"
-                    onClick={handleCopyLink}
-                  >
-                    Copy Link
-                  </Button>
-
-                  {/* View Proposed Times - Coordinator only */}
-                  {isCoordinator && (
+              {/* Actions Section */}
+              <Box borderWidth="1px" borderRadius="xl" p={4} bg={cardBg} shadow={shadows.card}>
+                <Text
+                  fontSize="xs"
+                  fontWeight="semibold"
+                  textTransform="uppercase"
+                  letterSpacing="0.5px"
+                  color="gray.500"
+                  mb={3}
+                >
+                  Actions
+                </Text>
+                <VStack spacing={3}>
+                  {/* Primary Action - Coordinator: View Proposed Times */}
+                  {isCoordinator && event?.status !== 'finalized' && (
                     <Button
-                      leftIcon={isLoadingProposals ? <Spinner size="xs" /> : <FiClock />}
+                      colorScheme="purple"
                       w="full"
-                      size="sm"
-                      variant="outline"
+                      size="md"
+                      leftIcon={isLoadingProposals ? <Spinner size="sm" /> : <FiClock />}
                       onClick={() => setIsProposedTimesModalOpen(true)}
-                      isDisabled={timeOptions.length === 0 || isLoadingProposals}
-                      isLoading={isLoadingProposals}
+                      isDisabled={isLoadingProposals}
                     >
-                      {isLoadingProposals ? "Generating AI Proposals..." : "View Proposed Times"}
+                      {isLoadingProposals ? "Generating..." : "View Proposed Times"}
                       {!isLoadingProposals && timeOptions.length > 0 && (
-                        <Badge ml={2} colorScheme="purple">{timeOptions.length}</Badge>
-                      )}
-                      {proposalMetadata.needsUpdate && (
-                        <Badge ml={2} colorScheme="yellow">Updates Available</Badge>
+                        <Badge ml={2} colorScheme="whiteAlpha" bg="whiteAlpha.300">{timeOptions.length}</Badge>
                       )}
                     </Button>
                   )}
 
-                  {/* Sync All Calendars - Coordinator only */}
-                  {isCoordinator && (
+                  {/* Secondary Actions Row */}
+                  <HStack w="full" spacing={2}>
+                    {isCoordinator && (
+                      <Button
+                        flex={1}
+                        size="sm"
+                        variant="outline"
+                        leftIcon={<FiRefreshCw />}
+                        onClick={handleSyncCalendars}
+                        isLoading={busySlotsLoading}
+                        isDisabled={event?.status === 'finalized'}
+                      >
+                        Sync
+                      </Button>
+                    )}
+                    {(isCoordinator || canInvite) && (
+                      <Button
+                        flex={1}
+                        size="sm"
+                        variant="outline"
+                        leftIcon={<FiMail />}
+                        onClick={() => setIsInviteModalOpen(true)}
+                      >
+                        Invite
+                      </Button>
+                    )}
+                  </HStack>
+
+                  {/* Tertiary Actions */}
+                  <HStack w="full" spacing={2}>
                     <Button
-                      leftIcon={<FiRefreshCw />}
-                      w="full"
-                      size="sm"
-                      variant="outline"
-                      onClick={handleSyncCalendars}
-                      isLoading={busySlotsLoading}
-                      isDisabled={event?.status === 'finalized'}
+                      flex={1}
+                      size="xs"
+                      variant="ghost"
+                      leftIcon={<FiCopy />}
+                      onClick={handleCopyLink}
                     >
-                      Sync All Calendars
+                      Copy Link
                     </Button>
-                  )}
-
-                  {/* Reconnect Google Calendar - Available to all */}
-                  <Button
-                    leftIcon={<FiCalendar />}
-                    w="full"
-                    size="sm"
-                    variant="outline"
-                    onClick={handleReconnectGoogleCalendar}
-                    data-reconnect-calendar
-                  >
-                    Reconnect Google Calendar
-                  </Button>
-
-                  {/* Invite Participants - Coordinator or users with invite permission */}
-                  {(isCoordinator || canInvite) && (
                     <Button
-                      leftIcon={<FiMail />}
-                      w="full"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setIsInviteModalOpen(true)}
+                      flex={1}
+                      size="xs"
+                      variant="ghost"
+                      leftIcon={<FiCalendar />}
+                      onClick={handleReconnectGoogleCalendar}
+                      data-reconnect-calendar
                     >
-                      Invite Participants
+                      Reconnect
                     </Button>
-                  )}
-
-                  {/* Edit Event - Coordinator only */}
-                  {isCoordinator && (
-                    <Button
-                      leftIcon={<FiEdit />}
-                      w="full"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setIsEditModalOpen(true)}
-                    >
-                      Edit Event
-                    </Button>
-                  )}
-
-                  {/* Back to Dashboard - Available to all */}
-                  <Button
-                    leftIcon={<FiArrowLeft />}
-                    w="full"
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => navigate("/dashboard")}
-                  >
-                    Back to Dashboard
-                  </Button>
+                  </HStack>
                 </VStack>
               </Box>
 
-              {/* Participants */}
-              <Box borderWidth="1px" borderRadius="lg" p={3} bg={cardBg} shadow="sm" flex={1} overflowY="auto" maxH="300px">
-                <Heading size="sm" mb={3}>Participants ({participants.length})</Heading>
-                <VStack align="stretch" spacing={2}>
+              {/* Participants Section */}
+              <Box borderWidth="1px" borderRadius="xl" p={4} bg={cardBg} shadow={shadows.card}>
+                <HStack justify="space-between" mb={3}>
+                  <Text
+                    fontSize="xs"
+                    fontWeight="semibold"
+                    textTransform="uppercase"
+                    letterSpacing="0.5px"
+                    color="gray.500"
+                  >
+                    Participants
+                  </Text>
+                  <Badge colorScheme="purple" borderRadius="full" fontSize="xs">
+                    {participants.length}
+                  </Badge>
+                </HStack>
+
+                {/* Avatar stack preview */}
+                <HStack mb={3}>
+                  <AvatarGroup size="sm" max={5}>
+                    {participants.map((p) => (
+                      <Avatar key={p.id} name={p.name || p.email} src={p.avatar_url} />
+                    ))}
+                  </AvatarGroup>
+                  {participants.length > 5 && (
+                    <Text fontSize="sm" color="gray.500">+{participants.length - 5} more</Text>
+                  )}
+                </HStack>
+
+                {/* RSVP breakdown bar */}
+                <Box w="full" h={2} bg="gray.100" borderRadius="full" overflow="hidden" mb={2}>
+                  <Flex h="full">
+                    <Box w={`${rsvpPercentages.going}%`} bg="green.400" />
+                    <Box w={`${rsvpPercentages.maybe}%`} bg="yellow.400" />
+                    <Box w={`${rsvpPercentages.declined}%`} bg="red.400" />
+                  </Flex>
+                </Box>
+
+                {/* Expandable participant list */}
+                <VStack align="stretch" spacing={2} maxH="200px" overflowY="auto" mt={3}>
                   {participants.map((participant) => (
-                    <HStack key={participant.id}>
-                      <Avatar size="2xs" name={participant.name || participant.email} src={participant.avatar_url} />
-                      <VStack align="start" spacing={0} flex={1}>
-                        <Text fontSize="xs" fontWeight="medium">{participant.name || "User"}</Text>
-                      </VStack>
+                    <HStack key={participant.id} py={1}>
+                      <Avatar size="xs" name={participant.name || participant.email} src={participant.avatar_url} />
+                      <Text fontSize="sm" flex={1} noOfLines={1}>{participant.name || "User"}</Text>
                       <Badge
+                        size="sm"
                         colorScheme={
                           participant.rsvp_status === 'going' ? 'green' :
                             participant.rsvp_status === 'maybe' ? 'yellow' :
                               participant.rsvp_status === 'not_going' ? 'red' : 'gray'
                         }
+                        variant="subtle"
                         fontSize="2xs"
                       >
                         {participant.rsvp_status === 'going' ? 'Going' :
                           participant.rsvp_status === 'maybe' ? 'Maybe' :
-                            participant.rsvp_status === 'not_going' ? 'Can\'t go' :
-                              'No response'}
+                            participant.rsvp_status === 'not_going' ? "Can't" :
+                              'Pending'}
                       </Badge>
                     </HStack>
                   ))}

@@ -7,23 +7,24 @@ export const colors = {
   primaryLight: "#A78BFA",
   primaryDark: "#5B21B6",
   primaryHover: "#6D28D9",
-  
+  primarySoft: "#EDE9FE",
+
   // Secondary colors
   secondary: "#10B981",
   secondaryLight: "#34D399",
   secondaryDark: "#059669",
-  
+
   // Accent colors
   accent: "#F59E0B",
   accentLight: "#FCD34D",
   accentDark: "#D97706",
-  
+
   // Status colors
   success: "#10B981",
   warning: "#F59E0B",
   error: "#EF4444",
   info: "#3B82F6",
-  
+
   // Neutral colors
   gray50: "#F9FAFB",
   gray100: "#F3F4F6",
@@ -35,22 +36,33 @@ export const colors = {
   gray700: "#374151",
   gray800: "#1F2937",
   gray900: "#111827",
-  
+
   // Background colors
   bgPrimary: "#FFFFFF",
   bgSecondary: "#F9FAFB",
   bgTertiary: "#F3F4F6",
-  
-  // Text colors
+  bgPage: "#F8FAFC",
+
+  // Surface colors (refined)
+  surface: "#FFFFFF",
+  surfaceHover: "#F8FAFC",
+
+  // Text colors (refined)
   textPrimary: "#111827",
   textSecondary: "#6B7280",
   textTertiary: "#9CA3AF",
   textInverse: "#FFFFFF",
-  
-  // Border colors
+  textHeading: "#1E293B",
+  textBody: "#475569",
+  textMuted: "#64748B",
+  textFaint: "#94A3B8",
+
+  // Border colors (refined)
   borderLight: "#E5E7EB",
   borderMedium: "#D1D5DB",
-  borderDark: "#9CA3AF"
+  borderDark: "#9CA3AF",
+  borderSubtle: "#E2E8F0",
+  borderHover: "#CBD5E1"
 };
 
 export const spacing = {
@@ -81,7 +93,11 @@ export const shadows = {
   xl: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
   "2xl": "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
   inner: "inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)",
-  none: "none"
+  none: "none",
+  // New refined shadows
+  card: "0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06)",
+  cardHover: "0 4px 12px rgba(0,0,0,0.08)",
+  sidebar: "1px 0 3px rgba(0,0,0,0.05)"
 };
 
 export const typography = {
@@ -176,6 +192,24 @@ export const gradients = {
   forest: "linear-gradient(135deg, #10B981 0%, #059669 100%)"
 };
 
+// Component-specific design tokens
+export const components = {
+  card: {
+    borderRadius: "12px",
+    padding: "16px",
+    paddingLg: "20px"
+  },
+  button: {
+    borderRadius: "8px"
+  },
+  badge: {
+    borderRadius: "6px"
+  },
+  sidebar: {
+    width: "320px"
+  }
+};
+
 export default {
   colors,
   spacing,
@@ -186,6 +220,7 @@ export default {
   transitions,
   zIndex,
   animations,
-  gradients
+  gradients,
+  components
 };
 
