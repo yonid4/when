@@ -2,9 +2,7 @@ import axios from "axios";
 import { getAccessToken } from "./supabaseClient";
 
 // Normalize baseURL: strip trailing slash
-// const RAW_BASE = (process.env.REACT_APP_API_BASE_URL || "http://localhost:5000").replace(/\/$/, "");
-// const RAW_BASE = (process.env.REACT_APP_API_BASE_URL || 'https://when-now.com/api').replace(/\/$/, "");
-const RAW_BASE = 'https://when-now.com/api'
+const RAW_BASE = (process.env.REACT_APP_API_BASE_URL || 'https://when-now.com/api').replace(/\/$/, "");
 
 const api = axios.create({
   baseURL: RAW_BASE,
