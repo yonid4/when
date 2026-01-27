@@ -412,18 +412,18 @@ const Dashboard = () => {
   const hasNoEvents = events.length === 0;
 
   return (
-    <Box minH="100vh" bg={colors.bgPage}>
+    <Box h="calc(100vh - 64px)" bg={colors.bgPage} overflow="hidden">
       <Grid
         templateColumns={{ base: "1fr", lg: `1fr ${components.sidebar.width}` }}
         gap={0}
-        minH="calc(100vh - 64px)"
+        h="100%"
       >
         {/* Main Content Area */}
         <Box
           overflowY="auto"
           py={6}
           px={{ base: 4, md: 6 }}
-          maxH="calc(100vh - 64px)"
+          h="100%"
         >
           {/* Welcome Section - Compact */}
           <MotionBox
@@ -605,9 +605,8 @@ const Dashboard = () => {
           borderColor="gray.200"
           bg="white"
           p={5}
-          position={{ base: "relative", lg: "sticky" }}
-          top={{ lg: "0" }}
-          h={{ base: "auto", lg: "calc(100vh - 64px)" }}
+          position="relative"
+          h="100%"
           overflowY="auto"
           display={{ base: "none", lg: "block" }}
           shadow={shadows.sidebar}

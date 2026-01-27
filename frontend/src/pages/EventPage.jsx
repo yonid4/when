@@ -606,7 +606,7 @@ const EventPage = () => {
 
   if (loading && !event) {
     return (
-      <Center minH="100vh" bg={bgColor}>
+      <Center h="calc(100vh - 64px)" bg={bgColor}>
         <Spinner size="xl" color={colors.primary} />
       </Center>
     );
@@ -614,7 +614,7 @@ const EventPage = () => {
 
   if (!event) {
     return (
-      <Box minH="100vh" bg={bgColor} pt={8}>
+      <Box h="calc(100vh - 64px)" bg={bgColor} pt={8}>
         <Container maxW="container.xl">
           <Text>Event not found</Text>
           <Button mt={4} onClick={() => navigate("/dashboard")}>
@@ -1287,7 +1287,7 @@ const EventPage = () => {
   const timeOptions = aiProposals;
 
   return (
-    <Box h="100vh" bg={bgColor} overflow="hidden">
+    <Box h="calc(100vh - 64px)" bg={bgColor} overflow="hidden">
       <style>
         {`
           @keyframes pulse {
@@ -1364,7 +1364,7 @@ const EventPage = () => {
         </Menu>
       </Flex>
 
-      <Container maxW="95%" h="calc(100vh - 57px)" py={4}>
+      <Container maxW="95%" h="calc(100% - 57px)" py={4}>
         <Grid templateColumns={{ base: "1fr", lg: "65fr 35fr" }} gap={6} h="full">
 
           {/* Left Column */}
