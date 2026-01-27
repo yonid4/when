@@ -226,12 +226,70 @@ export const preferredSlotsAPI = {
 
 export const busySlotsAPI = {
     /**
+     * Add busy slots for an event
+     * @param {string} eventId - Event ID (UUID)
+     * @param {Array} slots - Array of busy slot objects
+     * @returns {Promise<Object>} Created slots
+     */
+    add: async (eventId, slots) => {
+        const res = await api.post(`/api/busy_slots/${eventId}`, { slots });
+        return res.data;
+    },
+
+    /**
+     * Get busy slots for an event
+     * @param {string} eventId - Event ID (UUID)
+     * @returns {Promise<Object>} Busy slots
+     */
+    getByEvent: async (eventId) => {
+        const res = await api.get(`/api/busy_slots/${eventId}`);
+        return res.data;
+    },
+
+    /**
+     * Get user's busy slots for an event
+     * @param {string} userId - User ID
+     * @param {string} eventId - Event ID (UUID)
+     * @returns {Promise<Object>} User's busy slots
+     */
+    getByUser: async (userId, eventId) => {
+        const res = await api.get(`/api/busy_slots/user/${userId}`, { params: { event_id: eventId } });
+        return res.data;
+    },
+
+    /**
+     * Delete user's busy slots for an event
+     * @param {string} eventId - Event ID (UUID)
+     * @param {string} userId - User ID
+     * @returns {Promise<Object>} Success message
+     */
+    deleteByUser: async (eventId, userId) => {
+        const res = await api.delete(`/api/busy_slots/${eventId}/${userId}`);
+        return res.data;
+    },
+
+    /**
      * Get merged busy slots for all event participants
      * @param {string} eventId - Event ID (UUID, not UID!)
-     * @returns {Promise<Array>} Busy slots
+     * @returns {Promise<Object>} Merged busy slots data
      */
     getMerged: async (eventId) => {
         const res = await api.get(`/api/busy_slots/event/${eventId}/merged`);
+        return res.data;
+    },
+
+    /**
+     * Sync user's Google Calendar for specific date range
+     * @param {string} userId - User ID
+     * @param {string} startDateISO - Start date in ISO format
+     * @param {string} endDateISO - End date in ISO format
+     * @returns {Promise<Object>} Sync result
+     */
+    syncUserCalendar: async (userId, startDateISO, endDateISO) => {
+        const res = await api.post(`/api/busy_slots/sync/${userId}`, {
+            start_date: startDateISO,
+            end_date: endDateISO
+        });
         return res.data;
     },
 
@@ -297,7 +355,7 @@ export const notificationsAPI = {
      * @returns {Promise<Object>} Success message
      */
     markAllAsRead: async () => {
-        const res = await api.post("/api/notifications /mark-all-read");
+        const res = await api.post("/api/notifications/mark-all-read");
         return res.data;
     },
 

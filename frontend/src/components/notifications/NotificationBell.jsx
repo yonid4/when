@@ -17,7 +17,7 @@ import {
 } from "@chakra-ui/react";
 import { BellIcon } from "@chakra-ui/icons";
 import { useNavigate } from "react-router-dom";
-import { getNotifications, markAllAsRead } from "../../services/notificationsService";
+import { notificationsAPI } from "../../services/apiService";
 import { supabase } from "../../services/supabaseClient";
 import NotificationItem from "./NotificationItem";
 
@@ -38,7 +38,7 @@ const NotificationBell = ({ currentUserId, isAuthenticated }) => {
     
     try {
       setIsLoading(true);
-      const data = await getNotifications(false, 50);
+      const data = await notificationsAPI.getAll(false, 50);
       setNotifications(data.notifications);
       setUnreadCount(data.unread_count);
     } catch (error) {
@@ -114,7 +114,7 @@ const NotificationBell = ({ currentUserId, isAuthenticated }) => {
 
   const handleMarkAllRead = async () => {
     try {
-      await markAllAsRead();
+      await notificationsAPI.markAllAsRead();
       fetchNotifications();
     } catch (error) {
       console.error("Failed to mark all as read:", error);

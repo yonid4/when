@@ -12,7 +12,7 @@ import {
 import { CloseIcon } from "@chakra-ui/icons";
 import { FiCalendar, FiCheckCircle, FiXCircle, FiRefreshCw, FiBell } from "react-icons/fi";
 import { formatDistanceToNow } from "date-fns";
-import { handleNotificationAction, deleteNotification } from "../../services/notificationsService";
+import { notificationsAPI } from "../../services/apiService";
 
 /**
  * Individual notification item component
@@ -24,7 +24,7 @@ const NotificationItem = ({ notification, onUpdate, onNavigate }) => {
   const handleAction = async (action) => {
     setIsProcessing(true);
     try {
-      const result = await handleNotificationAction(notification.id, action);
+      const result = await notificationsAPI.handleAction(notification.id, action);
 
       toast({
         title: action === "accept" ? "Invitation accepted!" : "Invitation declined",
@@ -62,7 +62,7 @@ const NotificationItem = ({ notification, onUpdate, onNavigate }) => {
   const handleDelete = async (e) => {
     e.stopPropagation();
     try {
-      await deleteNotification(notification.id);
+      await notificationsAPI.delete(notification.id);
       toast({
         title: "Notification deleted",
         status: "success",

@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { getUserBusySlots, addBusySlots } from "../services/busySlotsService";
+import { useEffect, useState, useCallback } from "react";
+import { busySlotsAPI } from "../services/apiService";
 
 export function useAvailability(eventId, userId) {
   const [busySlots, setBusySlots] = useState([]);
@@ -12,7 +12,7 @@ export function useAvailability(eventId, userId) {
     const load = async () => {
       try {
         setLoading(true);
-        const res = await getUserBusySlots(userId, eventId);
+        const res = await busySlotsAPI.getByUser(userId, eventId);
         if (!mounted) return;
         setBusySlots(res || []);
       } catch (e) {
@@ -26,12 +26,17 @@ export function useAvailability(eventId, userId) {
     return () => { mounted = false; };
   }, [eventId, userId]);
 
-  const submitSlots = async (slots) => {
-    await addBusySlots(eventId, slots);
-    // refresh
-    const res = await getUserBusySlots(userId, eventId);
-    setBusySlots(res || []);
-  };
+  const submitSlots = useCallback(async (slots) => {
+    try {
+      await busySlotsAPI.add(eventId, slots);
+      // refresh
+      const res = await busySlotsAPI.getByUser(userId, eventId);
+      setBusySlots(res || []);
+    } catch (e) {
+      setError(e.message || "Failed to submit slots");
+      throw e;
+    }
+  }, [eventId, userId]);
 
   return { busySlots, loading, error, submitSlots };
 }

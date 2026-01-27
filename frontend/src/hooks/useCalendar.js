@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getMergedBusySlots } from "../services/busySlotsService";
+import { busySlotsAPI } from "../services/apiService";
 
 export function useCalendar(eventId) {
   const [mergedBusy, setMergedBusy] = useState([]);
@@ -12,7 +12,7 @@ export function useCalendar(eventId) {
     const load = async () => {
       try {
         setLoading(true);
-        const res = await getMergedBusySlots(eventId);
+        const res = await busySlotsAPI.getMerged(eventId);
         if (!mounted) return;
         // API returns { event_id, merged_busy_slots, total_slots, date_range }
         setMergedBusy(res?.merged_busy_slots || []);

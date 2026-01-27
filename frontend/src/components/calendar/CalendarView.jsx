@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useEffect } from "react";
+import React, { useMemo, useRef, useEffect, useCallback, memo } from "react";
 import { Calendar, dateFnsLocalizer } from "react-big-calendar";
 import { Box, Text, VStack, Flex } from "@chakra-ui/react";
 import format from "date-fns/format";
@@ -22,6 +22,161 @@ const localizer = dateFnsLocalizer({
   locales,
 });
 
+// Memoized month date header component
+const MonthDateHeader = memo(({ date }) => (
+  <Box fontSize="0.875rem" fontWeight="600" color="#111827" p={2} textAlign="right">
+    {format(date, 'd')}
+  </Box>
+));
+MonthDateHeader.displayName = 'MonthDateHeader';
+
+// Memoized month event component
+const MonthEvent = memo(({ event }) => {
+  if (event.type === 'month-busy') {
+    return (
+      <Box bg="#5f6368" color="white" px={1.5} py={0.5} borderRadius="sm" fontWeight="medium" fontSize="10px" w="full">
+        {event.busyCount} busy slot{event.busyCount !== 1 ? 's' : ''}
+      </Box>
+    );
+  }
+  if (event.type === 'month-preferred') {
+    return (
+      <Box bg="#a142f4" color="white" px={1.5} py={0.5} borderRadius="sm" fontWeight="medium" fontSize="10px" w="full">
+        {event.preferredCount} preferred slot{event.preferredCount !== 1 ? 's' : ''}
+      </Box>
+    );
+  }
+  return <span>{event.title}</span>;
+});
+MonthEvent.displayName = 'MonthEvent';
+
+// Memoized Google-style date header component
+const GoogleStyleDateHeader = memo(({ date }) => {
+  const isToday = isSameDay(date, new Date());
+  const dayOfWeek = format(date, 'EEE').toUpperCase();
+  const dayNumber = format(date, 'd');
+
+  return (
+    <VStack spacing={0} py={2} px={2} h="70px" justify="center">
+      <Text fontSize="11px" fontWeight="500" color="#70757a" letterSpacing="0.8px">
+        {dayOfWeek}
+      </Text>
+      <Flex
+        mt={1}
+        w="46px"
+        h="46px"
+        align="center"
+        justify="center"
+        borderRadius="full"
+        bg={isToday ? "#1a73e8" : "transparent"}
+        color={isToday ? "white" : "#3c4043"}
+        fontWeight={isToday ? "500" : "400"}
+        fontSize="24px"
+        lineHeight="1"
+        transition="all 0.2s"
+        _hover={!isToday ? { bg: "#f1f3f4" } : {}}
+      >
+        {dayNumber}
+      </Flex>
+    </VStack>
+  );
+});
+GoogleStyleDateHeader.displayName = 'GoogleStyleDateHeader';
+
+// Memoized Google-style event component
+const GoogleStyleEvent = memo(({ event }) => {
+  // Overlap slot (split display)
+  if (event.type === 'overlap') {
+    const startTime = format(event.start, 'h:mm a');
+    const endTime = format(event.end, 'h:mm a');
+    const timeRange = `${startTime} - ${endTime}`;
+    const busyCount = event.busyCount || 1;
+    const baseOpacity = 0.4;
+    const opacityIncrement = 0.15;
+    const busyOpacity = Math.min(baseOpacity + (busyCount * opacityIncrement), 0.95);
+
+    return (
+      <VStack spacing={0} h="100%" w="100%" align="stretch" borderRadius="4px" overflow="hidden" position="relative">
+        <Box
+          position="absolute"
+          top="0"
+          left="0"
+          right="0"
+          bg="white"
+          px={2}
+          py={1}
+          borderBottom="1px solid #dadce0"
+          zIndex={2}
+        >
+          <Text fontSize="11px" fontWeight="600" color="#3c4043" textAlign="center" whiteSpace="nowrap">
+            {timeRange}
+          </Text>
+        </Box>
+        <Flex flex="1" pt="28px" minH="0">
+          <Box flex="1" bg="#5f6368" opacity={busyOpacity} display="flex" alignItems="center" justifyContent="center" px={1}>
+            <Text fontSize="10px" color="white" fontWeight="500" textAlign="center">
+              {event.busyCount} busy
+            </Text>
+          </Box>
+          <Box flex="1" bg={event.preferredBackgroundColor || "#d7aefb"} display="flex" alignItems="center" justifyContent="center" px={1}>
+            <Text fontSize="10px" color={event.preferredTextColor || "#5f6368"} fontWeight="500" textAlign="center">
+              {event.preferredCount} available
+            </Text>
+          </Box>
+        </Flex>
+      </VStack>
+    );
+  }
+
+  // Preferred slot
+  if (event.type === "preferred-slot") {
+    const startTime = format(event.start, 'h:mm a');
+    return (
+      <Box px={2} py={1} h="100%" overflow="hidden">
+        <Text fontSize="11px" fontWeight="600" color={event.textColor || "#3c4043"} mb={0.5} whiteSpace="nowrap">
+          {startTime}
+        </Text>
+        <Text fontSize="11px" color={event.textColor || "#5f6368"} whiteSpace="nowrap">
+          Available
+        </Text>
+      </Box>
+    );
+  }
+
+  // Busy slot
+  if (event.type === "busy") {
+    const startTime = format(event.start, 'h:mm a');
+    return (
+      <Box px={2} py={1} h="100%" overflow="hidden">
+        <Text fontSize="11px" fontWeight="600" color="white" mb={0.5} whiteSpace="nowrap">
+          {startTime}
+        </Text>
+        <Text fontSize="11px" color="white" opacity={0.9} whiteSpace="nowrap">
+          Busy
+        </Text>
+      </Box>
+    );
+  }
+
+  // Finalized event
+  if (event.type === "finalized") {
+    const startTime = format(event.start, 'h:mm a');
+    return (
+      <Box px={2} py={1} h="100%" overflow="hidden">
+        <Text fontSize="11px" fontWeight="600" color="white" mb={0.5} whiteSpace="nowrap">
+          {startTime}
+        </Text>
+        <Text fontSize="11px" color="white" whiteSpace="nowrap">
+          {event.title}
+        </Text>
+      </Box>
+    );
+  }
+
+  return <span>{event.title}</span>;
+});
+GoogleStyleEvent.displayName = 'GoogleStyleEvent';
+
 const CalendarView = ({
   events = [],
   onSelectSlot,
@@ -43,34 +198,9 @@ const CalendarView = ({
     }
   }, [view, events]);
 
-  // Month components (keeping your existing logic)
-  const MonthDateHeader = ({ date }) => (
-    <Box fontSize="0.875rem" fontWeight="600" color="#111827" p={2} textAlign="right">
-      {format(date, 'd')}
-    </Box>
-  );
-
-  const MonthEvent = ({ event }) => {
-    if (event.type === 'month-busy') {
-      return (
-        <Box bg="#5f6368" color="white" px={1.5} py={0.5} borderRadius="sm" fontWeight="medium" fontSize="10px" w="full">
-          {event.busyCount} busy slot{event.busyCount !== 1 ? 's' : ''}
-        </Box>
-      );
-    }
-    if (event.type === 'month-preferred') {
-      return (
-        <Box bg="#a142f4" color="white" px={1.5} py={0.5} borderRadius="sm" fontWeight="medium" fontSize="10px" w="full">
-          {event.preferredCount} preferred slot{event.preferredCount !== 1 ? 's' : ''}
-        </Box>
-      );
-    }
-    return <span>{event.title}</span>;
-  };
-
   const processedEvents = useMemo(() => {
     if (view !== 'month') return events;
-    
+
     const eventsByDay = new Map();
     events.forEach(event => {
       const dayKey = startOfDay(event.start).getTime();
@@ -117,135 +247,8 @@ const CalendarView = ({
     return aggregated;
   }, [events, view]);
 
-  // Google Calendar-style date header - FIXED overflow
-  const GoogleStyleDateHeader = ({ date, label }) => {
-    const isToday = isSameDay(date, new Date());
-    const dayOfWeek = format(date, 'EEE').toUpperCase();
-    const dayNumber = format(date, 'd');
-
-    return (
-      <VStack spacing={0} py={2} px={2} h="70px" justify="center">
-        <Text fontSize="11px" fontWeight="500" color="#70757a" letterSpacing="0.8px">
-          {dayOfWeek}
-        </Text>
-        <Flex
-          mt={1}
-          w="46px"
-          h="46px"
-          align="center"
-          justify="center"
-          borderRadius="full"
-          bg={isToday ? "#1a73e8" : "transparent"}
-          color={isToday ? "white" : "#3c4043"}
-          fontWeight={isToday ? "500" : "400"}
-          fontSize="24px"
-          lineHeight="1"
-          transition="all 0.2s"
-          _hover={!isToday ? { bg: "#f1f3f4" } : {}}
-        >
-          {dayNumber}
-        </Flex>
-      </VStack>
-    );
-  };
-
-  // Google Calendar-style event component - FIXED time text centering
-  const GoogleStyleEvent = ({ event }) => {
-    // Overlap slot (split display) - TIME TEXT SPANS FULL WIDTH
-    if (event.type === 'overlap') {
-      const startTime = format(event.start, 'h:mm a');
-      const endTime = format(event.end, 'h:mm a');
-      const timeRange = `${startTime} - ${endTime}`;
-      const busyCount = event.busyCount || 1;
-      const baseOpacity = 0.4;
-      const opacityIncrement = 0.15;
-      const busyOpacity = Math.min(baseOpacity + (busyCount * opacityIncrement), 0.95);
-
-      return (
-        <VStack spacing={0} h="100%" w="100%" align="stretch" borderRadius="4px" overflow="hidden" position="relative">
-          {/* FIXED: Time header spans full width with absolute positioning */}
-          <Box 
-            position="absolute"
-            top="0"
-            left="0"
-            right="0"
-            bg="white" 
-            px={2} 
-            py={1} 
-            borderBottom="1px solid #dadce0" 
-            zIndex={2}
-          >
-            <Text fontSize="11px" fontWeight="600" color="#3c4043" textAlign="center" whiteSpace="nowrap">
-              {timeRange}
-            </Text>
-          </Box>
-          {/* Split display with padding top for the header */}
-          <Flex flex="1" pt="28px" minH="0">
-            <Box flex="1" bg="#5f6368" opacity={busyOpacity} display="flex" alignItems="center" justifyContent="center" px={1}>
-              <Text fontSize="10px" color="white" fontWeight="500" textAlign="center">
-                {event.busyCount} busy
-              </Text>
-            </Box>
-            <Box flex="1" bg={event.preferredBackgroundColor || "#d7aefb"} display="flex" alignItems="center" justifyContent="center" px={1}>
-              <Text fontSize="10px" color={event.preferredTextColor || "#5f6368"} fontWeight="500" textAlign="center">
-                {event.preferredCount} available
-              </Text>
-            </Box>
-          </Flex>
-        </VStack>
-      );
-    }
-
-    // Preferred slot
-    if (event.type === "preferred-slot") {
-      const startTime = format(event.start, 'h:mm a');
-      return (
-        <Box px={2} py={1} h="100%" overflow="hidden">
-          <Text fontSize="11px" fontWeight="600" color={event.textColor || "#3c4043"} mb={0.5} whiteSpace="nowrap">
-            {startTime}
-          </Text>
-          <Text fontSize="11px" color={event.textColor || "#5f6368"} whiteSpace="nowrap">
-            Available
-          </Text>
-        </Box>
-      );
-    }
-
-    // Busy slot
-    if (event.type === "busy") {
-      const startTime = format(event.start, 'h:mm a');
-      return (
-        <Box px={2} py={1} h="100%" overflow="hidden">
-          <Text fontSize="11px" fontWeight="600" color="white" mb={0.5} whiteSpace="nowrap">
-            {startTime}
-          </Text>
-          <Text fontSize="11px" color="white" opacity={0.9} whiteSpace="nowrap">
-            Busy
-          </Text>
-        </Box>
-      );
-    }
-
-    // Finalized event
-    if (event.type === "finalized") {
-      const startTime = format(event.start, 'h:mm a');
-      return (
-        <Box px={2} py={1} h="100%" overflow="hidden">
-          <Text fontSize="11px" fontWeight="600" color="white" mb={0.5} whiteSpace="nowrap">
-            {startTime}
-          </Text>
-          <Text fontSize="11px" color="white" whiteSpace="nowrap">
-            {event.title}
-          </Text>
-        </Box>
-      );
-    }
-
-    return <span>{event.title}</span>;
-  };
-
-  // Google Calendar-style event styling
-  const eventStyleGetter = (event) => {
+  // Memoized event style getter
+  const eventStyleGetter = useCallback((event) => {
     // Overlap - transparent wrapper
     if (event.type === "overlap") {
       return {
@@ -254,7 +257,7 @@ const CalendarView = ({
           border: "1px solid #dadce0",
           borderRadius: "4px",
           padding: 0,
-          overflow: "visible", // Changed to visible for absolute positioned header
+          overflow: "visible",
           cursor: "pointer",
           boxShadow: "0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15)",
         }
@@ -326,7 +329,24 @@ const CalendarView = ({
         overflow: "hidden",
       }
     };
-  };
+  }, []);
+
+  // Memoize components object to prevent unnecessary re-renders
+  const calendarComponents = useMemo(() => ({
+    week: {
+      header: GoogleStyleDateHeader,
+      event: GoogleStyleEvent,
+    },
+    day: {
+      header: GoogleStyleDateHeader,
+      event: GoogleStyleEvent,
+    },
+    month: {
+      header: MonthDateHeader,
+      event: MonthEvent,
+      dateHeader: MonthDateHeader,
+    },
+  }), []);
 
   return (
     <Box
@@ -358,7 +378,7 @@ const CalendarView = ({
 
         // FIXED: Remove horizontal line from rbc-row-bg and reduce height
         '.rbc-row-bg': {
-          display: 'none !important', // This removes the background row completely
+          display: 'none !important',
         },
 
         // Today column
@@ -535,21 +555,7 @@ const CalendarView = ({
         min={minTime}
         max={maxTime}
         eventPropGetter={eventStyleGetter}
-        components={{
-          week: {
-            header: GoogleStyleDateHeader,
-            event: GoogleStyleEvent,
-          },
-          day: {
-            header: GoogleStyleDateHeader,
-            event: GoogleStyleEvent,
-          },
-          month: {
-            header: MonthDateHeader,
-            event: MonthEvent,
-            dateHeader: MonthDateHeader,
-          },
-        }}
+        components={calendarComponents}
       />
     </Box>
   );

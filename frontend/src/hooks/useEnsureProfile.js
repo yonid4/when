@@ -7,28 +7,35 @@ export const useEnsureProfile = () => {
 
   useEffect(() => {
     let retryCount = 0;
+    let timeoutId = null;
+    let mounted = true;
+
     const ensureProfile = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      if (!session || !mounted) return;
       const userId = session.user.id;
+
       const fetchOrCreateProfile = async () => {
+        if (!mounted) return;
+
         try {
           const profileResponse = await api.get(`/api/users/${userId}`);
+          if (!mounted) return;
+
           // Profile exists, check if it needs enrichment with Google data
           const profile = profileResponse.data;
-          
+
           // If profile exists but doesn't have Google data, enrich it
           if (profile && !profile.google_auth_token && session.user.app_metadata?.provider === 'google') {
             try {
-              console.log('Enriching profile with Google data...');
               await api.post('/api/auth/enrich-profile');
-              console.log('Profile enriched successfully');
             } catch (enrichErr) {
-              console.warn('Failed to enrich profile with Google data:', enrichErr);
               // Don't fail the entire flow if enrichment fails
             }
           }
         } catch (err) {
+          if (!mounted) return;
+
           const status = err?.response?.status;
           if (status === 404) {
             try {
@@ -42,21 +49,32 @@ export const useEnsureProfile = () => {
               });
               return;
             } catch (createErr) {
-              if (retryCount < 3) {
+              if (retryCount < 3 && mounted) {
                 retryCount++;
-                setTimeout(fetchOrCreateProfile, 500 * retryCount);
+                timeoutId = setTimeout(fetchOrCreateProfile, 500 * retryCount);
                 return;
               }
             }
-            setError("Your account is being set up or there was a problem fetching your profile. Please refresh the page in a few seconds or contact support if this persists.");
+            if (mounted) {
+              setError("Your account is being set up or there was a problem fetching your profile. Please refresh the page in a few seconds or contact support if this persists.");
+            }
           } else {
-            setError("Your account is being set up or there was a problem fetching your profile. Please refresh the page in a few seconds or contact support if this persists.");
+            if (mounted) {
+              setError("Your account is being set up or there was a problem fetching your profile. Please refresh the page in a few seconds or contact support if this persists.");
+            }
           }
         }
       };
       fetchOrCreateProfile();
     };
     ensureProfile();
+
+    return () => {
+      mounted = false;
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
   }, []);
 
   return { error };

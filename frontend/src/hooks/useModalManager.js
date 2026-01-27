@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 
 /**
  * Custom hook for managing multiple modal states
@@ -22,13 +22,16 @@ import { useState, useCallback } from "react";
  * <Button onClick={() => openModal('invite')}>Invite</Button>
  */
 export const useModalManager = (modalNames = []) => {
-  // Initialize state with all modals closed
-  const initialState = modalNames.reduce((acc, name) => {
-    acc[name] = false;
-    return acc;
-  }, {});
+  // Memoize modal names to prevent unnecessary re-renders
+  const stableModalNames = useMemo(() => modalNames, [modalNames.join(',')]);
 
-  const [modals, setModals] = useState(initialState);
+  // Initialize state with all modals closed
+  const [modals, setModals] = useState(() =>
+    stableModalNames.reduce((acc, name) => {
+      acc[name] = false;
+      return acc;
+    }, {})
+  );
 
   const openModal = useCallback((name) => {
     setModals((prev) => ({
@@ -52,18 +55,21 @@ export const useModalManager = (modalNames = []) => {
   }, []);
 
   const closeAll = useCallback(() => {
-    setModals(initialState);
-  }, [initialState]);
+    setModals(stableModalNames.reduce((acc, name) => ({ ...acc, [name]: false }), {}));
+  }, [stableModalNames]);
 
   /**
    * Check if any modal is currently open
    */
-  const isAnyOpen = Object.values(modals).some(Boolean);
+  const isAnyOpen = useMemo(() => Object.values(modals).some(Boolean), [modals]);
 
   /**
    * Get the name of the currently open modal (first one found)
    */
-  const activeModal = Object.entries(modals).find(([, isOpen]) => isOpen)?.[0] || null;
+  const activeModal = useMemo(
+    () => Object.entries(modals).find(([, isOpen]) => isOpen)?.[0] || null,
+    [modals]
+  );
 
   return {
     modals,

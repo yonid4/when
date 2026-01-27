@@ -74,72 +74,25 @@ export const useCalendarConnection = () => {
 
   // Determine if calendar prompt should be shown
   const shouldShowCalendarPrompt = (context, isConnected = null) => {
-    console.log('[DEBUG shouldShowCalendarPrompt] context:', context);
-    console.log('[DEBUG shouldShowCalendarPrompt] isChecking:', isChecking);
-    console.log('[DEBUG shouldShowCalendarPrompt] hasGoogleCalendar():', hasGoogleCalendar());
-    console.log('[DEBUG shouldShowCalendarPrompt] hasShownCalendarPrompt(context):', hasShownCalendarPrompt(context));
-    console.log('[DEBUG shouldShowCalendarPrompt] isFirstEventView():', isFirstEventView());
-    console.log('[DEBUG shouldShowCalendarPrompt] localStorage first_event_view:', localStorage.getItem(FIRST_EVENT_VIEW_KEY));
-  
     // Use passed isConnected value if provided, otherwise use state
     const connected = isConnected !== null ? isConnected : hasGoogleCalendar();
 
     // Don't show if already connected
     if (connected) {
-      console.log('[DEBUG shouldShowCalendarPrompt] Returning false: already connected');
       return false;
     }
 
-    // // Don't show if already shown for this context
-    // if (hasShownCalendarPrompt(context)) {
-    //   console.log('[DEBUG shouldShowCalendarPrompt] Returning false: already shown for this context');
-    //   return false;
-    // }
-
     // Show on first event creation
     if (context === 'create' && isFirstEventCreation()) {
-      console.log('[DEBUG shouldShowCalendarPrompt] Returning true: first event creation');
       return true;
     }
 
     // Show on first event page view
     if (context === 'view') {
-      console.log('[DEBUG shouldShowCalendarPrompt] Returning true: first event view');
       return true;
     }
 
-    console.log('[DEBUG shouldShowCalendarPrompt] Returning false: no condition met');
     return false;
-
-    // // Don't show if still checking connection
-    // if (isChecking){
-    //   console.log('[DEBUG shouldShowCalendarPrompt] Returning false: still checking');
-    //   return false;
-    // }
-      
-    // // Don't show if already connected
-    // if (hasGoogleCalendar()) {
-    //   console.log('[DEBUG shouldShowCalendarPrompt] Returning false: already connected');
-    //   return false;
-    // }
-    
-    // // Don't show if already shown for this context
-    // if (hasShownCalendarPrompt(context)) return false;
-    
-    // // Show on first event creation
-    // if (context === 'create' && isFirstEventCreation()) {
-    //   console.log('[DEBUG shouldShowCalendarPrompt] Returning true: first event creation');
-    //   return true;
-    // }
-    
-    // // Show on first event page view
-    // if (context === 'view' && isFirstEventView()) {
-    //   console.log('[DEBUG shouldShowCalendarPrompt] Returning true: first event view');
-    //   return true;
-    // }    
-
-    // console.log('[DEBUG shouldShowCalendarPrompt] Returning false: no condition met');
-    // return false;
   };
 
   // Show calendar prompt
@@ -180,7 +133,6 @@ export const useCalendarConnection = () => {
     // Re-check connection status
     await checkGoogleCalendarConnection();
     hideCalendarPrompt();
-    console.log('Google Calendar connected successfully!');
   };
 
   // Handle skip calendar connection
