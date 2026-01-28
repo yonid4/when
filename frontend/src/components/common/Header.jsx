@@ -2,8 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, Icon } from "@chakra-ui/react";
 import { FiPlus } from "react-icons/fi";
-import { supabase } from "../services/supabaseClient";
-import NotificationBell from "./notifications/NotificationBell";
+import { supabase } from "../../services/supabaseClient";
+import { NotificationBell } from "../notifications";
 
 const Header = () => {
     const navigate = useNavigate();

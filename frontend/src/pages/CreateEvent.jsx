@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { Button } from "@chakra-ui/react";
 import { useCalendarConnection } from "../hooks/useCalendarConnection";
-import CalendarConnectPrompt from "../components/calendar/CalendarConnectPrompt";
-import { Button } from "../components/common/Button";
+import { CalendarConnectPrompt } from "../components/calendar";
 import "../styles/calendar.css";
 
 const CreateEvent = () => {

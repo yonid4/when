@@ -21,15 +21,17 @@ import { useAuth } from "../hooks/useAuth";
 import { colors, shadows } from "../styles/designSystem";
 
 // Components
-import CalendarView from "../components/calendar/CalendarView";
-import InviteModal from "../components/event/InviteModal";
-import EditEventModal from "../components/event/EditEventModal";
-import ProposedTimesModal from "../components/event/ProposedTimesModal";
-import FinalizeEventModal from "../components/event/FinalizeEventModal";
-import EventHeader from "../components/event/EventHeader";
-import EventDetailsCard from "../components/event/EventDetailsCard";
-import ActionsPanel from "../components/event/ActionsPanel";
-import ParticipantsList from "../components/event/ParticipantsList";
+import { CalendarView } from "../components/calendar";
+import {
+  InviteModal,
+  EditEventModal,
+  ProposedTimesModal,
+  FinalizeEventModal,
+  EventHeader,
+  EventDetailsCard,
+  ActionsPanel,
+  ParticipantsList
+} from "../components/event";
 
 // Utils
 import { extractCalendarTimeBound } from "../utils/dateUtils";

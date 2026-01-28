@@ -1,3 +1,4 @@
+export { default as Header } from "./Header";
 export { default as FormCard } from "./FormCard";
 export { default as InfoCard } from "./InfoCard";
 export { default as SectionHeader } from "./SectionHeader";

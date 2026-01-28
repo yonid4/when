@@ -2,7 +2,7 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { Box } from "@chakra-ui/react";
 import Layout from "./layout";
-import ProtectedRoute from "./components/ProtectedRoute";
+import { ProtectedRoute } from "./components/auth";
 
 import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";

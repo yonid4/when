@@ -18,9 +18,7 @@ import {
   LocationForm,
   EventReviewCard
 } from "../components/event/forms";
-import StepProgressIndicator from "../components/common/StepProgressIndicator";
-import FormStepNavigation from "../components/common/FormStepNavigation";
-import WizardHeader from "../components/common/WizardHeader";
+import { StepProgressIndicator, FormStepNavigation, WizardHeader } from "../components/common";
 import { colors, shadows } from "../styles/designSystem";
 
 const MotionBox = motion(Box);

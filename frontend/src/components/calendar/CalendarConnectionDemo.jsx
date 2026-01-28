@@ -1,7 +1,7 @@
 import React from "react";
 import { useCalendarConnection } from "../../hooks/useCalendarConnection";
 import CalendarConnectPrompt from "./CalendarConnectPrompt";
-import { Button } from "../common/Button";
+import { Button } from "@chakra-ui/react";
 import { clearCalendarConnectionData, getCalendarConnectionData } from "../../utils/calendarConnection";
 
 /**
