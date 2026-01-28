@@ -1,5 +1,5 @@
 import React from "react";
-import { Flex, Button } from "@chakra-ui/react";
+import { Flex, Button, Stack, useBreakpointValue } from "@chakra-ui/react";
 import { FiArrowLeft, FiArrowRight, FiCheck } from "react-icons/fi";
 
 /**
@@ -14,6 +14,7 @@ import { FiArrowLeft, FiArrowRight, FiCheck } from "react-icons/fi";
  * @param {boolean} props.isLoading - Loading state for submit button
  * @param {string} props.submitLabel - Label for submit button
  * @param {string} props.submitColorScheme - Color scheme for submit button
+ * @param {string|number} props.mt - Margin top for spacing
  */
 const FormStepNavigation = ({
   currentStep,
@@ -23,19 +24,22 @@ const FormStepNavigation = ({
   onSubmit,
   isLoading = false,
   submitLabel = "Submit",
-  submitColorScheme = "green"
+  submitColorScheme = "green",
+  mt
 }) => {
   const isFirstStep = currentStep === 0;
   const isLastStep = currentStep === totalSteps - 1;
+  const isMobile = useBreakpointValue({ base: true, md: false });
 
-  return (
-    <Flex justify="space-between">
+  const buttons = (
+    <>
       <Button
         leftIcon={<FiArrowLeft />}
         variant="outline"
         onClick={onBack}
         isDisabled={isFirstStep}
         size="lg"
+        w={{ base: "full", md: "auto" }}
       >
         Back
       </Button>
@@ -46,6 +50,7 @@ const FormStepNavigation = ({
           colorScheme="purple"
           onClick={onNext}
           size="lg"
+          w={{ base: "full", md: "auto" }}
         >
           Next
         </Button>
@@ -57,9 +62,29 @@ const FormStepNavigation = ({
           isLoading={isLoading}
           size="lg"
           px={8}
+          w={{ base: "full", md: "auto" }}
         >
           {submitLabel}
         </Button>
+      )}
+    </>
+  );
+
+  return (
+    <Flex
+      borderTop="1px solid"
+      borderColor="gray.100"
+      pt={6}
+      mt={mt}
+    >
+      {isMobile ? (
+        <Stack direction="column-reverse" spacing={3} w="full">
+          {buttons}
+        </Stack>
+      ) : (
+        <Flex justify="space-between" w="full">
+          {buttons}
+        </Flex>
       )}
     </Flex>
   );

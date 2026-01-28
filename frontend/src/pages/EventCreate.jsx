@@ -2,19 +2,12 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Box,
-  Button,
   Container,
-  Flex,
-  Heading,
-  Text,
-  VStack,
-  Card,
-  CardBody,
-  useColorModeValue,
+  Progress,
   useToast
 } from "@chakra-ui/react";
-import { motion } from "framer-motion";
-import { FiEdit, FiCalendar, FiUsers, FiMapPin, FiCheck, FiSave } from "react-icons/fi";
+import { motion, AnimatePresence } from "framer-motion";
+import { FiEdit, FiCalendar, FiUsers, FiMapPin, FiCheck } from "react-icons/fi";
 import { eventsAPI, usersAPI } from "../services/apiService";
 import { useApiCall } from "../hooks/useApiCall";
 import { useAuth } from "../hooks/useAuth";
@@ -27,6 +20,8 @@ import {
 } from "../components/event/forms";
 import StepProgressIndicator from "../components/common/StepProgressIndicator";
 import FormStepNavigation from "../components/common/FormStepNavigation";
+import WizardHeader from "../components/common/WizardHeader";
+import { colors, shadows } from "../styles/designSystem";
 
 const MotionBox = motion(Box);
 
@@ -40,6 +35,7 @@ const EventCreate = () => {
   const [userTimezone] = useState(() => Intl.DateTimeFormat().resolvedOptions().timeZone);
 
   const [currentStep, setCurrentStep] = useState(0);
+  const [direction, setDirection] = useState(1); // 1 for forward, -1 for backward
   const [formData, setFormData] = useState({
     // Step 1: Basics
     title: "",
@@ -78,10 +74,6 @@ const EventCreate = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
 
-  const bgColor = useColorModeValue("gray.50", "gray.900");
-  const cardBg = useColorModeValue("white", "gray.800");
-  const borderColor = useColorModeValue("gray.200", "gray.700");
-
   const steps = [
     { id: 0, name: "Basics", icon: FiEdit },
     { id: 1, name: "When", icon: FiCalendar },
@@ -89,6 +81,8 @@ const EventCreate = () => {
     { id: 3, name: "Where", icon: FiMapPin },
     { id: 4, name: "Review", icon: FiCheck }
   ];
+
+  const progressPercentage = ((currentStep + 1) / steps.length) * 100;
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -190,13 +184,23 @@ const EventCreate = () => {
     }
 
     if (currentStep < steps.length - 1) {
+      setDirection(1);
       setCurrentStep(prev => prev + 1);
     }
   };
 
   const handleBack = () => {
     if (currentStep > 0) {
+      setDirection(-1);
       setCurrentStep(prev => prev - 1);
+    }
+  };
+
+  const handleHeaderBack = () => {
+    if (currentStep > 0) {
+      handleBack();
+    } else {
+      navigate(-1);
     }
   };
 
@@ -392,7 +396,7 @@ const EventCreate = () => {
           <EventBasicsForm
             formData={formData}
             onChange={handleInputChange}
-            borderColor={borderColor}
+            borderColor="gray.200"
           />
         );
       case 1:
@@ -400,7 +404,7 @@ const EventCreate = () => {
           <EventSchedulingForm
             formData={formData}
             onChange={handleInputChange}
-            borderColor={borderColor}
+            borderColor="gray.200"
           />
         );
       case 2:
@@ -436,61 +440,90 @@ const EventCreate = () => {
     }
   };
 
-  return (
-    <Box minH="100vh" bg={bgColor}>
-      <Container maxW="container.lg" py={8}>
-        <VStack spacing={8} align="stretch">
-          {/* Header */}
-          <Flex justify="space-between" align="center">
-            <VStack align="start" spacing={1}>
-              <Heading size="lg">Create New Event</Heading>
-              <Text color="gray.600">
-                Step {currentStep + 1} of {steps.length}: {steps[currentStep].name}
-              </Text>
-            </VStack>
-            <Button
-              leftIcon={<FiSave />}
-              variant="outline"
-              onClick={handleSaveDraft}
-            >
-              Save Draft
-            </Button>
-          </Flex>
+  // Animation variants for directional slide
+  const slideVariants = {
+    enter: (direction) => ({
+      x: direction > 0 ? 50 : -50,
+      opacity: 0
+    }),
+    center: {
+      x: 0,
+      opacity: 1
+    },
+    exit: (direction) => ({
+      x: direction > 0 ? -50 : 50,
+      opacity: 0
+    })
+  };
 
-          {/* Progress Bar */}
+  return (
+    <Box minH="100vh" bg={colors.bgPage}>
+      {/* Wizard Header */}
+      <WizardHeader
+        title="Create Event"
+        onBack={handleHeaderBack}
+        onSaveDraft={handleSaveDraft}
+        showSaveDraft={true}
+      />
+
+      {/* Stepper Section */}
+      <Box bg="white" borderBottom="1px solid" borderColor="gray.200">
+        <Container maxW={{ base: "100%", md: "600px" }} px={{ base: 4, md: 0 }}>
           <StepProgressIndicator
             steps={steps}
             currentStep={currentStep}
-            cardBg={cardBg}
           />
+        </Container>
+      </Box>
 
-          {/* Form Content */}
-          <Card bg={cardBg} minH="500px">
-            <CardBody>
-              <MotionBox
-                key={currentStep}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3 }}
-              >
-                {renderStepContent()}
-              </MotionBox>
-            </CardBody>
-          </Card>
+      {/* Progress Bar */}
+      <Progress
+        value={progressPercentage}
+        size="xs"
+        colorScheme="purple"
+        bg="gray.100"
+        borderRadius={0}
+      />
 
-          {/* Navigation Buttons */}
-          <FormStepNavigation
-            currentStep={currentStep}
-            totalSteps={steps.length}
-            onBack={handleBack}
-            onNext={handleNext}
-            onSubmit={handleSubmit}
-            isLoading={loading}
-            submitLabel="Send Invitations"
-            submitColorScheme="green"
-          />
-        </VStack>
+      {/* Form Content */}
+      <Container maxW={{ base: "100%", md: "600px" }} px={{ base: 4, md: 0 }} py={8}>
+        <AnimatePresence mode="wait" custom={direction}>
+          <MotionBox
+            key={currentStep}
+            custom={direction}
+            variants={slideVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{ duration: 0.25, ease: "easeOut" }}
+          >
+            <Box
+              bg="white"
+              borderRadius="xl"
+              boxShadow={shadows.card}
+              border="1px solid"
+              borderColor="gray.200"
+              p={{ base: 5, md: 8 }}
+              minH="400px"
+            >
+              {/* Step Content */}
+              {renderStepContent()}
+
+              {/* Navigation Inside Card */}
+              <FormStepNavigation
+                currentStep={currentStep}
+                totalSteps={steps.length}
+                onBack={handleBack}
+                onNext={handleNext}
+                onSubmit={handleSubmit}
+                isLoading={loading}
+                submitLabel="Send Invitations"
+                submitColorScheme="green"
+                mt={8}
+              />
+            </Box>
+          </MotionBox>
+        </AnimatePresence>
       </Container>
     </Box>
   );
