@@ -49,7 +49,8 @@ def create_app(config_name="development"):
         )
     
     app = Flask(__name__)
-    
+    app.url_map.strict_slashes = False  # Accept URLs with or without trailing slashes
+
     # Suppress noisy HTTP client debug logs
     logging.getLogger("hpack.hpack").setLevel(logging.WARNING)
     logging.getLogger("httpcore.connection").setLevel(logging.WARNING)
