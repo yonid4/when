@@ -15,19 +15,19 @@ import {
   Box
 } from "@chakra-ui/react";
 import { motion } from "framer-motion";
-import { FiEdit3 } from "react-icons/fi";
+import { FiEdit3, FiBriefcase, FiMusic, FiGift, FiCalendar } from "react-icons/fi";
 import { colors, shadows } from "../../../styles/designSystem";
 
 const MotionBox = motion(Box);
 
 /**
- * Event type options
+ * Event type options with Feather icons
  */
 export const eventTypes = [
-  { value: "meeting", label: "Meeting", color: "blue", emoji: "💼" },
-  { value: "social", label: "Social", color: "green", emoji: "🎉" },
-  { value: "birthday", label: "Birthday", color: "pink", emoji: "🎂" },
-  { value: "other", label: "Other", color: "purple", emoji: "📅" }
+  { value: "meeting", label: "Meeting", color: "blue", icon: FiBriefcase },
+  { value: "social", label: "Social", color: "green", icon: FiMusic },
+  { value: "birthday", label: "Birthday", color: "pink", icon: FiGift },
+  { value: "other", label: "Other", color: "purple", icon: FiCalendar }
 ];
 
 /**
@@ -138,6 +138,7 @@ const EventBasicsForm = ({ formData, onChange }) => {
           <Grid templateColumns="repeat(4, 1fr)" gap={3}>
             {eventTypes.map((type) => {
               const isSelected = formData.type === type.value;
+              const TypeIcon = type.icon;
               return (
                 <Card
                   key={type.value}
@@ -154,9 +155,13 @@ const EventBasicsForm = ({ formData, onChange }) => {
                   transition="all 0.15s ease"
                   borderRadius="lg"
                 >
-                  <CardBody py={4} px={3} textAlign="center">
-                    <VStack spacing={1}>
-                      <Text fontSize="2xl">{type.emoji}</Text>
+                  <CardBody py={5} px={3} textAlign="center">
+                    <VStack spacing={2}>
+                      <Icon
+                        as={TypeIcon}
+                        boxSize={7}
+                        color={isSelected ? colors.primary : "gray.500"}
+                      />
                       <Text
                         fontSize="sm"
                         fontWeight={isSelected ? "bold" : "medium"}

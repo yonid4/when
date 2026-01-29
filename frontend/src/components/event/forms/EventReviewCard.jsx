@@ -163,9 +163,16 @@ const EventReviewCard = ({ formData, onEditStep }) => {
                         color="white"
                         fontSize="xs"
                         px={2}
+                        py={1}
                         borderRadius="full"
+                        display="flex"
+                        alignItems="center"
+                        gap={1}
                       >
-                        {currentEventType?.emoji} {currentEventType?.label || formData.type}
+                        {currentEventType?.icon && (
+                          <Icon as={currentEventType.icon} boxSize={3} />
+                        )}
+                        {currentEventType?.label || formData.type}
                       </Badge>
                       <Heading size="lg" color="white">
                         {formData.title || "Untitled Event"}
