@@ -33,12 +33,6 @@ const App = () => (
               </ProtectedRoute>
             }
           />
-          {/* Legacy route redirect */}
-          <Route
-            path="/event/create_wizard"
-            element={<Navigate to="/event/create" replace />}
-          />
-
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>
