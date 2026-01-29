@@ -8,6 +8,7 @@ import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
 import EventPage from "./pages/EventPage";
 import EventCreate from "./pages/EventCreate";
+import CreateEvent from "./pages/CreateEvent"
 
 const App = () => (
   <Box minH="100vh" bg="gray.50" w="100%">
@@ -30,6 +31,14 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <EventCreate />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/event/create_wizard"
+            element={
+              <ProtectedRoute>
+                <CreateEvent />
               </ProtectedRoute>
             }
           />
