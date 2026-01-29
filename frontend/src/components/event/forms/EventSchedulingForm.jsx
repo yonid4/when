@@ -1,232 +1,425 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   VStack,
+  HStack,
   FormControl,
   FormLabel,
+  FormHelperText,
   Input,
   Select,
   Grid,
   Card,
   CardBody,
   Text,
-  HStack,
-  RadioGroup,
-  Radio,
-  Stack,
+  Icon,
+  Box,
   Badge,
+  Button,
+  ButtonGroup,
   Divider
 } from "@chakra-ui/react";
+import { motion } from "framer-motion";
+import { FiCalendar, FiClock, FiUsers } from "react-icons/fi";
 import { colors } from "../../../styles/designSystem";
+
+const MotionBox = motion(Box);
 
 /**
  * Duration options for events
  */
 export const durationOptions = [
-  { value: "15", label: "15 minutes" },
-  { value: "30", label: "30 minutes" },
-  { value: "60", label: "1 hour" },
-  { value: "90", label: "1.5 hours" },
-  { value: "120", label: "2 hours" },
-  { value: "180", label: "3 hours" },
-  { value: "custom", label: "Custom" }
+  { value: "15", label: "15 min", short: "15m" },
+  { value: "30", label: "30 min", short: "30m" },
+  { value: "60", label: "1 hour", short: "1h" },
+  { value: "90", label: "1.5 hours", short: "1.5h" },
+  { value: "120", label: "2 hours", short: "2h" },
+  { value: "180", label: "3 hours", short: "3h" }
 ];
 
 /**
+ * Format hour to 12-hour display
+ */
+const formatHour = (hour) => {
+  const h = parseInt(hour);
+  if (h === 0) return "12 AM";
+  if (h < 12) return `${h} AM`;
+  if (h === 12) return "12 PM";
+  return `${h - 12} PM`;
+};
+
+/**
+ * Get smart defaults for date range
+ */
+const getDefaultDates = () => {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  const twoWeeksOut = new Date();
+  twoWeeksOut.setDate(twoWeeksOut.getDate() + 14);
+
+  return {
+    startDate: tomorrow.toISOString().split('T')[0],
+    endDate: twoWeeksOut.toISOString().split('T')[0]
+  };
+};
+
+/**
  * EventSchedulingForm - Second step of event creation
- * Handles scheduling mode selection, date/time inputs, and duration
+ * Concept A: Calendar-Centric with inline date pickers
  *
  * @param {Object} props
  * @param {Object} props.formData - Form data containing scheduling fields
  * @param {Function} props.onChange - Handler for input changes
- * @param {string} props.borderColor - Border color for cards
  */
-const EventSchedulingForm = ({ formData, onChange, borderColor }) => {
+const EventSchedulingForm = ({ formData, onChange }) => {
   const handleInputChange = (field, value) => {
     onChange(field, value);
   };
 
+  // Set smart defaults on mount if dates are empty
+  useEffect(() => {
+    if (formData.schedulingMode === "multiple" && !formData.startDate && !formData.endDate) {
+      const defaults = getDefaultDates();
+      onChange("startDate", defaults.startDate);
+      onChange("endDate", defaults.endDate);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.schedulingMode]);
+
+  const isMultipleMode = formData.schedulingMode === "multiple";
+  const isSingleMode = formData.schedulingMode === "single";
+
   return (
-    <VStack spacing={6} align="stretch">
-      <FormControl>
-        <FormLabel fontSize="lg" fontWeight="bold">
-          How do you want to schedule this?
-        </FormLabel>
-        <RadioGroup
-          value={formData.schedulingMode}
-          onChange={(value) => handleInputChange("schedulingMode", value)}
-        >
-          <Stack spacing={4}>
+    <VStack spacing={8} align="stretch">
+      {/* Step Header */}
+      <MotionBox
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        <HStack spacing={3} mb={2}>
+          <Icon as={FiCalendar} color={colors.primary} boxSize={5} />
+          <Text
+            fontSize="sm"
+            fontWeight="semibold"
+            textTransform="uppercase"
+            letterSpacing="0.5px"
+            color={colors.primary}
+          >
+            Step 2 of 5
+          </Text>
+        </HStack>
+        <Text fontSize="2xl" fontWeight="bold" color={colors.textHeading}>
+          When should it happen?
+        </Text>
+        <Text color={colors.textMuted} mt={1}>
+          Choose a specific time or let participants vote on the best time.
+        </Text>
+      </MotionBox>
+
+      {/* Scheduling Mode Selection */}
+      <MotionBox
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.1 }}
+      >
+        <FormControl>
+          <FormLabel
+            fontSize="sm"
+            fontWeight="semibold"
+            textTransform="uppercase"
+            letterSpacing="0.5px"
+            color="gray.600"
+          >
+            Scheduling Mode
+          </FormLabel>
+          <Grid templateColumns="repeat(2, 1fr)" gap={4}>
+            {/* Single Time Option */}
             <Card
               variant="outline"
               cursor="pointer"
               borderWidth={2}
-              borderColor={
-                formData.schedulingMode === "single" ? colors.primary : borderColor
-              }
-              bg={formData.schedulingMode === "single" ? "purple.50" : "transparent"}
+              borderColor={isSingleMode ? colors.primary : "gray.200"}
+              bg={isSingleMode ? colors.primarySoft : "white"}
               onClick={() => handleInputChange("schedulingMode", "single")}
+              _hover={{ borderColor: isSingleMode ? colors.primary : "gray.300" }}
+              transition="all 0.15s ease"
+              borderRadius="lg"
             >
-              <CardBody>
-                <HStack spacing={4}>
-                  <Radio value="single" size="lg" />
-                  <VStack align="start" spacing={1} flex={1}>
-                    <Text fontWeight="bold">Single Time</Text>
-                    <Text fontSize="sm" color="gray.600">
-                      I know when the event should be
-                    </Text>
-                  </VStack>
-                </HStack>
+              <CardBody py={5}>
+                <VStack align="start" spacing={2}>
+                  <HStack spacing={3}>
+                    <Box
+                      w="40px"
+                      h="40px"
+                      borderRadius="lg"
+                      bg={isSingleMode ? colors.primary : "gray.100"}
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="center"
+                    >
+                      <Icon
+                        as={FiCalendar}
+                        boxSize={5}
+                        color={isSingleMode ? "white" : "gray.500"}
+                      />
+                    </Box>
+                    <VStack align="start" spacing={0}>
+                      <Text fontWeight="bold" color={isSingleMode ? colors.primary : "gray.800"}>
+                        Fixed Time
+                      </Text>
+                      <Text fontSize="sm" color="gray.500">
+                        I know the exact date & time
+                      </Text>
+                    </VStack>
+                  </HStack>
+                </VStack>
               </CardBody>
             </Card>
 
+            {/* Multiple Times Option */}
             <Card
               variant="outline"
               cursor="pointer"
               borderWidth={2}
-              borderColor={
-                formData.schedulingMode === "multiple" ? colors.primary : borderColor
-              }
-              bg={formData.schedulingMode === "multiple" ? "purple.50" : "transparent"}
+              borderColor={isMultipleMode ? colors.primary : "gray.200"}
+              bg={isMultipleMode ? colors.primarySoft : "white"}
               onClick={() => handleInputChange("schedulingMode", "multiple")}
+              _hover={{ borderColor: isMultipleMode ? colors.primary : "gray.300" }}
+              transition="all 0.15s ease"
+              borderRadius="lg"
+              position="relative"
             >
-              <CardBody>
-                <HStack spacing={4}>
-                  <Radio value="multiple" size="lg" />
-                  <VStack align="start" spacing={1} flex={1}>
-                    <Text fontWeight="bold">Find Best Time</Text>
-                    <Text fontSize="sm" color="gray.600">
-                      Let guests vote on multiple time options
-                    </Text>
-                  </VStack>
-                  <Badge colorScheme="purple">Recommended</Badge>
-                </HStack>
+              <Badge
+                position="absolute"
+                top={-2}
+                right={3}
+                colorScheme="purple"
+                fontSize="xs"
+                px={2}
+                borderRadius="full"
+              >
+                Recommended
+              </Badge>
+              <CardBody py={5}>
+                <VStack align="start" spacing={2}>
+                  <HStack spacing={3}>
+                    <Box
+                      w="40px"
+                      h="40px"
+                      borderRadius="lg"
+                      bg={isMultipleMode ? colors.primary : "gray.100"}
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="center"
+                    >
+                      <Icon
+                        as={FiUsers}
+                        boxSize={5}
+                        color={isMultipleMode ? "white" : "gray.500"}
+                      />
+                    </Box>
+                    <VStack align="start" spacing={0}>
+                      <Text fontWeight="bold" color={isMultipleMode ? colors.primary : "gray.800"}>
+                        Find Best Time
+                      </Text>
+                      <Text fontSize="sm" color="gray.500">
+                        Let guests vote on options
+                      </Text>
+                    </VStack>
+                  </HStack>
+                </VStack>
               </CardBody>
             </Card>
-          </Stack>
-        </RadioGroup>
-      </FormControl>
+          </Grid>
+        </FormControl>
+      </MotionBox>
 
-      {formData.schedulingMode === "single" && (
-        <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={4}>
-          <FormControl isRequired>
-            <FormLabel>Date</FormLabel>
-            <Input
-              type="date"
-              value={formData.date}
-              onChange={(e) => handleInputChange("date", e.target.value)}
-            />
-          </FormControl>
-          <FormControl isRequired>
-            <FormLabel>Start Time</FormLabel>
-            <Input
-              type="time"
-              value={formData.time}
-              onChange={(e) => handleInputChange("time", e.target.value)}
-            />
-          </FormControl>
-        </Grid>
-      )}
-
-      {formData.schedulingMode === "multiple" && (
-        <Card variant="outline" bg="blue.50">
-          <CardBody>
-            <VStack spacing={4} align="stretch">
-              <Text fontWeight="bold">Select Date Range</Text>
-              <Text fontSize="sm" color="gray.600">
-                Choose the range of dates for guests to vote on.
-              </Text>
-
-              <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={4}>
-                <FormControl isRequired>
-                  <FormLabel>Start Date</FormLabel>
-                  <Input
-                    type="date"
-                    value={formData.startDate}
-                    onChange={(e) => handleInputChange("startDate", e.target.value)}
-                    bg="white"
-                  />
-                </FormControl>
-                <FormControl isRequired>
-                  <FormLabel>End Date</FormLabel>
-                  <Input
-                    type="date"
-                    value={formData.endDate}
-                    onChange={(e) => handleInputChange("endDate", e.target.value)}
-                    bg="white"
-                  />
-                </FormControl>
-              </Grid>
-
-              <Divider borderColor="blue.200" />
-
-              <Text fontWeight="bold">Daily Time Range</Text>
-              <Text fontSize="sm" color="gray.600">
-                What hours are available each day?
-              </Text>
-
-              <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={4}>
-                <FormControl isRequired>
-                  <FormLabel>Earliest Start Time</FormLabel>
-                  <Select
-                    value={formData.earliestHour}
-                    onChange={(e) => handleInputChange("earliestHour", e.target.value)}
-                    bg="white"
-                  >
-                    {Array.from({ length: 24 }, (_, i) => (
-                      <option key={i} value={i.toString()}>
-                        {i === 0
-                          ? "12 AM"
-                          : i < 12
-                          ? `${i} AM`
-                          : i === 12
-                          ? "12 PM"
-                          : `${i - 12} PM`}
-                      </option>
-                    ))}
-                  </Select>
-                </FormControl>
-                <FormControl isRequired>
-                  <FormLabel>Latest End Time</FormLabel>
-                  <Select
-                    value={formData.latestHour}
-                    onChange={(e) => handleInputChange("latestHour", e.target.value)}
-                    bg="white"
-                  >
-                    {Array.from({ length: 24 }, (_, i) => (
-                      <option key={i} value={i.toString()}>
-                        {i === 0
-                          ? "12 AM"
-                          : i < 12
-                          ? `${i} AM`
-                          : i === 12
-                          ? "12 PM"
-                          : `${i - 12} PM`}
-                      </option>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-            </VStack>
-          </CardBody>
-        </Card>
-      )}
-
-      <FormControl isRequired>
-        <FormLabel fontSize="lg" fontWeight="bold">
-          Duration
-        </FormLabel>
-        <Select
-          value={formData.duration}
-          onChange={(e) => handleInputChange("duration", e.target.value)}
-          size="lg"
+      {/* Single Mode Fields */}
+      {isSingleMode && (
+        <MotionBox
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
         >
-          {durationOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </Select>
-      </FormControl>
+          <Card variant="outline" borderRadius="lg" bg="gray.50">
+            <CardBody>
+              <VStack spacing={5} align="stretch">
+                <Text fontWeight="semibold" color="gray.700">
+                  Select Date & Time
+                </Text>
+                <Grid templateColumns="repeat(2, 1fr)" gap={4}>
+                  <FormControl isRequired>
+                    <FormLabel fontSize="sm" color="gray.600">Date</FormLabel>
+                    <Input
+                      type="date"
+                      value={formData.date}
+                      onChange={(e) => handleInputChange("date", e.target.value)}
+                      bg="white"
+                      borderRadius="lg"
+                      size="lg"
+                    />
+                  </FormControl>
+                  <FormControl isRequired>
+                    <FormLabel fontSize="sm" color="gray.600">Start Time</FormLabel>
+                    <Input
+                      type="time"
+                      value={formData.time}
+                      onChange={(e) => handleInputChange("time", e.target.value)}
+                      bg="white"
+                      borderRadius="lg"
+                      size="lg"
+                    />
+                  </FormControl>
+                </Grid>
+              </VStack>
+            </CardBody>
+          </Card>
+        </MotionBox>
+      )}
+
+      {/* Multiple Mode Fields */}
+      {isMultipleMode && (
+        <MotionBox
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <Card variant="outline" borderRadius="lg" bg="purple.50" borderColor="purple.200">
+            <CardBody>
+              <VStack spacing={6} align="stretch">
+                {/* Date Range Section */}
+                <Box>
+                  <HStack spacing={2} mb={3}>
+                    <Icon as={FiCalendar} color={colors.primary} boxSize={4} />
+                    <Text fontWeight="semibold" color="gray.700">
+                      Date Range
+                    </Text>
+                  </HStack>
+                  <Text fontSize="sm" color="gray.600" mb={4}>
+                    Guests can vote for times within this window
+                  </Text>
+                  <Grid templateColumns="repeat(2, 1fr)" gap={4}>
+                    <FormControl isRequired>
+                      <FormLabel fontSize="sm" color="gray.600">From</FormLabel>
+                      <Input
+                        type="date"
+                        value={formData.startDate}
+                        onChange={(e) => handleInputChange("startDate", e.target.value)}
+                        bg="white"
+                        borderRadius="lg"
+                        size="lg"
+                      />
+                    </FormControl>
+                    <FormControl isRequired>
+                      <FormLabel fontSize="sm" color="gray.600">To</FormLabel>
+                      <Input
+                        type="date"
+                        value={formData.endDate}
+                        onChange={(e) => handleInputChange("endDate", e.target.value)}
+                        bg="white"
+                        borderRadius="lg"
+                        size="lg"
+                      />
+                    </FormControl>
+                  </Grid>
+                </Box>
+
+                <Divider borderColor="purple.200" />
+
+                {/* Daily Hours Section */}
+                <Box>
+                  <HStack spacing={2} mb={3}>
+                    <Icon as={FiClock} color={colors.primary} boxSize={4} />
+                    <Text fontWeight="semibold" color="gray.700">
+                      Daily Hours
+                    </Text>
+                  </HStack>
+                  <Text fontSize="sm" color="gray.600" mb={4}>
+                    What hours are you available each day?
+                  </Text>
+                  <Grid templateColumns="repeat(2, 1fr)" gap={4}>
+                    <FormControl isRequired>
+                      <FormLabel fontSize="sm" color="gray.600">Earliest</FormLabel>
+                      <Select
+                        value={formData.earliestHour}
+                        onChange={(e) => handleInputChange("earliestHour", e.target.value)}
+                        bg="white"
+                        borderRadius="lg"
+                        size="lg"
+                      >
+                        {Array.from({ length: 24 }, (_, i) => (
+                          <option key={i} value={i.toString()}>
+                            {formatHour(i)}
+                          </option>
+                        ))}
+                      </Select>
+                    </FormControl>
+                    <FormControl isRequired>
+                      <FormLabel fontSize="sm" color="gray.600">Latest</FormLabel>
+                      <Select
+                        value={formData.latestHour}
+                        onChange={(e) => handleInputChange("latestHour", e.target.value)}
+                        bg="white"
+                        borderRadius="lg"
+                        size="lg"
+                      >
+                        {Array.from({ length: 24 }, (_, i) => (
+                          <option key={i} value={i.toString()}>
+                            {formatHour(i)}
+                          </option>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                </Box>
+              </VStack>
+            </CardBody>
+          </Card>
+        </MotionBox>
+      )}
+
+      {/* Duration Selection - Pill Style */}
+      <MotionBox
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.2 }}
+      >
+        <FormControl isRequired>
+          <FormLabel
+            fontSize="sm"
+            fontWeight="semibold"
+            textTransform="uppercase"
+            letterSpacing="0.5px"
+            color="gray.600"
+          >
+            Event Duration
+          </FormLabel>
+          <ButtonGroup spacing={2} flexWrap="wrap">
+            {durationOptions.map((option) => {
+              const isSelected = formData.duration === option.value;
+              return (
+                <Button
+                  key={option.value}
+                  size="md"
+                  variant={isSelected ? "solid" : "outline"}
+                  colorScheme={isSelected ? "purple" : "gray"}
+                  borderRadius="full"
+                  onClick={() => handleInputChange("duration", option.value)}
+                  px={5}
+                  fontWeight={isSelected ? "bold" : "medium"}
+                  mb={2}
+                >
+                  {option.label}
+                </Button>
+              );
+            })}
+          </ButtonGroup>
+          <FormHelperText color="gray.500">
+            How long will your event last?
+          </FormHelperText>
+        </FormControl>
+      </MotionBox>
     </VStack>
   );
 };

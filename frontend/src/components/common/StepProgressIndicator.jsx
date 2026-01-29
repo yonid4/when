@@ -4,10 +4,11 @@ import {
   Flex,
   Text,
   Icon,
-  useBreakpointValue
+  useBreakpointValue,
+  Tooltip
 } from "@chakra-ui/react";
 import { FiCheck } from "react-icons/fi";
-import { colors } from "../../styles/designSystem";
+import { colors, shadows } from "../../styles/designSystem";
 
 /**
  * StepProgressIndicator - Horizontal stepper with connected nodes
@@ -37,19 +38,30 @@ const StepProgressIndicator = ({ steps, currentStep }) => {
     );
   }
 
-  // Desktop: Full horizontal stepper
+  // Desktop: Full horizontal stepper with icons
   return (
-    <Box py={4} px={8}>
+    <Box py={5} px={8}>
       <Flex align="center" justify="center" position="relative">
         {/* Connecting line behind nodes */}
         <Box
           position="absolute"
-          top="16px"
-          left="10%"
-          right="10%"
+          top="20px"
+          left="12%"
+          right="12%"
           height="2px"
           bg="gray.200"
           zIndex={0}
+        />
+        {/* Progress fill line */}
+        <Box
+          position="absolute"
+          top="20px"
+          left="12%"
+          width={`${Math.max(0, ((currentStep) / (steps.length - 1)) * 76)}%`}
+          height="2px"
+          bg={colors.primary}
+          zIndex={0}
+          transition="width 0.3s ease"
         />
 
         {/* Step nodes */}
@@ -57,70 +69,88 @@ const StepProgressIndicator = ({ steps, currentStep }) => {
           {steps.map((step, index) => {
             const isCompleted = index < currentStep;
             const isCurrent = index === currentStep;
+            const StepIcon = step.icon;
 
             return (
-              <Flex
+              <Tooltip
                 key={step.id}
-                direction="column"
-                align="center"
-                flex={1}
+                label={step.name}
+                placement="bottom"
+                hasArrow
+                isDisabled={!StepIcon}
               >
-                {/* Node circle */}
                 <Flex
-                  w="32px"
-                  h="32px"
-                  borderRadius="full"
-                  justify="center"
+                  direction="column"
                   align="center"
-                  bg={
-                    isCompleted
-                      ? colors.secondary
-                      : isCurrent
-                      ? colors.primary
-                      : "white"
-                  }
-                  border="2px solid"
-                  borderColor={
-                    isCompleted
-                      ? colors.secondary
-                      : isCurrent
-                      ? colors.primary
-                      : "gray.300"
-                  }
-                  transition="all 0.2s ease"
+                  flex={1}
+                  cursor="default"
                 >
-                  {isCompleted ? (
-                    <Icon as={FiCheck} color="white" boxSize={4} />
-                  ) : (
-                    <Text
-                      fontSize="sm"
-                      fontWeight="semibold"
-                      color={isCurrent ? "white" : "gray.400"}
-                    >
-                      {index + 1}
-                    </Text>
-                  )}
-                </Flex>
+                  {/* Node circle with icon */}
+                  <Flex
+                    w="40px"
+                    h="40px"
+                    borderRadius="full"
+                    justify="center"
+                    align="center"
+                    bg={
+                      isCompleted
+                        ? colors.secondary
+                        : isCurrent
+                        ? colors.primary
+                        : "white"
+                    }
+                    border="2px solid"
+                    borderColor={
+                      isCompleted
+                        ? colors.secondary
+                        : isCurrent
+                        ? colors.primary
+                        : "gray.300"
+                    }
+                    boxShadow={isCurrent ? shadows.md : shadows.sm}
+                    transition="all 0.25s ease"
+                    transform={isCurrent ? "scale(1.1)" : "scale(1)"}
+                  >
+                    {isCompleted ? (
+                      <Icon as={FiCheck} color="white" boxSize={5} />
+                    ) : StepIcon ? (
+                      <Icon
+                        as={StepIcon}
+                        color={isCurrent ? "white" : "gray.400"}
+                        boxSize={5}
+                      />
+                    ) : (
+                      <Text
+                        fontSize="sm"
+                        fontWeight="bold"
+                        color={isCurrent ? "white" : "gray.400"}
+                      >
+                        {index + 1}
+                      </Text>
+                    )}
+                  </Flex>
 
-                {/* Label */}
-                <Text
-                  mt={2}
-                  fontSize="xs"
-                  fontWeight="semibold"
-                  textTransform="uppercase"
-                  letterSpacing="0.5px"
-                  color={
-                    isCompleted
-                      ? colors.secondary
-                      : isCurrent
-                      ? colors.primary
-                      : "gray.400"
-                  }
-                  textAlign="center"
-                >
-                  {step.name}
-                </Text>
-              </Flex>
+                  {/* Label */}
+                  <Text
+                    mt={2}
+                    fontSize="xs"
+                    fontWeight="semibold"
+                    textTransform="uppercase"
+                    letterSpacing="0.5px"
+                    color={
+                      isCompleted
+                        ? colors.secondary
+                        : isCurrent
+                        ? colors.primary
+                        : "gray.400"
+                    }
+                    textAlign="center"
+                    transition="color 0.2s ease"
+                  >
+                    {step.name}
+                  </Text>
+                </Flex>
+              </Tooltip>
             );
           })}
         </Flex>

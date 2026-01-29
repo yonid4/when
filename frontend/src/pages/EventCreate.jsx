@@ -26,7 +26,7 @@ const MotionBox = motion(Box);
 const EventCreate = () => {
   const navigate = useNavigate();
   const toast = useToast();
-  const { user } = useAuth();
+  useAuth(); // Ensure user is authenticated
   const { execute, loading } = useApiCall();
 
   // Capture user timezone for UTC conversion
@@ -465,8 +465,8 @@ const EventCreate = () => {
       />
 
       {/* Stepper Section */}
-      <Box bg="white" borderBottom="1px solid" borderColor="gray.200">
-        <Container maxW={{ base: "100%", md: "600px" }} px={{ base: 4, md: 0 }}>
+      <Box bg="white" borderBottom="1px solid" borderColor="gray.200" shadow={shadows.sm}>
+        <Container maxW={{ base: "100%", md: "700px" }} px={{ base: 4, md: 6 }}>
           <StepProgressIndicator
             steps={steps}
             currentStep={currentStep}
@@ -484,7 +484,7 @@ const EventCreate = () => {
       />
 
       {/* Form Content */}
-      <Container maxW={{ base: "100%", md: "600px" }} px={{ base: 4, md: 0 }} py={8}>
+      <Container maxW={{ base: "100%", md: "700px" }} px={{ base: 4, md: 6 }} py={8}>
         <AnimatePresence mode="wait" custom={direction}>
           <MotionBox
             key={currentStep}
@@ -501,8 +501,8 @@ const EventCreate = () => {
               boxShadow={shadows.card}
               border="1px solid"
               borderColor="gray.200"
-              p={{ base: 5, md: 8 }}
-              minH="400px"
+              p={{ base: 6, md: 8 }}
+              minH="450px"
             >
               {/* Step Content */}
               {renderStepContent()}
@@ -515,8 +515,8 @@ const EventCreate = () => {
                 onNext={handleNext}
                 onSubmit={handleSubmit}
                 isLoading={loading}
-                submitLabel="Send Invitations"
-                submitColorScheme="green"
+                submitLabel={formData.guests.length > 0 ? "Create & Send Invitations" : "Create Event"}
+                submitColorScheme="purple"
                 mt={8}
               />
             </Box>
