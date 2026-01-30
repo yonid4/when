@@ -1,0 +1,162 @@
+import React, { useRef } from "react";
+import {
+  Box,
+  Container,
+  Heading,
+  Text,
+  VStack,
+  Icon,
+  Card,
+  CardBody,
+  SimpleGrid
+} from "@chakra-ui/react";
+import { motion, useInView } from "framer-motion";
+import { FiCalendar, FiUsers, FiCheck, FiArrowRight } from "react-icons/fi";
+import { colors, shadows } from "../../styles/designSystem";
+
+const MotionBox = motion(Box);
+const MotionCard = motion(Card);
+
+const steps = [
+  {
+    number: "01",
+    icon: FiCalendar,
+    iconBg: colors.primarySoft,
+    iconColor: colors.primary,
+    title: "Create an Event",
+    description:
+      "Set up your event with a name, duration, and preferred date range. It takes less than 30 seconds."
+  },
+  {
+    number: "02",
+    icon: FiUsers,
+    iconBg: "blue.50",
+    iconColor: "blue.500",
+    title: "Invite Participants",
+    description:
+      "Share a simple link with your team. They can mark their availability without signing up."
+  },
+  {
+    number: "03",
+    icon: FiCheck,
+    iconBg: "green.50",
+    iconColor: colors.secondary,
+    title: "Find the Perfect Time",
+    description:
+      "We show you when everyone is free. Pick a time, confirm, and we'll send calendar invites automatically."
+  }
+];
+
+/**
+ * How It Works section with 3 staggered step cards.
+ * Uses whileInView for entrance animation with 0.15s stagger.
+ */
+const HowItWorksSection = ({ reducedMotion }) => {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-100px" });
+
+  return (
+    <Box py={20} bg="gray.50">
+      <Container maxW="container.xl">
+        <VStack spacing={4} textAlign="center" mb={16}>
+          <MotionBox
+            initial={reducedMotion ? {} : { opacity: 0, y: 20 }}
+            animate={
+              reducedMotion
+                ? {}
+                : isInView
+                ? { opacity: 1, y: 0 }
+                : { opacity: 0, y: 20 }
+            }
+            transition={{ duration: 0.6 }}
+            ref={ref}
+          >
+            <Heading size="2xl" mb={4}>
+              How it works
+            </Heading>
+            <Text fontSize="xl" color="gray.600" maxW="2xl" mx="auto">
+              Three simple steps to schedule your next meeting
+            </Text>
+          </MotionBox>
+        </VStack>
+
+        <SimpleGrid columns={{ base: 1, md: 3 }} spacing={8}>
+          {steps.map((step, index) => (
+            <MotionCard
+              key={index}
+              initial={reducedMotion ? {} : { opacity: 0, y: 30 }}
+              animate={
+                reducedMotion
+                  ? {}
+                  : isInView
+                  ? { opacity: 1, y: 0 }
+                  : { opacity: 0, y: 30 }
+              }
+              transition={{
+                duration: 0.5,
+                delay: reducedMotion ? 0 : 0.2 + index * 0.15
+              }}
+              bg="white"
+              borderRadius="2xl"
+              shadow={shadows.card}
+              _hover={{
+                shadow: shadows.cardHover,
+                transform: "translateY(-4px)"
+              }}
+              cursor="default"
+              position="relative"
+              overflow="hidden"
+            >
+              {/* Step number watermark */}
+              <Text
+                position="absolute"
+                top={-2}
+                right={4}
+                fontSize="8xl"
+                fontWeight="bold"
+                color="gray.100"
+                userSelect="none"
+              >
+                {step.number}
+              </Text>
+
+              <CardBody p={8} position="relative">
+                <VStack align="start" spacing={4}>
+                  <Box p={3} bg={step.iconBg} borderRadius="xl">
+                    <Icon as={step.icon} boxSize={7} color={step.iconColor} />
+                  </Box>
+                  <Heading size="md" color={colors.textPrimary}>
+                    {step.title}
+                  </Heading>
+                  <Text color="gray.600" lineHeight="tall">
+                    {step.description}
+                  </Text>
+                </VStack>
+              </CardBody>
+
+              {/* Connector arrow (except last card) */}
+              {index < steps.length - 1 && (
+                <Box
+                  display={{ base: "none", md: "block" }}
+                  position="absolute"
+                  right={-6}
+                  top="50%"
+                  transform="translateY(-50%)"
+                  zIndex={1}
+                  bg="white"
+                  borderRadius="full"
+                  p={2}
+                  shadow="sm"
+                >
+                  <Icon as={FiArrowRight} color="gray.400" boxSize={4} />
+                </Box>
+              )}
+            </MotionCard>
+          ))}
+        </SimpleGrid>
+      </Container>
+    </Box>
+  );
+};
+
+export default HowItWorksSection;
