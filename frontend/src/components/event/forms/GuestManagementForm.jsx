@@ -93,7 +93,7 @@ const GuestManagementForm = ({
 
     // Add as a new guest object
     const newGuest = {
-      id: `email-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `email-${crypto.randomUUID()}`,
       email: trimmedEmail,
       email_address: trimmedEmail,
       name: trimmedEmail.split('@')[0],
@@ -128,7 +128,7 @@ const GuestManagementForm = ({
 
         if (!alreadyAdded) {
           const newGuest = {
-            id: `email-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            id: `email-${crypto.randomUUID()}`,
             email: email,
             email_address: email,
             name: email.split('@')[0],

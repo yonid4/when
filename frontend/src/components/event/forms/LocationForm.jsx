@@ -20,17 +20,9 @@ import {
 import { motion } from "framer-motion";
 import { FiMapPin, FiVideo, FiGlobe, FiLink } from "react-icons/fi";
 import { colors } from "../../../styles/designSystem";
+import { LOCATION_TYPES } from "../../../constants/eventConstants";
 
 const MotionBox = motion(Box);
-
-/**
- * Location type options
- */
-const LOCATION_TYPES = {
-  IN_PERSON: "in_person",
-  VIRTUAL: "virtual",
-  BOTH: "both"
-};
 
 /**
  * LocationForm - Fourth step of event creation

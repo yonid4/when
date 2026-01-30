@@ -22,12 +22,12 @@ const Landing = () => {
   const reducedMotion = useReducedMotion();
 
   // Detect mobile for simpler fallback experience
-  const isMobile = useBreakpointValue({ base: true, lg: false });
+  // Default to false to prevent SSR hydration mismatch
+  const isMobile = useBreakpointValue({ base: true, lg: false }, { ssr: false });
 
   // Redirect authenticated users to dashboard
   useEffect(() => {
     if (!loading && user && session) {
-      console.log("User authenticated, redirecting to dashboard...");
       navigate("/dashboard", { replace: true });
     }
   }, [user, session, loading, navigate]);

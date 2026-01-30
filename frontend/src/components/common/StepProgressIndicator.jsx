@@ -10,6 +10,9 @@ import {
 import { FiCheck } from "react-icons/fi";
 import { colors, shadows } from "../../styles/designSystem";
 
+/** Maximum percentage width for the progress line (accounts for edge margins) */
+const PROGRESS_LINE_MAX_WIDTH = 76;
+
 /**
  * StepProgressIndicator - Horizontal stepper with connected nodes
  *
@@ -57,7 +60,7 @@ const StepProgressIndicator = ({ steps, currentStep }) => {
           position="absolute"
           top="20px"
           left="12%"
-          width={`${Math.max(0, ((currentStep) / (steps.length - 1)) * 76)}%`}
+          width={`${Math.max(0, ((currentStep) / (steps.length - 1)) * PROGRESS_LINE_MAX_WIDTH)}%`}
           height="2px"
           bg={colors.primary}
           zIndex={0}

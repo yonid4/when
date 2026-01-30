@@ -1,13 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useLayoutEffect } from "react";
 
 /**
  * Hook to detect if the user prefers reduced motion.
  * Returns true if the user has enabled reduced motion in their OS settings.
+ * Uses useLayoutEffect to prevent animation flicker on initial render.
  */
 export const useReducedMotion = () => {
   const [reducedMotion, setReducedMotion] = useState(false);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     setReducedMotion(mediaQuery.matches);
 

@@ -21,31 +21,10 @@ import {
 import { motion } from "framer-motion";
 import { FiCalendar, FiClock, FiUsers } from "react-icons/fi";
 import { colors } from "../../../styles/designSystem";
+import { durationOptions } from "../../../constants/eventConstants";
+import { formatHour } from "../../../utils/dateTimeUtils";
 
 const MotionBox = motion(Box);
-
-/**
- * Duration options for events
- */
-export const durationOptions = [
-  { value: "15", label: "15 min", short: "15m" },
-  { value: "30", label: "30 min", short: "30m" },
-  { value: "60", label: "1 hour", short: "1h" },
-  { value: "90", label: "1.5 hours", short: "1.5h" },
-  { value: "120", label: "2 hours", short: "2h" },
-  { value: "180", label: "3 hours", short: "3h" }
-];
-
-/**
- * Format hour to 12-hour display
- */
-const formatHour = (hour) => {
-  const h = parseInt(hour);
-  if (h === 0) return "12 AM";
-  if (h < 12) return `${h} AM`;
-  if (h === 12) return "12 PM";
-  return `${h - 12} PM`;
-};
 
 /**
  * Get smart defaults for date range

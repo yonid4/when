@@ -27,21 +27,13 @@ import {
   FiSend
 } from "react-icons/fi";
 import { colors } from "../../../styles/designSystem";
-import { eventTypes } from "./EventBasicsForm";
-import { durationOptions } from "./EventSchedulingForm";
+import { eventTypes, getDurationLabel } from "../../../constants/eventConstants";
+import { formatHour } from "../../../utils/dateTimeUtils";
 
 const MotionBox = motion(Box);
 
-/**
- * Format hour to 12-hour display
- */
-const formatHour = (hour) => {
-  const h = parseInt(hour);
-  if (h === 0) return "12 AM";
-  if (h < 12) return `${h} AM`;
-  if (h === 12) return "12 PM";
-  return `${h - 12} PM`;
-};
+/** Maximum number of guest avatars to display before showing "+X more" */
+const MAX_VISIBLE_GUESTS = 8;
 
 /**
  * Format date for display
@@ -55,14 +47,6 @@ const formatDate = (dateStr) => {
     day: "numeric",
     year: "numeric"
   });
-};
-
-/**
- * Get duration label
- */
-const getDurationLabel = (value) => {
-  const option = durationOptions.find(o => o.value === value);
-  return option ? option.label : `${value} minutes`;
 };
 
 /**
@@ -301,7 +285,7 @@ const EventReviewCard = ({ formData, onEditStep }) => {
               >
                 {guestCount > 0 ? (
                   <Flex flexWrap="wrap" gap={2}>
-                    {formData.guests.slice(0, 8).map((guest) => (
+                    {formData.guests.slice(0, MAX_VISIBLE_GUESTS).map((guest) => (
                       <HStack
                         key={guest.id}
                         bg="gray.50"
@@ -320,9 +304,9 @@ const EventReviewCard = ({ formData, onEditStep }) => {
                         </Text>
                       </HStack>
                     ))}
-                    {guestCount > 8 && (
+                    {guestCount > MAX_VISIBLE_GUESTS && (
                       <Badge colorScheme="purple" borderRadius="full" px={3} py={2}>
-                        +{guestCount - 8} more
+                        +{guestCount - MAX_VISIBLE_GUESTS} more
                       </Badge>
                     )}
                   </Flex>

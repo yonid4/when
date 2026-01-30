@@ -10,7 +10,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FiEdit, FiCalendar, FiUsers, FiMapPin, FiCheck } from "react-icons/fi";
 import { eventsAPI, usersAPI } from "../services/apiService";
 import { useApiCall } from "../hooks/useApiCall";
-import { useAuth } from "../hooks/useAuth";
 import {
   EventBasicsForm,
   EventSchedulingForm,
@@ -26,7 +25,6 @@ const MotionBox = motion(Box);
 const EventCreate = () => {
   const navigate = useNavigate();
   const toast = useToast();
-  useAuth(); // Ensure user is authenticated
   const { execute, loading } = useApiCall();
 
   // Capture user timezone for UTC conversion
@@ -96,7 +94,7 @@ const EventCreate = () => {
     try {
       const results = await usersAPI.search(guestSearchQuery);
       // Filter out already added guests
-      const filtered = results.filter(u => !formData.guests.find(g => g.id === u.id));
+      const filtered = results.filter(user => !formData.guests.find(guest => guest.id === user.id));
       setSearchResults(filtered);
     } catch (error) {
       console.error("Search failed:", error);
@@ -111,7 +109,7 @@ const EventCreate = () => {
   };
 
   const handleAddGuest = (user) => {
-    if (!formData.guests.find(g => g.id === user.id)) {
+    if (!formData.guests.find(guest => guest.id === user.id)) {
       setFormData(prev => ({
         ...prev,
         guests: [...prev.guests, user]
@@ -124,7 +122,7 @@ const EventCreate = () => {
   const handleRemoveGuest = (userId) => {
     setFormData(prev => ({
       ...prev,
-      guests: prev.guests.filter(g => g.id !== userId)
+      guests: prev.guests.filter(guest => guest.id !== userId)
     }));
   };
 

@@ -15,20 +15,11 @@ import {
   Box
 } from "@chakra-ui/react";
 import { motion } from "framer-motion";
-import { FiEdit3, FiBriefcase, FiMusic, FiGift, FiCalendar } from "react-icons/fi";
+import { FiEdit3 } from "react-icons/fi";
 import { colors, shadows } from "../../../styles/designSystem";
+import { eventTypes } from "../../../constants/eventConstants";
 
 const MotionBox = motion(Box);
-
-/**
- * Event type options with Feather icons
- */
-export const eventTypes = [
-  { value: "meeting", label: "Meeting", color: "blue", icon: FiBriefcase },
-  { value: "social", label: "Social", color: "green", icon: FiMusic },
-  { value: "birthday", label: "Birthday", color: "pink", icon: FiGift },
-  { value: "other", label: "Other", color: "purple", icon: FiCalendar }
-];
 
 /**
  * EventBasicsForm - First step of event creation

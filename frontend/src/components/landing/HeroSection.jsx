@@ -21,41 +21,52 @@ import { colors, gradients } from "../../styles/designSystem";
 const MotionBox = motion(Box);
 
 /**
+ * Create animation props for framer-motion components.
+ * Returns empty object if reduced motion is preferred.
+ *
+ * @param {boolean} reducedMotion - Whether user prefers reduced motion
+ * @param {Object} initial - Initial animation state
+ * @param {Object} animate - Target animation state
+ * @param {Object} transition - Transition configuration
+ * @returns {Object} Animation props for MotionBox
+ */
+const createAnimationProps = (reducedMotion, initial, animate, transition) => {
+  if (reducedMotion) return {};
+  return { initial, animate, transition };
+};
+
+/**
  * Hero section with badge, heading, CTA, and social proof.
  * Features subtle entrance animations.
  */
 const HeroSection = ({ onSignIn, reducedMotion }) => {
-  const animationProps = reducedMotion
-    ? {}
-    : {
-        initial: { opacity: 0, y: 30 },
-        animate: { opacity: 1, y: 0 },
-        transition: { duration: 0.8 }
-      };
+  const animationProps = createAnimationProps(
+    reducedMotion,
+    { opacity: 0, y: 30 },
+    { opacity: 1, y: 0 },
+    { duration: 0.8 }
+  );
 
-  const scaleAnimationProps = reducedMotion
-    ? {}
-    : {
-        initial: { opacity: 0, scale: 0.9 },
-        animate: { opacity: 1, scale: 1 },
-        transition: { duration: 0.8, delay: 0.2 }
-      };
+  const scaleAnimationProps = createAnimationProps(
+    reducedMotion,
+    { opacity: 0, scale: 0.9 },
+    { opacity: 1, scale: 1 },
+    { duration: 0.8, delay: 0.2 }
+  );
 
-  const cardAnimationProps = reducedMotion
-    ? {}
-    : {
-        initial: { opacity: 0, y: 50 },
-        animate: { opacity: 1, y: 0 },
-        transition: { duration: 1, delay: 0.4 }
-      };
+  const cardAnimationProps = createAnimationProps(
+    reducedMotion,
+    { opacity: 0, y: 50 },
+    { opacity: 1, y: 0 },
+    { duration: 1, delay: 0.4 }
+  );
 
-  const fadeAnimationProps = reducedMotion
-    ? {}
-    : {
-        initial: { opacity: 0 },
-        animate: { opacity: 1 },
-        transition: { duration: 0.8, delay: 0.6 }
-      };
+  const fadeAnimationProps = createAnimationProps(
+    reducedMotion,
+    { opacity: 0 },
+    { opacity: 1 },
+    { duration: 0.8, delay: 0.6 }
+  );
 
   return (
     <Box
