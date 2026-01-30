@@ -41,7 +41,7 @@ const CtaSection = ({ onSignIn, reducedMotion }) => {
 
   const scrollToAbout = (e) => {
     e.preventDefault();
-    const target = document.querySelector("#scroll-zoom-section");
+    const target = document.querySelector("#converging-section");
     if (target) {
       target.scrollIntoView({ behavior: "smooth", block: "start" });
     }

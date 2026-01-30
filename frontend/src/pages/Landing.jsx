@@ -6,7 +6,7 @@ import { useReducedMotion } from "../hooks/useReducedMotion";
 import { supabase } from "../services/supabaseClient";
 import {
   HeroSection,
-  ScrollZoomSection,
+  TimeSlotsConvergingSection,
   PinnedFeatureSection,
   HowItWorksSection,
   CtaSection
@@ -62,9 +62,9 @@ const Landing = () => {
       {/* Hero with entrance animations */}
       <HeroSection onSignIn={handleSignIn} reducedMotion={reducedMotion} />
 
-      {/* Scroll zoom calendar section */}
-      <Box id="scroll-zoom-section">
-        <ScrollZoomSection reducedMotion={reducedMotion} isMobile={isMobile} />
+      {/* Time slots converging animation */}
+      <Box id="converging-section">
+        <TimeSlotsConvergingSection reducedMotion={reducedMotion} isMobile={isMobile} />
       </Box>
 
       {/* Pinned feature section with slide switching */}
