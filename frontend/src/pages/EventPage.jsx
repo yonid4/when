@@ -10,7 +10,6 @@ import {
   VStack,
   Text,
   Spinner,
-  Center,
   useColorModeValue,
   useToast
 } from "@chakra-ui/react";
@@ -19,6 +18,7 @@ import api from "../services/api";
 import { useApiCall } from "../hooks/useApiCall";
 import { useAuth } from "../hooks/useAuth";
 import { colors, shadows } from "../styles/designSystem";
+import { EventPageSkeleton } from "../components/skeletons";
 
 // Components
 import { CalendarView } from "../components/calendar";
@@ -499,11 +499,7 @@ const EventPage = () => {
 
   // Loading state
   if (loading && !event) {
-    return (
-      <Center h="calc(100vh - 64px)" bg={bgColor}>
-        <Spinner size="xl" color={colors.primary} />
-      </Center>
-    );
+    return <EventPageSkeleton />;
   }
 
   // Not found state

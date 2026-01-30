@@ -14,8 +14,6 @@ import {
   CardBody,
   Icon,
   IconButton,
-  Spinner,
-  Center,
   Collapse,
   useDisclosure
 } from "@chakra-ui/react";
@@ -35,6 +33,7 @@ import { useApiCall } from "../hooks/useApiCall";
 import { useAuth } from "../hooks/useAuth";
 import { useEnsureProfile } from "../hooks/useEnsureProfile";
 import { colors, shadows, components } from "../styles/designSystem";
+import { DashboardSkeleton } from "../components/skeletons";
 
 const MotionBox = motion(Box);
 const MotionCard = motion(Card);
@@ -399,14 +398,7 @@ const Dashboard = () => {
   const userName = isDemo ? "Demo User" : (user?.user_metadata?.full_name || user?.email?.split('@')[0] || "User");
 
   if (loading || (!isDemo && authLoading)) {
-    return (
-      <Center minH="100vh" bg={colors.bgPage}>
-        <VStack spacing={4}>
-          <Spinner size="xl" color={colors.primary} thickness="4px" />
-          <Text color="gray.600">Loading your dashboard...</Text>
-        </VStack>
-      </Center>
-    );
+    return <DashboardSkeleton />;
   }
 
   const hasNoEvents = events.length === 0;
