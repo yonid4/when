@@ -185,13 +185,13 @@ const AnimatedVersion = ({ sectionRef, scrollYProgress }) => {
   const findingOpacity = useTransform(scrollYProgress, [0.6, 0.8], [1, 0]);
   const successOpacity = useTransform(scrollYProgress, [0.75, 0.9], [0, 1]);
   const successY = useTransform(scrollYProgress, [0.75, 0.9], [20, 0]);
-  const buttonOpacity = useTransform(scrollYProgress, [0.8, 1], [0, 1]);
-  const buttonScale = useTransform(scrollYProgress, [0.8, 1], [0.8, 1]);
+  const buttonOpacity = useTransform(scrollYProgress, [0.5, 0.65], [0, 1]);
+  const buttonScale = useTransform(scrollYProgress, [0.5, 0.65], [0.8, 1]);
 
   return (
     <Box
       ref={sectionRef}
-      h="250vh"
+      h="180vh"
       position="relative"
       bg="gray.50"
     >

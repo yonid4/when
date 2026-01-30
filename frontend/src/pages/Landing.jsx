@@ -7,7 +7,7 @@ import { supabase } from "../services/supabaseClient";
 import {
   HeroSection,
   TimeSlotsConvergingSection,
-  PinnedFeatureSection,
+  FeaturesSection,
   HowItWorksSection,
   CtaSection
 } from "../components/landing";
@@ -67,8 +67,8 @@ const Landing = () => {
         <TimeSlotsConvergingSection reducedMotion={reducedMotion} isMobile={isMobile} />
       </Box>
 
-      {/* Pinned feature section with slide switching */}
-      <PinnedFeatureSection reducedMotion={reducedMotion} isMobile={isMobile} />
+      {/* Features section - value props and showcase */}
+      <FeaturesSection reducedMotion={reducedMotion} />
 
       {/* How it works - 3 step cards */}
       <HowItWorksSection reducedMotion={reducedMotion} />
