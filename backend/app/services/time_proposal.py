@@ -25,7 +25,7 @@ class TimeProposalService:
     """Service for generating AI-powered time proposals using Gemini."""
 
     # Minimum buffer time from now for proposed times (in minutes)
-    MIN_BUFFER_MINUTES = 60  # 1 hour minimum from current time
+    MIN_BUFFER_MINUTES = 45  # 45 minutes minimum from current time
 
     def __init__(self, access_token: Optional[str] = None):
         self.supabase = get_supabase(access_token)
