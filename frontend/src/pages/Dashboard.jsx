@@ -15,7 +15,9 @@ import {
   Icon,
   IconButton,
   Collapse,
-  useDisclosure
+  useDisclosure,
+  Skeleton,
+  SkeletonText
 } from "@chakra-ui/react";
 import { motion } from "framer-motion";
 import {
@@ -155,6 +157,34 @@ const EventCard = ({ event, onClick, isUpcoming }) => {
     </Card>
   );
 };
+
+// Event card skeleton for loading state
+const EventCardSkeleton = () => (
+  <Card
+    borderRadius="xl"
+    border="1px solid"
+    borderColor="gray.200"
+    bg="white"
+    shadow={shadows.card}
+  >
+    <CardBody p={4}>
+      <HStack justify="space-between" mb={2}>
+        <Skeleton height="20px" width="60px" borderRadius="md" />
+        <Skeleton height="14px" width="70px" />
+      </HStack>
+      <Skeleton height="20px" width="80%" mb={2} />
+      <HStack fontSize="xs" mb={3}>
+        <Skeleton height="14px" width="16px" />
+        <Skeleton height="14px" width="120px" />
+      </HStack>
+      <HStack fontSize="xs" mb={3}>
+        <Skeleton height="14px" width="16px" />
+        <Skeleton height="14px" width="60px" />
+      </HStack>
+      <Skeleton height="32px" width="100%" borderRadius="md" />
+    </CardBody>
+  </Card>
+);
 
 // Compact invitation card for sidebar
 const InvitationCard = ({ notification, onAccept, onDecline, onNavigate }) => (
@@ -397,11 +427,12 @@ const Dashboard = () => {
 
   const userName = isDemo ? "Demo User" : (user?.user_metadata?.full_name || user?.email?.split('@')[0] || "User");
 
-  if (loading || (!isDemo && authLoading)) {
+  // Only show full skeleton during initial auth loading
+  if (!isDemo && authLoading) {
     return <DashboardSkeleton />;
   }
 
-  const hasNoEvents = events.length === 0;
+  const hasNoEvents = !loading && events.length === 0;
 
   return (
     <Box h="calc(100vh - 64px)" bg={colors.bgPage} overflow="hidden">
@@ -447,10 +478,23 @@ const Dashboard = () => {
           >
             <SectionHeader
               title="Upcoming Events"
-              count={completedUpcomingEvents.length}
+              count={loading ? undefined : completedUpcomingEvents.length}
               colorScheme="green"
             />
-            {completedUpcomingEvents.length > 0 ? (
+            {loading ? (
+              <Grid
+                templateColumns={{
+                  base: "1fr",
+                  md: "repeat(2, 1fr)",
+                  xl: "repeat(3, 1fr)"
+                }}
+                gap={4}
+              >
+                {[1, 2, 3].map((i) => (
+                  <EventCardSkeleton key={i} />
+                ))}
+              </Grid>
+            ) : completedUpcomingEvents.length > 0 ? (
               <Grid
                 templateColumns={{
                   base: "1fr",
@@ -493,10 +537,23 @@ const Dashboard = () => {
           >
             <SectionHeader
               title="In Progress"
-              count={inProgressEvents.length}
+              count={loading ? undefined : inProgressEvents.length}
               colorScheme="blue"
             />
-            {inProgressEvents.length > 0 ? (
+            {loading ? (
+              <Grid
+                templateColumns={{
+                  base: "1fr",
+                  md: "repeat(2, 1fr)",
+                  xl: "repeat(3, 1fr)"
+                }}
+                gap={4}
+              >
+                {[1, 2].map((i) => (
+                  <EventCardSkeleton key={i} />
+                ))}
+              </Grid>
+            ) : inProgressEvents.length > 0 ? (
               <Grid
                 templateColumns={{
                   base: "1fr",
@@ -538,7 +595,7 @@ const Dashboard = () => {
           </MotionBox>
 
           {/* Past Events Section - Collapsible */}
-          {pastEvents.length > 0 && (
+          {!loading && pastEvents.length > 0 && (
             <MotionBox
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -615,27 +672,37 @@ const Dashboard = () => {
             >
               Quick Stats
             </Text>
-            <StatRow
-              icon={FiCheck}
-              label="Upcoming"
-              value={stats.completedUpcoming}
-              borderColor="green.400"
-              textColor="green.600"
-            />
-            <StatRow
-              icon={FiClock}
-              label="In Progress"
-              value={stats.inProgress}
-              borderColor="blue.400"
-              textColor="blue.600"
-            />
-            <StatRow
-              icon={FiCalendar}
-              label="Past Events"
-              value={stats.pastEvents}
-              borderColor="gray.400"
-              textColor="gray.600"
-            />
+            {loading ? (
+              <>
+                <Skeleton height="48px" borderRadius="md" />
+                <Skeleton height="48px" borderRadius="md" />
+                <Skeleton height="48px" borderRadius="md" />
+              </>
+            ) : (
+              <>
+                <StatRow
+                  icon={FiCheck}
+                  label="Upcoming"
+                  value={stats.completedUpcoming}
+                  borderColor="green.400"
+                  textColor="green.600"
+                />
+                <StatRow
+                  icon={FiClock}
+                  label="In Progress"
+                  value={stats.inProgress}
+                  borderColor="blue.400"
+                  textColor="blue.600"
+                />
+                <StatRow
+                  icon={FiCalendar}
+                  label="Past Events"
+                  value={stats.pastEvents}
+                  borderColor="gray.400"
+                  textColor="gray.600"
+                />
+              </>
+            )}
           </VStack>
 
           {/* Pending Invitations */}
@@ -650,14 +717,19 @@ const Dashboard = () => {
               >
                 Invitations
               </Text>
-              {invitations.length > 0 && (
+              {!loading && invitations.length > 0 && (
                 <Badge colorScheme="orange" borderRadius="full" fontSize="xs">
                   {invitations.length}
                 </Badge>
               )}
             </HStack>
 
-            {invitations.length > 0 ? (
+            {loading ? (
+              <VStack align="stretch" spacing={2}>
+                <Skeleton height="60px" borderRadius="md" />
+                <Skeleton height="60px" borderRadius="md" />
+              </VStack>
+            ) : invitations.length > 0 ? (
               <VStack
                 align="stretch"
                 spacing={2}

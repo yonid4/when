@@ -6,7 +6,8 @@ import {
   Text,
   Button,
   Badge,
-  Spinner
+  Spinner,
+  Skeleton
 } from "@chakra-ui/react";
 import { FiClock, FiRefreshCw, FiMail, FiCopy, FiCalendar } from "react-icons/fi";
 import { shadows } from "../../styles/designSystem";
@@ -27,6 +28,7 @@ import { shadows } from "../../styles/designSystem";
  * @param {Function} props.onCopyLink - Handler for copying event link
  * @param {Function} props.onReconnect - Handler for reconnecting Google Calendar
  * @param {string} props.cardBg - Card background color
+ * @param {boolean} props.isLoading - Show skeleton loading state
  */
 const ActionsPanel = ({
   isCoordinator,
@@ -40,8 +42,37 @@ const ActionsPanel = ({
   onInvite,
   onCopyLink,
   onReconnect,
-  cardBg
+  cardBg,
+  isLoading = false
 }) => {
+  if (isLoading) {
+    return (
+      <Box borderWidth="1px" borderRadius="xl" p={4} bg={cardBg} shadow={shadows.card}>
+        <Text
+          fontSize="xs"
+          fontWeight="semibold"
+          textTransform="uppercase"
+          letterSpacing="0.5px"
+          color="gray.500"
+          mb={3}
+        >
+          Actions
+        </Text>
+        <VStack spacing={3}>
+          <Skeleton height="40px" width="100%" borderRadius="md" />
+          <HStack w="full" spacing={2}>
+            <Skeleton height="32px" flex={1} borderRadius="md" />
+            <Skeleton height="32px" flex={1} borderRadius="md" />
+          </HStack>
+          <HStack w="full" spacing={2}>
+            <Skeleton height="24px" flex={1} borderRadius="md" />
+            <Skeleton height="24px" flex={1} borderRadius="md" />
+          </HStack>
+        </VStack>
+      </Box>
+    );
+  }
+
   return (
     <Box borderWidth="1px" borderRadius="xl" p={4} bg={cardBg} shadow={shadows.card}>
       <Text

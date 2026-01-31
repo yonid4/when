@@ -10,7 +10,10 @@ import {
   Badge,
   Divider,
   Link,
-  IconButton
+  IconButton,
+  Skeleton,
+  SkeletonCircle,
+  SkeletonText
 } from "@chakra-ui/react";
 import {
   FiCalendar,
@@ -59,6 +62,7 @@ const getEventTypeInfo = (eventType) => {
  * @param {Function} props.onRsvp - Handler for RSVP changes
  * @param {Object} props.rsvpStats - RSVP counts { going, maybe, declined }
  * @param {string} props.cardBg - Card background color
+ * @param {boolean} props.isLoading - Show skeleton loading state
  */
 const EventDetailsCard = ({
   event,
@@ -66,9 +70,67 @@ const EventDetailsCard = ({
   userRsvp,
   onRsvp,
   rsvpStats,
-  cardBg
+  cardBg,
+  isLoading = false
 }) => {
-  const eventTypeInfo = event.event_type ? getEventTypeInfo(event.event_type) : null;
+  const eventTypeInfo = event?.event_type ? getEventTypeInfo(event.event_type) : null;
+
+  // Skeleton loading state
+  if (isLoading) {
+    return (
+      <Box borderWidth="1px" borderRadius="xl" p={4} bg={cardBg} shadow={shadows.card}>
+        <Text
+          fontSize="xs"
+          fontWeight="semibold"
+          textTransform="uppercase"
+          letterSpacing="0.5px"
+          color="gray.500"
+          mb={3}
+        >
+          Event Details
+        </Text>
+        <VStack align="stretch" spacing={3}>
+          {/* Host and RSVP skeleton */}
+          <HStack justify="space-between" align="center" gap={3}>
+            <HStack spacing={3} flex={1}>
+              <SkeletonCircle size="8" />
+              <VStack align="start" spacing={1}>
+                <Skeleton height="10px" width="30px" />
+                <Skeleton height="14px" width="80px" />
+              </VStack>
+            </HStack>
+            <HStack spacing={2}>
+              <Skeleton height="24px" width="60px" borderRadius="full" />
+              <Skeleton height="24px" width="60px" borderRadius="full" />
+              <Skeleton height="24px" width="55px" borderRadius="full" />
+            </HStack>
+          </HStack>
+
+          <Divider />
+
+          {/* Date skeleton */}
+          <HStack spacing={2}>
+            <Skeleton height="16px" width="16px" />
+            <Skeleton height="14px" width="180px" />
+          </HStack>
+
+          {/* Duration skeleton */}
+          <HStack spacing={2}>
+            <Skeleton height="16px" width="16px" />
+            <Skeleton height="14px" width="80px" />
+          </HStack>
+
+          <Divider />
+
+          {/* Description skeleton */}
+          <SkeletonText noOfLines={2} spacing={2} />
+
+          {/* Event type badge skeleton */}
+          <Skeleton height="24px" width="80px" borderRadius="md" />
+        </VStack>
+      </Box>
+    );
+  }
 
   return (
     <Box borderWidth="1px" borderRadius="xl" p={4} bg={cardBg} shadow={shadows.card}>

@@ -568,22 +568,32 @@ const EventPage = () => {
                 </HStack>
               </Flex>
 
-              <Box flex="1" minH="0">
-                {(busySlotsLoading || preferredSlotsLoading) ? (
-                  <Flex justify="center" align="center" h="full">
-                    <Spinner size="xl" color={colors.primary} />
-                    <Text ml={4}>Loading calendar data...</Text>
+              <Box flex="1" minH="0" position="relative">
+                {(busySlotsLoading || preferredSlotsLoading) && (
+                  <Flex
+                    position="absolute"
+                    top={2}
+                    right={2}
+                    zIndex={10}
+                    bg="white"
+                    px={3}
+                    py={1}
+                    borderRadius="full"
+                    shadow="sm"
+                    align="center"
+                  >
+                    <Spinner size="sm" color={colors.primary} mr={2} />
+                    <Text fontSize="xs" color="gray.600">Syncing...</Text>
                   </Flex>
-                ) : (
-                  <CalendarView
-                    events={calendarEvents}
-                    onSelectSlot={handleSelectSlot}
-                    onSelectEvent={handleSelectEvent}
-                    selectable={event?.status !== "finalized"}
-                    minTime={extractCalendarTimeBound(event.earliest_datetime_utc, event.earliest_hour)}
-                    maxTime={extractCalendarTimeBound(event.latest_datetime_utc, event.latest_hour)}
-                  />
                 )}
+                <CalendarView
+                  events={calendarEvents}
+                  onSelectSlot={handleSelectSlot}
+                  onSelectEvent={handleSelectEvent}
+                  selectable={event?.status !== "finalized"}
+                  minTime={extractCalendarTimeBound(event?.earliest_datetime_utc, event?.earliest_hour)}
+                  maxTime={extractCalendarTimeBound(event?.latest_datetime_utc, event?.latest_hour)}
+                />
               </Box>
             </Box>
           </Flex>
@@ -598,6 +608,7 @@ const EventPage = () => {
                 onRsvp={handleRsvp}
                 rsvpStats={rsvpStats}
                 cardBg={cardBg}
+                isLoading={loading && !event}
               />
 
               <ActionsPanel
@@ -613,12 +624,14 @@ const EventPage = () => {
                 onCopyLink={handleCopyLink}
                 onReconnect={handleReconnectGoogleCalendar}
                 cardBg={cardBg}
+                isLoading={loading && !event}
               />
 
               <ParticipantsList
                 participants={participants}
                 rsvpStats={rsvpStats}
                 cardBg={cardBg}
+                isLoading={loading && !event}
               />
             </VStack>
           </Box>
