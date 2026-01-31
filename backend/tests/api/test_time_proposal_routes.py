@@ -27,12 +27,14 @@ class TestProposeTimes:
             {
                 "start_time": "2025-01-15T10:00:00Z",
                 "end_time": "2025-01-15T11:00:00Z",
-                "score": 0.95
+                "conflicts": 0,
+                "preferredCount": 3
             },
             {
                 "start_time": "2025-01-15T14:00:00Z",
                 "end_time": "2025-01-15T15:00:00Z",
-                "score": 0.90
+                "conflicts": 1,
+                "preferredCount": 2
             }
         ]
 
@@ -86,7 +88,8 @@ class TestProposeTimes:
             {
                 "start_time": "2025-01-15T10:00:00Z",
                 "end_time": "2025-01-15T11:00:00Z",
-                "score": 0.95
+                "conflicts": 0,
+                "preferredCount": 3
             }
         ]
 
@@ -136,7 +139,8 @@ class TestProposeTimes:
             {
                 "start_time": "2025-01-15T10:00:00Z",
                 "end_time": "2025-01-15T11:00:00Z",
-                "score": 0.95
+                "conflicts": 0,
+                "preferredCount": 3
             }
         ]
 

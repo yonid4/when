@@ -106,14 +106,12 @@ def sample_gemini_response():
         {
             "start_time_utc": "2025-12-20T14:00:00Z",
             "end_time_utc": "2025-12-20T15:00:00Z",
-            "score": 95,
             "conflicts": 0,
             "reasoning": "Perfect time - all participants free"
         },
         {
             "start_time_utc": "2025-12-21T10:00:00Z",
             "end_time_utc": "2025-12-21T11:00:00Z",
-            "score": 85,
             "conflicts": 0,
             "reasoning": "Good time in morning"
         }
@@ -177,8 +175,8 @@ class TestProposeTimes:
         # Assert
         assert len(result) == 2
         assert result[0]["conflicts"] == 0
-        assert "score" in result[0]
         assert "start_time_utc" in result[0]
+        assert "preferredCount" in result[0]
 
     def test_propose_times_no_gemini_available(self, monkeypatch, mock_supabase):
         """Test propose_times fails when Gemini is not available."""
@@ -290,7 +288,6 @@ class TestParseGeminiResponse:
             {
                 "start_time_utc": "2025-12-20T14:00:00Z",
                 "end_time_utc": "2025-12-20T15:00:00Z",
-                "score": 90,
                 "conflicts": 0,
                 "reasoning": "Good time"
             }
@@ -301,7 +298,7 @@ class TestParseGeminiResponse:
 
         # Assert
         assert len(result) == 1
-        assert result[0]["score"] == 90
+        assert result[0]["conflicts"] == 0
 
     def test_parse_json_with_markdown(self, time_proposal_service):
         """Test parsing JSON wrapped in markdown code blocks."""
@@ -311,7 +308,6 @@ class TestParseGeminiResponse:
     {
         "start_time_utc": "2025-12-20T14:00:00Z",
         "end_time_utc": "2025-12-20T15:00:00Z",
-        "score": 90,
         "conflicts": 0,
         "reasoning": "Good time"
     }
@@ -348,7 +344,6 @@ class TestValidateProposedTimes:
             {
                 "start_time_utc": "2025-12-20T14:00:00Z",
                 "end_time_utc": "2025-12-20T15:00:00Z",
-                "score": 90,
                 "conflicts": 0,
                 "reasoning": "Good time"
             }
@@ -371,7 +366,7 @@ class TestValidateProposedTimes:
         proposals = [
             {
                 "start_time_utc": "2025-12-20T14:00:00Z",
-                # Missing end_time_utc, score, conflicts, reasoning
+                # Missing end_time_utc, conflicts, reasoning
             }
         ]
 
@@ -393,7 +388,6 @@ class TestValidateProposedTimes:
             {
                 "start_time_utc": "2025-12-20T14:00:00Z",
                 "end_time_utc": "2025-12-20T14:30:00Z",  # 30 min instead of 60
-                "score": 90,
                 "conflicts": 0,
                 "reasoning": "Good time"
             }
@@ -429,7 +423,6 @@ class TestGetCachedProposals:
             {
                 "start_time_utc": "2025-12-20T14:00:00",
                 "end_time_utc": "2025-12-20T15:00:00",
-                "score": 90,
                 "conflicts": 0,
                 "reasoning": "Good time",
                 "rank": 0
@@ -442,6 +435,9 @@ class TestGetCachedProposals:
         participants_result = Mock()
         participants_result.data = [{"user_id": "user-1"}, {"user_id": "user-2"}]
 
+        preferred_slots_result = Mock()
+        preferred_slots_result.data = []
+
         def mock_table_chain(*args, **kwargs):
             mock_chain = Mock()
             table_name = args[0] if args else None
@@ -452,6 +448,8 @@ class TestGetCachedProposals:
                 mock_chain.select.return_value.eq.return_value.execute.return_value = event_result
             elif table_name == "event_participants":
                 mock_chain.select.return_value.eq.return_value.execute.return_value = participants_result
+            elif table_name == "preferred_slots":
+                mock_chain.select.return_value.eq.return_value.execute.return_value = preferred_slots_result
 
             return mock_chain
 
@@ -463,6 +461,7 @@ class TestGetCachedProposals:
         # Assert
         assert result is not None
         assert len(result) == 1
+        assert "preferredCount" in result[0]
 
     def test_get_cached_proposals_no_cache(self, time_proposal_service, mock_supabase):
         """Test getting cached proposals when none exist."""
@@ -493,7 +492,6 @@ class TestSaveProposalsToCache:
             {
                 "start_time_utc": "2025-12-20T14:00:00Z",
                 "end_time_utc": "2025-12-20T15:00:00Z",
-                "score": 90,
                 "conflicts": 0,
                 "reasoning": "Good time"
             }

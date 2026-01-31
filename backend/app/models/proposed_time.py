@@ -14,7 +14,6 @@ class ProposedTime(BaseModel):
     start_time_utc: datetime = Field(...)
     end_time_utc: datetime = Field(...)
     conflicts: int = Field(default=0)
-    score: Optional[float] = Field(default=None)  # DOUBLE PRECISION in DB, nullable
     reasoning: Optional[str] = Field(default=None)
     rank: int = Field(...)
     created_at: datetime = Field(default_factory=datetime.utcnow)
@@ -27,7 +26,6 @@ class ProposedTime(BaseModel):
             "start_time_utc": self.start_time_utc.isoformat(),
             "end_time_utc": self.end_time_utc.isoformat(),
             "conflicts": self.conflicts,
-            "score": self.score,
             "reasoning": self.reasoning,
             "rank": self.rank,
             "created_at": self.created_at.isoformat(),

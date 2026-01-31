@@ -9,11 +9,10 @@ CREATE TABLE IF NOT EXISTS proposed_times (
     start_time_utc TIMESTAMP WITH TIME ZONE NOT NULL,
     end_time_utc TIMESTAMP WITH TIME ZONE NOT NULL,
     conflicts INTEGER DEFAULT 0,
-    score DOUBLE PRECISION,
     reasoning TEXT,
     rank INTEGER NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    
+
     -- Constraints
     CONSTRAINT valid_time_range CHECK (end_time_utc > start_time_utc),
     CONSTRAINT valid_rank CHECK (rank >= 0),
@@ -34,12 +33,14 @@ ALTER TABLE events
 ALTER TABLE proposed_times ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Users can view proposals for events they're part of
+-- Drop first if exists since CREATE POLICY doesn't support IF NOT EXISTS
+DROP POLICY IF EXISTS "Users can view proposals for their events" ON proposed_times;
 CREATE POLICY "Users can view proposals for their events"
     ON proposed_times FOR SELECT
     USING (
         event_id IN (
-            SELECT ep.event_id 
-            FROM event_participants ep 
+            SELECT ep.event_id
+            FROM event_participants ep
             WHERE ep.user_id = auth.uid()
         )
     );
@@ -50,7 +51,6 @@ COMMENT ON COLUMN proposed_times.event_id IS 'Reference to the event';
 COMMENT ON COLUMN proposed_times.start_time_utc IS 'Proposed start time in UTC';
 COMMENT ON COLUMN proposed_times.end_time_utc IS 'Proposed end time in UTC';
 COMMENT ON COLUMN proposed_times.conflicts IS 'Number of participants with conflicts at this time';
-COMMENT ON COLUMN proposed_times.score IS 'AI-assigned score (0-100) for this proposal';
 COMMENT ON COLUMN proposed_times.reasoning IS 'AI explanation for why this time was suggested';
 COMMENT ON COLUMN proposed_times.rank IS 'Ranking of proposal (0=best, 1=second best, etc.)';
 

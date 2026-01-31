@@ -439,21 +439,11 @@ CONFLICT DEFINITION (IMPORTANT):
 - A participant with ANY overlap counts as 1 conflict
 - If 2 out of 5 participants are busy during a time slot, conflicts = 2
 
-SCORING GUIDANCE:
-- Score range: 0-100
-- 100: Perfect slot - 0 conflicts, matches preferences, good time of day
-- 90-99: Excellent - 0 conflicts, reasonable time of day
-- 70-89: Good - 0 conflicts but suboptimal time, OR 1 conflict with preferences
-- 50-69: Fair - 1-2 conflicts
-- 30-49: Poor - 3+ conflicts
-- 0-29: Very poor - most participants unavailable
-
 RESPONSE FORMAT (JSON only, no markdown):
 [
   {{
     "start_time_utc": "YYYY-MM-DDTHH:MM:SSZ",
     "end_time_utc": "YYYY-MM-DDTHH:MM:SSZ",
-    "score": 85,
     "conflicts": 0,
     "reasoning": "Brief explanation of why this time is optimal (mention timezone if relevant)"
   }}
@@ -560,8 +550,8 @@ Return ONLY the JSON array, no other text or markdown formatting.
         
         for proposal in proposals:
             try:
-                # Validate required fields
-                if not all(k in proposal for k in ["start_time_utc", "end_time_utc", "score", "reasoning", "conflicts"]):
+                # Validate required fields (score removed)
+                if not all(k in proposal for k in ["start_time_utc", "end_time_utc", "reasoning", "conflicts"]):
                     print(f"[WARNING] Skipping proposal with missing fields: {proposal}")
                     continue
                 
@@ -591,6 +581,25 @@ Return ONLY the JSON array, no other text or markdown formatting.
         
         return validated
     
+    def _calculate_preferred_count_for_time(
+        self,
+        start_time: datetime,
+        end_time: datetime,
+        all_preferred_slots: List[Dict[str, Any]]
+    ) -> int:
+        """Calculate how many participants have marked this time as preferred."""
+        preferring_users = set()
+
+        for pref_slot in all_preferred_slots:
+            pref_start = datetime.fromisoformat(pref_slot["start_time_utc"].replace("Z", "+00:00"))
+            pref_end = datetime.fromisoformat(pref_slot["end_time_utc"].replace("Z", "+00:00"))
+
+            # Check for overlap - if the proposed time overlaps with preferred slot
+            if start_time < pref_end and end_time > pref_start:
+                preferring_users.add(pref_slot["user_id"])
+
+        return len(preferring_users)
+
     def _format_for_frontend(
         self,
         proposals: List[Dict[str, Any]],
@@ -600,6 +609,7 @@ Return ONLY the JSON array, no other text or markdown formatting.
         formatted = []
         participant_count = data["participant_count"]
         all_busy_slots = data["all_busy_slots"]
+        all_preferred_slots = data.get("all_preferred_slots", [])
 
         # Track validation metrics for logging
         total_proposals = len(proposals)
@@ -637,6 +647,9 @@ Return ONLY the JSON array, no other text or markdown formatting.
             # Calculate availability
             available_count = participant_count - conflicts
 
+            # Calculate preferred count
+            preferred_count = self._calculate_preferred_count_for_time(start_time, end_time, all_preferred_slots)
+
             # Format time display
             time_display = f"{start_time.strftime('%I:%M %p')} - {end_time.strftime('%I:%M %p')}"
 
@@ -646,10 +659,10 @@ Return ONLY the JSON array, no other text or markdown formatting.
                 "time": time_display,
                 "start_time_utc": proposal["start_time_utc"],
                 "end_time_utc": proposal["end_time_utc"],
-                "score": proposal.get("score", 50),
                 "reasoning": proposal.get("reasoning", "AI-generated suggestion"),
                 "conflicts": conflicts,
                 "availableCount": available_count,
+                "preferredCount": preferred_count,
                 "totalParticipants": participant_count
             })
 
@@ -661,8 +674,8 @@ Return ONLY the JSON array, no other text or markdown formatting.
         else:
             print(f"[AI_VALIDATION_SUMMARY] All {total_proposals} proposals passed conflict validation ✓")
 
-        # Sort by conflicts (ascending), then by score (descending)
-        formatted.sort(key=lambda x: (x["conflicts"], -x["score"]))
+        # Sort by conflicts (ascending), then by preferredCount (descending)
+        formatted.sort(key=lambda x: (x["conflicts"], -x["preferredCount"]))
 
         return formatted
     
@@ -702,9 +715,17 @@ Return ONLY the JSON array, no other text or markdown formatting.
                 .select("user_id") \
                 .eq("event_id", event_id) \
                 .execute()
-            
+
             participant_count = len(participants_response.data) if participants_response.data else 0
-            
+
+            # Get preferred slots to calculate preferredCount
+            preferred_slots_response = self.service_role_client.table("preferred_slots") \
+                .select("*") \
+                .eq("event_id", event_id) \
+                .execute()
+
+            all_preferred_slots = preferred_slots_response.data if preferred_slots_response.data else []
+
             # Format for frontend
             formatted = []
             for i, proposal in enumerate(response.data):
@@ -712,23 +733,26 @@ Return ONLY the JSON array, no other text or markdown formatting.
                 end_time = datetime.fromisoformat(proposal["end_time_utc"])
                 conflicts = proposal.get("conflicts", 0)
                 available_count = participant_count - conflicts
-                
+
+                # Calculate preferred count
+                preferred_count = self._calculate_preferred_count_for_time(start_time, end_time, all_preferred_slots)
+
                 # Format time display
                 time_display = f"{start_time.strftime('%I:%M %p')} - {end_time.strftime('%I:%M %p')}"
-                
+
                 formatted.append({
                     "id": f"cached-{i}-{start_time.isoformat()}",
                     "date": proposal["start_time_utc"],
                     "time": time_display,
                     "start_time_utc": proposal["start_time_utc"],
                     "end_time_utc": proposal["end_time_utc"],
-                    "score": proposal.get("score", 50),
                     "reasoning": proposal.get("reasoning", "AI-generated suggestion"),
                     "conflicts": conflicts,
                     "availableCount": available_count,
+                    "preferredCount": preferred_count,
                     "totalParticipants": participant_count
                 })
-            
+
             return formatted
             
         except Exception as e:
@@ -761,7 +785,6 @@ Return ONLY the JSON array, no other text or markdown formatting.
                     "start_time_utc": start_time.isoformat(),
                     "end_time_utc": end_time.isoformat(),
                     "conflicts": proposal.get("conflicts", 0),
-                    "score": proposal.get("score"),
                     "reasoning": proposal.get("reasoning"),
                     "rank": rank
                 })

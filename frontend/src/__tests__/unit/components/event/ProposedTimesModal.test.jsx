@@ -26,6 +26,7 @@ describe('ProposedTimesModal', () => {
       start_time_utc: '2025-12-25T14:00:00.000Z',
       end_time_utc: '2025-12-25T15:00:00.000Z',
       availableCount: 8,
+      preferredCount: 5,
       totalParticipants: 10,
       conflicts: 0,
     },
@@ -34,6 +35,7 @@ describe('ProposedTimesModal', () => {
       start_time_utc: '2025-12-26T16:00:00.000Z',
       end_time_utc: '2025-12-26T17:00:00.000Z',
       availableCount: 6,
+      preferredCount: 3,
       totalParticipants: 10,
       conflicts: 2,
     },
@@ -42,6 +44,7 @@ describe('ProposedTimesModal', () => {
       start_time_utc: '2025-12-27T10:00:00.000Z',
       end_time_utc: '2025-12-27T11:00:00.000Z',
       availableCount: 5,
+      preferredCount: 2,
       totalParticipants: 10,
       conflicts: 1,
     },
@@ -73,13 +76,13 @@ describe('ProposedTimesModal', () => {
       });
       const modal = screen.getByRole('dialog');
 
-      expect(within(modal).getByText('Proposed Times')).toBeInTheDocument();
+      expect(within(modal).getByText('AI Proposed Times')).toBeInTheDocument();
     });
 
     it('does not render when closed', () => {
       renderWithProviders(<ProposedTimesModal {...defaultProps} isOpen={false} />);
 
-      expect(screen.queryByText('Proposed Times')).not.toBeInTheDocument();
+      expect(screen.queryByText('AI Proposed Times')).not.toBeInTheDocument();
     });
 
     it('renders all time options', async () => {
@@ -90,10 +93,10 @@ describe('ProposedTimesModal', () => {
       });
       const modal = screen.getByRole('dialog');
 
-      // Should render 3 time option cards
-      expect(within(modal).getByText(/8 of 10 available/i)).toBeInTheDocument();
-      expect(within(modal).getByText(/6 of 10 available/i)).toBeInTheDocument();
-      expect(within(modal).getByText(/5 of 10 available/i)).toBeInTheDocument();
+      // Should render 3 time option cards with new multi-metric format
+      expect(within(modal).getByText(/8 available/i)).toBeInTheDocument();
+      expect(within(modal).getByText(/6 available/i)).toBeInTheDocument();
+      expect(within(modal).getByText(/5 available/i)).toBeInTheDocument();
     });
 
     it('renders "Top Choice" badge for first option', async () => {
@@ -107,7 +110,7 @@ describe('ProposedTimesModal', () => {
       expect(within(modal).getByText('Top Choice')).toBeInTheDocument();
     });
 
-    it('renders conflict badges when conflicts exist', async () => {
+    it('renders busy counts when conflicts exist', async () => {
       renderWithProviders(<ProposedTimesModal {...defaultProps} />);
 
       await waitFor(() => {
@@ -115,11 +118,11 @@ describe('ProposedTimesModal', () => {
       });
       const modal = screen.getByRole('dialog');
 
-      expect(within(modal).getByText('2 conflicts')).toBeInTheDocument();
-      expect(within(modal).getByText('1 conflict')).toBeInTheDocument();
+      expect(within(modal).getByText('2 busy')).toBeInTheDocument();
+      expect(within(modal).getByText('1 busy')).toBeInTheDocument();
     });
 
-    it('renders percentage bars for each option', async () => {
+    it('renders preferred counts when available', async () => {
       renderWithProviders(<ProposedTimesModal {...defaultProps} />);
 
       await waitFor(() => {
@@ -127,12 +130,10 @@ describe('ProposedTimesModal', () => {
       });
       const modal = screen.getByRole('dialog');
 
-      // Top option: 8/10 = 80%
-      expect(within(modal).getByText('80%')).toBeInTheDocument();
-      // Second option: 6/10 = 60%
-      expect(within(modal).getByText('60%')).toBeInTheDocument();
-      // Third option: 5/10 = 50%
-      expect(within(modal).getByText('50%')).toBeInTheDocument();
+      // Should show preferred counts for each option
+      expect(within(modal).getByText('5 prefer')).toBeInTheDocument();
+      expect(within(modal).getByText('3 prefer')).toBeInTheDocument();
+      expect(within(modal).getByText('2 prefer')).toBeInTheDocument();
     });
   });
 
@@ -289,7 +290,7 @@ describe('ProposedTimesModal', () => {
       });
       const modal = screen.getByRole('dialog');
 
-      expect(within(modal).queryByText(/\d+ of \d+ available/i)).not.toBeInTheDocument();
+      expect(within(modal).queryByText(/\d+ available/i)).not.toBeInTheDocument();
     });
   });
 
@@ -303,8 +304,8 @@ describe('ProposedTimesModal', () => {
       });
       const modal = screen.getByRole('dialog');
 
-      // Click on the second option card (6 of 10 available)
-      const secondOption = within(modal).getByText(/6 of 10 available/i).closest('.chakra-card');
+      // Click on the second option card (6 available)
+      const secondOption = within(modal).getByText(/6 available/i).closest('.chakra-card');
       await user.click(secondOption);
 
       await waitFor(() => {
@@ -324,7 +325,7 @@ describe('ProposedTimesModal', () => {
       const modal = screen.getByRole('dialog');
 
       // Click on first option
-      const firstOption = within(modal).getByText(/8 of 10 available/i).closest('.chakra-card');
+      const firstOption = within(modal).getByText(/8 available/i).closest('.chakra-card');
       await user.click(firstOption);
 
       await waitFor(() => {
@@ -344,7 +345,7 @@ describe('ProposedTimesModal', () => {
       });
       const modal = screen.getByRole('dialog');
 
-      const firstOption = within(modal).getByText(/8 of 10 available/i).closest('.chakra-card');
+      const firstOption = within(modal).getByText(/8 available/i).closest('.chakra-card');
       await user.click(firstOption);
 
       await waitFor(() => {
@@ -459,7 +460,7 @@ describe('ProposedTimesModal', () => {
       const modal = screen.getByRole('dialog');
 
       // Should still render without crashing
-      expect(within(modal).getByText('Proposed Times')).toBeInTheDocument();
+      expect(within(modal).getByText('AI Proposed Times')).toBeInTheDocument();
     });
   });
 
@@ -512,7 +513,7 @@ describe('ProposedTimesModal', () => {
       const modal = screen.getByRole('dialog');
 
       // Find first card and simulate Enter key
-      const firstCard = within(modal).getByText(/8 of 10 available/i).closest('.chakra-card');
+      const firstCard = within(modal).getByText(/8 available/i).closest('.chakra-card');
 
       // Focus the card
       firstCard.focus();
@@ -615,13 +616,14 @@ describe('ProposedTimesModal', () => {
       const modal = screen.getByRole('dialog');
 
       expect(within(modal).getByText('Top Choice')).toBeInTheDocument();
-      expect(within(modal).getByText(/8 of 10 available/i)).toBeInTheDocument();
+      expect(within(modal).getByText(/8 available/i)).toBeInTheDocument();
     });
 
-    it('handles 100% availability', async () => {
+    it('handles full availability', async () => {
       const perfectOption = [{
         ...mockTimeOptions[0],
         availableCount: 10,
+        preferredCount: 8,
         totalParticipants: 10,
         conflicts: 0,
       }];
@@ -635,13 +637,15 @@ describe('ProposedTimesModal', () => {
       });
       const modal = screen.getByRole('dialog');
 
-      expect(within(modal).getByText('100%')).toBeInTheDocument();
+      expect(within(modal).getByText('10 available')).toBeInTheDocument();
+      expect(within(modal).getByText('8 prefer')).toBeInTheDocument();
     });
 
-    it('handles 0% availability edge case', async () => {
+    it('handles no availability edge case', async () => {
       const badOption = [{
         ...mockTimeOptions[0],
         availableCount: 0,
+        preferredCount: 0,
         totalParticipants: 10,
         conflicts: 10,
       }];
@@ -655,7 +659,8 @@ describe('ProposedTimesModal', () => {
       });
       const modal = screen.getByRole('dialog');
 
-      expect(within(modal).getByText('0%')).toBeInTheDocument();
+      expect(within(modal).getByText('0 available')).toBeInTheDocument();
+      expect(within(modal).getByText('10 busy')).toBeInTheDocument();
     });
 
     it('handles missing onSelectTime callback', async () => {
@@ -673,7 +678,7 @@ describe('ProposedTimesModal', () => {
       });
       const modal = screen.getByRole('dialog');
 
-      const firstOption = within(modal).getByText(/8 of 10 available/i).closest('.chakra-card');
+      const firstOption = within(modal).getByText(/8 available/i).closest('.chakra-card');
 
       // Should not crash when callback is missing
       await user.click(firstOption);

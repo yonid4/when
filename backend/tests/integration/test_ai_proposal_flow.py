@@ -232,21 +232,18 @@ class TestAIProposalFlow:
             {
                 "start_time_utc": (datetime.now(timezone.utc) + timedelta(days=2, hours=14)).strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "end_time_utc": (datetime.now(timezone.utc) + timedelta(days=2, hours=15)).strftime("%Y-%m-%dT%H:%M:%SZ"),
-                "score": 95,
                 "conflicts": 0,
                 "reasoning": "No conflicts, preferred time zone for most participants"
             },
             {
                 "start_time_utc": (datetime.now(timezone.utc) + timedelta(days=3, hours=10)).strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "end_time_utc": (datetime.now(timezone.utc) + timedelta(days=3, hours=11)).strftime("%Y-%m-%dT%H:%M:%SZ"),
-                "score": 85,
                 "conflicts": 0,
                 "reasoning": "Morning slot, good for international team"
             },
             {
                 "start_time_utc": (datetime.now(timezone.utc) + timedelta(days=4, hours=16)).strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "end_time_utc": (datetime.now(timezone.utc) + timedelta(days=4, hours=17)).strftime("%Y-%m-%dT%H:%M:%SZ"),
-                "score": 75,
                 "conflicts": 1,
                 "reasoning": "One participant has minor conflict"
             }
@@ -286,10 +283,10 @@ class TestAIProposalFlow:
                     assert len(proposals) == 3
                     assert all('start_time_utc' in p for p in proposals)
                     assert all('end_time_utc' in p for p in proposals)
-                    assert all('score' in p for p in proposals)
                     assert all('conflicts' in p for p in proposals)
                     assert all('reasoning' in p for p in proposals)
                     assert all('availableCount' in p for p in proposals)
+                    assert all('preferredCount' in p for p in proposals)
                     assert all('totalParticipants' in p for p in proposals)
 
                     # Verify Gemini was called
@@ -391,14 +388,12 @@ class TestAIProposalFlow:
             {
                 "start_time_utc": (datetime.now(timezone.utc) + timedelta(days=2, hours=15)).strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "end_time_utc": (datetime.now(timezone.utc) + timedelta(days=2, hours=14)).strftime("%Y-%m-%dT%H:%M:%SZ"),  # End before start!
-                "score": 95,
                 "conflicts": 0,
                 "reasoning": "Invalid time order"
             },
             {
                 "start_time_utc": (datetime.now(timezone.utc) + timedelta(days=3, hours=10)).strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "end_time_utc": (datetime.now(timezone.utc) + timedelta(days=3, hours=11)).strftime("%Y-%m-%dT%H:%M:%SZ"),
-                "score": 85,
                 "conflicts": 0,
                 "reasoning": "Valid proposal"
             }
@@ -432,7 +427,6 @@ class TestAIProposalFlow:
             {
                 "start_time_utc": (datetime.now(timezone.utc) + timedelta(days=2, hours=14)).strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "end_time_utc": (datetime.now(timezone.utc) + timedelta(days=2, hours=14, minutes=30)).strftime("%Y-%m-%dT%H:%M:%SZ"),
-                "score": 95,
                 "conflicts": 0,
                 "reasoning": "Wrong duration"
             }
@@ -493,8 +487,8 @@ class TestAIProposalFlow:
                         or "participant" in error_msg
                     )
 
-    def test_proposal_sorting_by_conflicts_and_score(self, mock_supabase_for_proposals, mock_gemini_response):
-        """Test that proposals are sorted by conflicts (ascending) then score (descending)."""
+    def test_proposal_sorting_by_conflicts_and_preferred_count(self, mock_supabase_for_proposals, mock_gemini_response):
+        """Test that proposals are sorted by conflicts (ascending) then preferredCount (descending)."""
         # Arrange
         event_id = "event-123"
 
@@ -512,14 +506,14 @@ class TestAIProposalFlow:
                     # Act
                     proposals = service.propose_times(event_id, num_suggestions=3)
 
-                    # Assert - Sorted by conflicts first, then score
+                    # Assert - Sorted by conflicts first, then preferredCount
                     for i in range(len(proposals) - 1):
                         current = proposals[i]
                         next_prop = proposals[i + 1]
 
-                        # If same conflicts, higher score should come first
+                        # If same conflicts, higher preferredCount should come first
                         if current["conflicts"] == next_prop["conflicts"]:
-                            assert current["score"] >= next_prop["score"]
+                            assert current["preferredCount"] >= next_prop["preferredCount"]
                         # Lower conflicts should come first
                         else:
                             assert current["conflicts"] <= next_prop["conflicts"]

@@ -14,7 +14,6 @@ import {
   Text,
   HStack,
   Badge,
-  Progress,
   Button,
   Icon,
   useColorModeValue
@@ -156,7 +155,6 @@ const ProposedTimesModal = ({
           ) : (
             <VStack spacing={3} maxH="600px" overflowY="auto" pr={2}>
               {timeOptions.map((option, index) => {
-                const percentage = (option.availableCount / option.totalParticipants) * 100;
                 const isWinner = index === 0;
 
                 // Convert UTC times to local timezone for display
@@ -235,56 +233,30 @@ const ProposedTimesModal = ({
                               </Badge>
                             )}
                           </HStack>
-                          <HStack spacing={2} mt={2}>
+                          <HStack spacing={3} mt={2} flexWrap="wrap">
                             <HStack spacing={1}>
-                              <Icon as={FiUsers} color="gray.500" boxSize={3} />
-                              <Text fontSize="xs" color="gray.600" fontWeight="medium">
-                                {option.availableCount} of {option.totalParticipants} available
+                              <Icon as={FiUsers} color="green.500" boxSize={3} />
+                              <Text fontSize="sm" color="green.600" fontWeight="semibold">
+                                {option.availableCount} available
                               </Text>
                             </HStack>
+                            {option.preferredCount > 0 && (
+                              <HStack spacing={1}>
+                                <Text fontSize="sm" color="gray.400">·</Text>
+                                <Text fontSize="sm" color="purple.600" fontWeight="semibold">
+                                  {option.preferredCount} prefer
+                                </Text>
+                              </HStack>
+                            )}
                             {option.conflicts > 0 && (
-                              <Badge 
-                                bgGradient="linear(to-r, orange.400, yellow.400)"
-                                color="white"
-                                fontSize="xs"
-                              >
-                                {option.conflicts} conflict{option.conflicts > 1 ? "s" : ""}
-                              </Badge>
+                              <HStack spacing={1}>
+                                <Text fontSize="sm" color="gray.400">·</Text>
+                                <Text fontSize="sm" color="orange.500" fontWeight="semibold">
+                                  {option.conflicts} busy
+                                </Text>
+                              </HStack>
                             )}
                           </HStack>
-                        </Box>
-                        <Box w="120px" ml={4}>
-                          <Text 
-                            fontSize="2xl" 
-                            textAlign="right" 
-                            mb={1} 
-                            fontWeight="bold"
-                            bgGradient={
-                              isWinner
-                                ? "linear(to-r, green.400, teal.500)"
-                                : "linear(to-r, purple.500, blue.500)"
-                            }
-                            bgClip="text"
-                          >
-                            {Math.round(percentage)}%
-                          </Text>
-                          <Box
-                            h="8px"
-                            bg="gray.100"
-                            borderRadius="full"
-                            overflow="hidden"
-                          >
-                            <Box
-                              h="full"
-                              w={`${percentage}%`}
-                              bgGradient={
-                                isWinner
-                                  ? "linear(to-r, green.400, teal.500)"
-                                  : "linear(to-r, purple.500, blue.500)"
-                              }
-                              transition="width 0.5s"
-                            />
-                          </Box>
                         </Box>
                       </Flex>
                     </CardBody>

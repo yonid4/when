@@ -206,16 +206,22 @@ const EventPage = () => {
     if (isDemo) {
       setAiProposals([
         {
+          id: "demo-1",
           start_time_utc: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000 + 11 * 60 * 60 * 1000).toISOString(),
           end_time_utc: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000 + 12 * 60 * 60 * 1000).toISOString(),
-          score: 95,
-          available_count: 4
+          availableCount: 5,
+          preferredCount: 3,
+          conflicts: 1,
+          totalParticipants: 6
         },
         {
+          id: "demo-2",
           start_time_utc: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000 + 15 * 60 * 60 * 1000).toISOString(),
           end_time_utc: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000 + 16 * 60 * 60 * 1000).toISOString(),
-          score: 88,
-          available_count: 3
+          availableCount: 4,
+          preferredCount: 2,
+          conflicts: 2,
+          totalParticipants: 6
         }
       ]);
       setIsLoadingProposals(false);

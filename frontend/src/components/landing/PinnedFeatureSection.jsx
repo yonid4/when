@@ -35,9 +35,9 @@ const slides = [
     visual: {
       type: "proposals",
       items: [
-        { time: "Tuesday, 2:00 PM", score: 98, label: "Best match" },
-        { time: "Wednesday, 10:00 AM", score: 85, label: "Good option" },
-        { time: "Thursday, 3:30 PM", score: 72, label: "Alternative" }
+        { time: "Tuesday, 2:00 PM", available: 8, preferred: 5, busy: 0, label: "Best match" },
+        { time: "Wednesday, 10:00 AM", available: 7, preferred: 3, busy: 1, label: "Good option" },
+        { time: "Thursday, 3:30 PM", available: 6, preferred: 2, busy: 2, label: "Alternative" }
       ]
     }
   },
@@ -96,23 +96,39 @@ const ProposalsVisual = ({ items }) => (
     {items.map((item, index) => (
       <Card key={index} w="full" shadow={shadows.card}>
         <CardBody py={3} px={4}>
-          <HStack justify="space-between">
-            <VStack align="start" spacing={0}>
+          <VStack align="start" spacing={2}>
+            <HStack justify="space-between" w="full">
               <Text fontWeight="medium" fontSize="sm">
                 {item.time}
               </Text>
-              <Text fontSize="xs" color="gray.500">
-                {item.label}
+              {index === 0 && (
+                <Badge colorScheme="green" fontSize="xs">
+                  {item.label}
+                </Badge>
+              )}
+            </HStack>
+            <HStack spacing={3} fontSize="xs">
+              <Text color="green.600" fontWeight="semibold">
+                {item.available} available
               </Text>
-            </VStack>
-            <Badge
-              colorScheme={index === 0 ? "green" : "gray"}
-              fontSize="sm"
-              px={2}
-            >
-              {item.score}% match
-            </Badge>
-          </HStack>
+              {item.preferred > 0 && (
+                <>
+                  <Text color="gray.400">·</Text>
+                  <Text color="purple.600" fontWeight="semibold">
+                    {item.preferred} prefer
+                  </Text>
+                </>
+              )}
+              {item.busy > 0 && (
+                <>
+                  <Text color="gray.400">·</Text>
+                  <Text color="orange.500" fontWeight="semibold">
+                    {item.busy} busy
+                  </Text>
+                </>
+              )}
+            </HStack>
+          </VStack>
         </CardBody>
       </Card>
     ))}
