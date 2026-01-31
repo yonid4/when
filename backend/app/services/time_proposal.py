@@ -23,7 +23,10 @@ except ImportError:
 
 class TimeProposalService:
     """Service for generating AI-powered time proposals using Gemini."""
-    
+
+    # Minimum buffer time from now for proposed times (in minutes)
+    MIN_BUFFER_MINUTES = 60  # 1 hour minimum from current time
+
     def __init__(self, access_token: Optional[str] = None):
         self.supabase = get_supabase(access_token)
         
@@ -539,31 +542,42 @@ Return ONLY the JSON array, no other text or markdown formatting.
         return len(conflicting_users)
     
     def _validate_proposed_times(
-        self, 
-        proposals: List[Dict[str, Any]], 
+        self,
+        proposals: List[Dict[str, Any]],
         data: Dict[str, Any]
     ) -> List[Dict[str, Any]]:
         """Validate proposed times against event constraints and busy slots."""
+        from datetime import timezone
+
         event = data["event"]
         all_busy_slots = data["all_busy_slots"]
         validated = []
-        
+
+        # Calculate minimum allowed start time (current time + buffer)
+        now_utc = datetime.now(timezone.utc)
+        min_start_time = now_utc + timedelta(minutes=self.MIN_BUFFER_MINUTES)
+
         for proposal in proposals:
             try:
                 # Validate required fields (score removed)
                 if not all(k in proposal for k in ["start_time_utc", "end_time_utc", "reasoning", "conflicts"]):
                     print(f"[WARNING] Skipping proposal with missing fields: {proposal}")
                     continue
-                
+
                 # Parse times
                 start_time = datetime.fromisoformat(proposal["start_time_utc"].replace("Z", "+00:00"))
                 end_time = datetime.fromisoformat(proposal["end_time_utc"].replace("Z", "+00:00"))
-                
+
                 # Validate time order
                 if start_time >= end_time:
                     print(f"[WARNING] Invalid time order: {proposal}")
                     continue
-                
+
+                # Validate proposal is not too soon (must be at least MIN_BUFFER_MINUTES from now)
+                if start_time < min_start_time:
+                    print(f"[WARNING] Skipping proposal too close to current time: {start_time.isoformat()} (min: {min_start_time.isoformat()})")
+                    continue
+
                 # Validate duration
                 duration = (end_time - start_time).total_seconds() / 60
                 expected_duration = event.get("duration_minutes", 60)
@@ -572,13 +586,13 @@ Return ONLY the JSON array, no other text or markdown formatting.
                     # Adjust end time to match expected duration
                     end_time = start_time + timedelta(minutes=expected_duration)
                     proposal["end_time_utc"] = end_time.isoformat().replace("+00:00", "Z")
-                
+
                 validated.append(proposal)
-                
+
             except Exception as e:
                 print(f"[WARNING] Failed to validate proposal: {str(e)}")
                 continue
-        
+
         return validated
     
     def _calculate_preferred_count_for_time(
@@ -683,11 +697,22 @@ Return ONLY the JSON array, no other text or markdown formatting.
     # CACHING METHODS
     # =========================================================================
     
-    def get_cached_proposals(self, event_id: str) -> Optional[List[Dict[str, Any]]]:
+    def get_cached_proposals(self, event_id: str) -> Dict[str, Any]:
         """
-        Retrieve cached proposals from database.
-        Returns None if no proposals exist.
+        Retrieve cached proposals from database, filtering out past proposals.
+
+        Returns: {
+            "proposals": List of valid proposals (not in the past),
+            "all_expired": True if all cached proposals are past current time,
+            "total_cached": Total number of proposals in cache (before filtering),
+            "filtered_count": Number of proposals after filtering out past ones
+        }
+
+        Returns {"proposals": None, "all_expired": False, "total_cached": 0, "filtered_count": 0}
+        if no proposals exist.
         """
+        from datetime import timezone
+
         try:
             # Query proposed_times table ordered by rank
             response = self.service_role_client.table("proposed_times") \
@@ -695,22 +720,33 @@ Return ONLY the JSON array, no other text or markdown formatting.
                 .eq("event_id", event_id) \
                 .order("rank") \
                 .execute()
-            
+
             if not response.data:
                 print(f"[TIME_PROPOSAL_CACHE] No cached proposals found for event {event_id}")
-                return None
-            
-            print(f"[TIME_PROPOSAL_CACHE] Found {len(response.data)} cached proposals for event {event_id}")
-            
+                return {
+                    "proposals": None,
+                    "all_expired": False,
+                    "total_cached": 0,
+                    "filtered_count": 0
+                }
+
+            total_cached = len(response.data)
+            print(f"[TIME_PROPOSAL_CACHE] Found {total_cached} cached proposals for event {event_id}")
+
             # Get participant count for formatting
             event_response = self.service_role_client.table("events") \
                 .select("id") \
                 .eq("id", event_id) \
                 .execute()
-            
+
             if not event_response.data:
-                return None
-            
+                return {
+                    "proposals": None,
+                    "all_expired": False,
+                    "total_cached": 0,
+                    "filtered_count": 0
+                }
+
             participants_response = self.service_role_client.table("event_participants") \
                 .select("user_id") \
                 .eq("event_id", event_id) \
@@ -726,11 +762,28 @@ Return ONLY the JSON array, no other text or markdown formatting.
 
             all_preferred_slots = preferred_slots_response.data if preferred_slots_response.data else []
 
-            # Format for frontend
+            # Current time for filtering past proposals
+            now_utc = datetime.now(timezone.utc)
+
+            # Format for frontend, filtering out past proposals
             formatted = []
+            filtered_out_count = 0
             for i, proposal in enumerate(response.data):
                 start_time = datetime.fromisoformat(proposal["start_time_utc"])
+                # Ensure timezone aware for comparison
+                if start_time.tzinfo is None:
+                    start_time = start_time.replace(tzinfo=timezone.utc)
+
+                # Skip proposals that are in the past
+                if start_time < now_utc:
+                    filtered_out_count += 1
+                    print(f"[TIME_PROPOSAL_CACHE] Filtering out past proposal: {start_time.isoformat()}")
+                    continue
+
                 end_time = datetime.fromisoformat(proposal["end_time_utc"])
+                if end_time.tzinfo is None:
+                    end_time = end_time.replace(tzinfo=timezone.utc)
+
                 conflicts = proposal.get("conflicts", 0)
                 available_count = participant_count - conflicts
 
@@ -753,11 +806,29 @@ Return ONLY the JSON array, no other text or markdown formatting.
                     "totalParticipants": participant_count
                 })
 
-            return formatted
-            
+            filtered_count = len(formatted)
+            all_expired = total_cached > 0 and filtered_count == 0
+
+            if all_expired:
+                print(f"[TIME_PROPOSAL_CACHE] All {total_cached} cached proposals are past - regeneration needed")
+            elif filtered_out_count > 0:
+                print(f"[TIME_PROPOSAL_CACHE] Filtered out {filtered_out_count} past proposals, {filtered_count} remaining")
+
+            return {
+                "proposals": formatted if formatted else None,
+                "all_expired": all_expired,
+                "total_cached": total_cached,
+                "filtered_count": filtered_count
+            }
+
         except Exception as e:
             print(f"[TIME_PROPOSAL_CACHE] Error getting cached proposals: {str(e)}")
-            return None
+            return {
+                "proposals": None,
+                "all_expired": False,
+                "total_cached": 0,
+                "filtered_count": 0
+            }
     
     def save_proposals_to_cache(self, event_id: str, proposals: List[Dict[str, Any]]) -> None:
         """
@@ -848,44 +919,72 @@ Return ONLY the JSON array, no other text or markdown formatting.
         Returns: {
             "needs_regeneration": bool,
             "has_proposals": bool,
+            "all_expired": bool,
             "last_generated_at": datetime or None
         }
         """
+        from datetime import timezone
+
         try:
             # Query events table for flags
             response = self.service_role_client.table("events") \
                 .select("proposals_needs_regeneration, proposals_last_generated_at") \
                 .eq("id", event_id) \
                 .execute()
-            
+
             if not response.data:
                 return {
                     "needs_regeneration": True,
                     "has_proposals": False,
+                    "all_expired": False,
                     "last_generated_at": None
                 }
-            
+
             event_data = response.data[0]
-            
-            # Check if proposals exist
+
+            # Check if proposals exist and if they're all expired
             proposals_response = self.service_role_client.table("proposed_times") \
-                .select("id") \
+                .select("id, start_time_utc") \
                 .eq("event_id", event_id) \
-                .limit(1) \
                 .execute()
-            
+
             has_proposals = len(proposals_response.data) > 0 if proposals_response.data else False
-            
+
+            # Check if all proposals are in the past
+            all_expired = False
+            if has_proposals:
+                now_utc = datetime.now(timezone.utc)
+                valid_proposals = 0
+                for proposal in proposals_response.data:
+                    start_time = datetime.fromisoformat(proposal["start_time_utc"])
+                    if start_time.tzinfo is None:
+                        start_time = start_time.replace(tzinfo=timezone.utc)
+                    if start_time >= now_utc:
+                        valid_proposals += 1
+
+                all_expired = valid_proposals == 0
+                if all_expired:
+                    print(f"[TIME_PROPOSAL_CACHE] All proposals for event {event_id} are expired")
+
+            # Needs regeneration if flagged, no proposals, or all expired
+            needs_regeneration = (
+                event_data.get("proposals_needs_regeneration", True) or
+                not has_proposals or
+                all_expired
+            )
+
             return {
-                "needs_regeneration": event_data.get("proposals_needs_regeneration", True),
+                "needs_regeneration": needs_regeneration,
                 "has_proposals": has_proposals,
+                "all_expired": all_expired,
                 "last_generated_at": event_data.get("proposals_last_generated_at")
             }
-            
+
         except Exception as e:
             print(f"[TIME_PROPOSAL_CACHE] Error checking regeneration status: {str(e)}")
             return {
                 "needs_regeneration": True,
                 "has_proposals": False,
+                "all_expired": False,
                 "last_generated_at": None
             }

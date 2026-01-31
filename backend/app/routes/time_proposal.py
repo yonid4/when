@@ -92,72 +92,105 @@ def propose_times(event_uid, user_id):
         try:
             # Check regeneration status
             regen_status = time_proposal_service.should_regenerate(db_event_id)
-            
+
             # Force refresh: regenerate immediately
             if force_refresh:
                 logging.info(f"[TIME_PROPOSAL] Force refresh requested for event {event_uid}")
                 proposals = time_proposal_service.regenerate_proposals_immediately(db_event_id, num_suggestions)
-                
+
                 return jsonify({
                     "success": True,
                     "proposals": proposals,
                     "cached": False,
                     "generated_at": regen_status.get("last_generated_at"),
-                    "needs_update": False
+                    "needs_update": False,
+                    "all_expired": False
                 }), 200
-            
+
             # Has cache and not stale: return cached
             if regen_status["has_proposals"] and not regen_status["needs_regeneration"]:
                 logging.info(f"[TIME_PROPOSAL] Returning cached proposals for event {event_uid}")
-                proposals = time_proposal_service.get_cached_proposals(db_event_id)
-                
+                cache_result = time_proposal_service.get_cached_proposals(db_event_id)
+                proposals = cache_result.get("proposals")
+
                 if proposals:
                     return jsonify({
                         "success": True,
                         "proposals": proposals,
                         "cached": True,
                         "generated_at": regen_status.get("last_generated_at"),
-                        "needs_update": False
+                        "needs_update": False,
+                        "all_expired": False
                     }), 200
-            
+
             # No cache (first view): generate and cache
             if not regen_status["has_proposals"]:
                 logging.info(f"[TIME_PROPOSAL] No cache found, generating proposals for event {event_uid}")
                 proposals = time_proposal_service.propose_times(db_event_id, num_suggestions)
                 time_proposal_service.save_proposals_to_cache(db_event_id, proposals)
-                
+
                 return jsonify({
                     "success": True,
                     "proposals": proposals,
                     "cached": False,
                     "generated_at": None,
-                    "needs_update": False
+                    "needs_update": False,
+                    "all_expired": False
                 }), 200
-            
+
+            # All cached proposals are expired: indicate regeneration needed
+            if regen_status.get("all_expired"):
+                logging.info(f"[TIME_PROPOSAL] All proposals expired for event {event_uid}, indicating regeneration needed")
+                return jsonify({
+                    "success": True,
+                    "proposals": [],
+                    "cached": True,
+                    "generated_at": regen_status.get("last_generated_at"),
+                    "needs_update": True,
+                    "all_expired": True,
+                    "message": "All proposed times have passed. Please refresh to generate new proposals."
+                }), 200
+
             # Has cache but stale: return cached with needs_update flag
             logging.info(f"[TIME_PROPOSAL] Returning stale cached proposals for event {event_uid}")
-            proposals = time_proposal_service.get_cached_proposals(db_event_id)
-            
+            cache_result = time_proposal_service.get_cached_proposals(db_event_id)
+            proposals = cache_result.get("proposals")
+            all_expired = cache_result.get("all_expired", False)
+
             if proposals:
                 return jsonify({
                     "success": True,
                     "proposals": proposals,
                     "cached": True,
                     "generated_at": regen_status.get("last_generated_at"),
-                    "needs_update": True
+                    "needs_update": True,
+                    "all_expired": False
                 }), 200
-            
+
+            # All proposals filtered out (expired) after getting cache
+            if all_expired:
+                return jsonify({
+                    "success": True,
+                    "proposals": [],
+                    "cached": True,
+                    "generated_at": regen_status.get("last_generated_at"),
+                    "needs_update": True,
+                    "all_expired": True,
+                    "message": "All proposed times have passed. Please refresh to generate new proposals."
+                }), 200
+
             # Fallback: generate fresh proposals
             logging.info(f"[TIME_PROPOSAL] Fallback: generating fresh proposals for event {event_uid}")
             proposals = time_proposal_service.propose_times(db_event_id, num_suggestions)
             time_proposal_service.save_proposals_to_cache(db_event_id, proposals)
-            
+
             return jsonify({
                 "success": True,
                 "proposals": proposals,
                 "cached": False,
                 "generated_at": None,
-                "needs_update": False
+                "needs_update": False,
+                "all_expired": False
             }), 200
             
         except Exception as service_error:

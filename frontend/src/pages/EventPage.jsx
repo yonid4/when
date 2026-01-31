@@ -111,7 +111,8 @@ const EventPage = () => {
   const [proposalMetadata, setProposalMetadata] = useState({
     cached: false,
     generatedAt: null,
-    needsUpdate: false
+    needsUpdate: false,
+    allExpired: false
   });
 
   const bgColor = useColorModeValue("gray.50", "gray.900");
@@ -186,12 +187,13 @@ const EventPage = () => {
         showSuccessToast: false
       });
 
-      if (result && result.proposals) {
-        setAiProposals(result.proposals);
+      if (result) {
+        setAiProposals(result.proposals || []);
         setProposalMetadata({
           cached: result.cached || false,
           generatedAt: result.generated_at || null,
-          needsUpdate: result.needs_update || false
+          needsUpdate: result.needs_update || false,
+          allExpired: result.all_expired || false
         });
       }
     } catch (error) {

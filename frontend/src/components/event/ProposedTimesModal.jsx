@@ -129,11 +129,23 @@ const ProposedTimesModal = ({
                 </Text>
               )}
             </Flex>
-            {proposalMetadata?.needsUpdate && (
-              <Badge 
+            {proposalMetadata?.allExpired && (
+              <Badge
+                bgGradient="linear(to-r, red.400, orange.400)"
+                color="white"
+                fontSize="xs"
+                mt={2}
+                px={3}
+                py={1}
+              >
+                All proposed times have passed - Please refresh
+              </Badge>
+            )}
+            {proposalMetadata?.needsUpdate && !proposalMetadata?.allExpired && (
+              <Badge
                 bgGradient="linear(to-r, orange.400, yellow.400)"
                 color="white"
-                fontSize="xs" 
+                fontSize="xs"
                 mt={2}
                 px={3}
                 py={1}
@@ -147,10 +159,35 @@ const ProposedTimesModal = ({
         <ModalBody pb={6}>
           {timeOptions.length === 0 ? (
             <Box textAlign="center" py={8}>
-              <Text color="gray.500">No proposed times available yet.</Text>
-              <Text fontSize="sm" color="gray.400" mt={2}>
-                Participants need to select their preferred times first.
-              </Text>
+              {proposalMetadata?.allExpired ? (
+                <>
+                  <Text color="orange.500" fontWeight="semibold">All proposed times have passed.</Text>
+                  <Text fontSize="sm" color="gray.500" mt={2}>
+                    {isCoordinator
+                      ? "Click Refresh to generate new time proposals."
+                      : "Ask the coordinator to refresh the proposed times."}
+                  </Text>
+                  {isCoordinator && (
+                    <Button
+                      leftIcon={<Icon as={FiRefreshCw} />}
+                      colorScheme="purple"
+                      size="sm"
+                      mt={4}
+                      onClick={onRefresh}
+                      isLoading={isLoadingProposals}
+                    >
+                      Generate New Proposals
+                    </Button>
+                  )}
+                </>
+              ) : (
+                <>
+                  <Text color="gray.500">No proposed times available yet.</Text>
+                  <Text fontSize="sm" color="gray.400" mt={2}>
+                    Participants need to select their preferred times first.
+                  </Text>
+                </>
+              )}
             </Box>
           ) : (
             <VStack spacing={3} maxH="600px" overflowY="auto" pr={2}>

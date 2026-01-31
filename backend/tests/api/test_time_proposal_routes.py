@@ -51,9 +51,15 @@ class TestProposeTimes:
             mock_proposal_instance.should_regenerate.return_value = {
                 "has_proposals": True,
                 "needs_regeneration": False,
+                "all_expired": False,
                 "last_generated_at": "2025-01-15T09:00:00Z"
             }
-            mock_proposal_instance.get_cached_proposals.return_value = mock_proposals
+            mock_proposal_instance.get_cached_proposals.return_value = {
+                "proposals": mock_proposals,
+                "all_expired": False,
+                "total_cached": 2,
+                "filtered_count": 2
+            }
             mock_proposal_service.return_value = mock_proposal_instance
 
             # Act
@@ -70,6 +76,7 @@ class TestProposeTimes:
             assert data["cached"] is True
             assert len(data["proposals"]) == 2
             assert data["needs_update"] is False
+            assert data["all_expired"] is False
 
     def test_propose_times_success_coordinator(self, client, auth_headers, sample_event):
         """Test successful proposal retrieval by coordinator."""
@@ -105,9 +112,15 @@ class TestProposeTimes:
             mock_proposal_instance.should_regenerate.return_value = {
                 "has_proposals": True,
                 "needs_regeneration": False,
+                "all_expired": False,
                 "last_generated_at": "2025-01-15T09:00:00Z"
             }
-            mock_proposal_instance.get_cached_proposals.return_value = mock_proposals
+            mock_proposal_instance.get_cached_proposals.return_value = {
+                "proposals": mock_proposals,
+                "all_expired": False,
+                "total_cached": 1,
+                "filtered_count": 1
+            }
             mock_proposal_service.return_value = mock_proposal_instance
 
             # Act
@@ -156,6 +169,7 @@ class TestProposeTimes:
             mock_proposal_instance.should_regenerate.return_value = {
                 "has_proposals": True,
                 "needs_regeneration": False,
+                "all_expired": False,
                 "last_generated_at": "2025-01-15T09:00:00Z"
             }
             mock_proposal_instance.regenerate_proposals_immediately.return_value = mock_proposals
@@ -174,6 +188,7 @@ class TestProposeTimes:
             assert data["success"] is True
             assert data["cached"] is False
             assert data["needs_update"] is False
+            assert data["all_expired"] is False
 
     def test_propose_times_force_refresh_non_coordinator(self, client, auth_headers, sample_event):
         """Test force refresh by non-coordinator returns 403."""
@@ -344,7 +359,8 @@ class TestProposeTimes:
             mock_proposal_instance = MagicMock()
             mock_proposal_instance.should_regenerate.return_value = {
                 "has_proposals": False,
-                "needs_regeneration": False
+                "needs_regeneration": False,
+                "all_expired": False
             }
             # Error message must contain "no participants" to trigger the right error handling
             mock_proposal_instance.propose_times.side_effect = Exception("no participants available")
@@ -387,7 +403,8 @@ class TestProposeTimes:
             mock_proposal_instance = MagicMock()
             mock_proposal_instance.should_regenerate.return_value = {
                 "has_proposals": False,
-                "needs_regeneration": False
+                "needs_regeneration": False,
+                "all_expired": False
             }
             mock_proposal_instance.propose_times.side_effect = Exception("No available time slots found")
             mock_proposal_service.return_value = mock_proposal_instance
@@ -429,7 +446,8 @@ class TestProposeTimes:
             mock_proposal_instance = MagicMock()
             mock_proposal_instance.should_regenerate.return_value = {
                 "has_proposals": False,
-                "needs_regeneration": False
+                "needs_regeneration": False,
+                "all_expired": False
             }
             mock_proposal_instance.propose_times.side_effect = Exception("Rate limit exceeded")
             mock_proposal_service.return_value = mock_proposal_instance
@@ -458,6 +476,52 @@ class TestProposeTimes:
 
         # Assert
         assert response.status_code == 401
+
+    def test_propose_times_all_expired(self, client, auth_headers, sample_event):
+        """Test proposal retrieval when all cached proposals are expired."""
+        # Arrange
+        event_uid = "abc123xyz456"
+        request_data = {"num_suggestions": 5}
+
+        mock_event = {
+            **sample_event,
+            "uid": event_uid,
+            "coordinator_id": "user-1",
+            "status": "planning"
+        }
+
+        with patch("app.routes.time_proposal.EventsService") as mock_events_service, \
+             patch("app.routes.time_proposal.TimeProposalService") as mock_proposal_service:
+            # Mock EventsService
+            mock_events_instance = MagicMock()
+            mock_events_instance.get_event_by_uid.return_value = mock_event
+            mock_events_service.return_value = mock_events_instance
+
+            # Mock TimeProposalService - all proposals expired
+            mock_proposal_instance = MagicMock()
+            mock_proposal_instance.should_regenerate.return_value = {
+                "has_proposals": True,
+                "needs_regeneration": True,
+                "all_expired": True,
+                "last_generated_at": "2025-01-10T09:00:00Z"
+            }
+            mock_proposal_service.return_value = mock_proposal_instance
+
+            # Act
+            response = client.post(
+                f"/api/events/{event_uid}/propose-times",
+                json=request_data,
+                headers=auth_headers
+            )
+
+            # Assert
+            assert response.status_code == 200
+            data = response.get_json()
+            assert data["success"] is True
+            assert data["all_expired"] is True
+            assert data["needs_update"] is True
+            assert "message" in data
+            assert "passed" in data["message"].lower()
 
 
 class TestProposalTestEndpoint:

@@ -101,17 +101,23 @@ def sample_participants():
 
 @pytest.fixture
 def sample_gemini_response():
-    """Sample Gemini API response."""
+    """Sample Gemini API response with future dates."""
+    # Use dates 30 days in the future to avoid time buffer filtering
+    future_date_1 = (datetime.now(timezone.utc) + timedelta(days=30)).strftime("%Y-%m-%dT14:00:00Z")
+    future_date_1_end = (datetime.now(timezone.utc) + timedelta(days=30)).strftime("%Y-%m-%dT15:00:00Z")
+    future_date_2 = (datetime.now(timezone.utc) + timedelta(days=31)).strftime("%Y-%m-%dT10:00:00Z")
+    future_date_2_end = (datetime.now(timezone.utc) + timedelta(days=31)).strftime("%Y-%m-%dT11:00:00Z")
+
     return json.dumps([
         {
-            "start_time_utc": "2025-12-20T14:00:00Z",
-            "end_time_utc": "2025-12-20T15:00:00Z",
+            "start_time_utc": future_date_1,
+            "end_time_utc": future_date_1_end,
             "conflicts": 0,
             "reasoning": "Perfect time - all participants free"
         },
         {
-            "start_time_utc": "2025-12-21T10:00:00Z",
-            "end_time_utc": "2025-12-21T11:00:00Z",
+            "start_time_utc": future_date_2,
+            "end_time_utc": future_date_2_end,
             "conflicts": 0,
             "reasoning": "Good time in morning"
         }
@@ -339,11 +345,14 @@ class TestValidateProposedTimes:
 
     def test_validate_proposed_times_success(self, time_proposal_service, sample_event):
         """Test validation passes for valid proposals."""
-        # Arrange
+        # Arrange - use future time to avoid buffer filtering
+        future_time = (datetime.now(timezone.utc) + timedelta(days=30)).strftime("%Y-%m-%dT14:00:00Z")
+        future_time_end = (datetime.now(timezone.utc) + timedelta(days=30)).strftime("%Y-%m-%dT15:00:00Z")
+
         proposals = [
             {
-                "start_time_utc": "2025-12-20T14:00:00Z",
-                "end_time_utc": "2025-12-20T15:00:00Z",
+                "start_time_utc": future_time,
+                "end_time_utc": future_time_end,
                 "conflicts": 0,
                 "reasoning": "Good time"
             }
@@ -383,11 +392,14 @@ class TestValidateProposedTimes:
 
     def test_validate_adjusts_duration_mismatch(self, time_proposal_service, sample_event):
         """Test validation adjusts duration mismatches."""
-        # Arrange
+        # Arrange - use future time
+        future_time = (datetime.now(timezone.utc) + timedelta(days=30)).strftime("%Y-%m-%dT14:00:00Z")
+        future_time_short = (datetime.now(timezone.utc) + timedelta(days=30)).strftime("%Y-%m-%dT14:30:00Z")
+
         proposals = [
             {
-                "start_time_utc": "2025-12-20T14:00:00Z",
-                "end_time_utc": "2025-12-20T14:30:00Z",  # 30 min instead of 60
+                "start_time_utc": future_time,
+                "end_time_utc": future_time_short,  # 30 min instead of 60
                 "conflicts": 0,
                 "reasoning": "Good time"
             }
@@ -405,6 +417,41 @@ class TestValidateProposedTimes:
         assert len(result) == 1
         # Duration should be adjusted to 60 minutes
 
+    def test_validate_filters_proposals_too_soon(self, time_proposal_service, sample_event):
+        """Test validation filters out proposals that are too close to current time."""
+        # Arrange - one proposal too soon, one in the future
+        too_soon_time = (datetime.now(timezone.utc) + timedelta(minutes=30)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        too_soon_end = (datetime.now(timezone.utc) + timedelta(minutes=90)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        future_time = (datetime.now(timezone.utc) + timedelta(days=30)).strftime("%Y-%m-%dT14:00:00Z")
+        future_time_end = (datetime.now(timezone.utc) + timedelta(days=30)).strftime("%Y-%m-%dT15:00:00Z")
+
+        proposals = [
+            {
+                "start_time_utc": too_soon_time,
+                "end_time_utc": too_soon_end,
+                "conflicts": 0,
+                "reasoning": "Too soon"
+            },
+            {
+                "start_time_utc": future_time,
+                "end_time_utc": future_time_end,
+                "conflicts": 0,
+                "reasoning": "Future time"
+            }
+        ]
+
+        data = {
+            "event": sample_event,
+            "all_busy_slots": []
+        }
+
+        # Act
+        result = time_proposal_service._validate_proposed_times(proposals, data)
+
+        # Assert - only the future proposal should remain
+        assert len(result) == 1
+        assert "Future time" in result[0]["reasoning"]
+
 
 # ============================================================================
 # Tests: get_cached_proposals
@@ -417,12 +464,15 @@ class TestGetCachedProposals:
         """Test getting cached proposals."""
         # Arrange
         event_id = "event-123"
+        # Use future date to avoid filtering
+        future_date = (datetime.now(timezone.utc) + timedelta(days=30)).strftime("%Y-%m-%dT14:00:00+00:00")
+        future_date_end = (datetime.now(timezone.utc) + timedelta(days=30)).strftime("%Y-%m-%dT15:00:00+00:00")
 
         proposed_times_result = Mock()
         proposed_times_result.data = [
             {
-                "start_time_utc": "2025-12-20T14:00:00",
-                "end_time_utc": "2025-12-20T15:00:00",
+                "start_time_utc": future_date,
+                "end_time_utc": future_date_end,
                 "conflicts": 0,
                 "reasoning": "Good time",
                 "rank": 0
@@ -460,8 +510,10 @@ class TestGetCachedProposals:
 
         # Assert
         assert result is not None
-        assert len(result) == 1
-        assert "preferredCount" in result[0]
+        assert result["proposals"] is not None
+        assert len(result["proposals"]) == 1
+        assert result["all_expired"] is False
+        assert "preferredCount" in result["proposals"][0]
 
     def test_get_cached_proposals_no_cache(self, time_proposal_service, mock_supabase):
         """Test getting cached proposals when none exist."""
@@ -474,7 +526,63 @@ class TestGetCachedProposals:
         result = time_proposal_service.get_cached_proposals("event-123")
 
         # Assert
-        assert result is None
+        assert result["proposals"] is None
+        assert result["all_expired"] is False
+        assert result["total_cached"] == 0
+
+    def test_get_cached_proposals_all_expired(self, time_proposal_service, mock_supabase):
+        """Test getting cached proposals when all are in the past."""
+        # Arrange
+        event_id = "event-123"
+        # Use past date to trigger expiration
+        past_date = "2020-01-01T14:00:00+00:00"
+        past_date_end = "2020-01-01T15:00:00+00:00"
+
+        proposed_times_result = Mock()
+        proposed_times_result.data = [
+            {
+                "start_time_utc": past_date,
+                "end_time_utc": past_date_end,
+                "conflicts": 0,
+                "reasoning": "Good time",
+                "rank": 0
+            }
+        ]
+
+        event_result = Mock()
+        event_result.data = [{"id": event_id}]
+
+        participants_result = Mock()
+        participants_result.data = [{"user_id": "user-1"}]
+
+        preferred_slots_result = Mock()
+        preferred_slots_result.data = []
+
+        def mock_table_chain(*args, **kwargs):
+            mock_chain = Mock()
+            table_name = args[0] if args else None
+
+            if table_name == "proposed_times":
+                mock_chain.select.return_value.eq.return_value.order.return_value.execute.return_value = proposed_times_result
+            elif table_name == "events":
+                mock_chain.select.return_value.eq.return_value.execute.return_value = event_result
+            elif table_name == "event_participants":
+                mock_chain.select.return_value.eq.return_value.execute.return_value = participants_result
+            elif table_name == "preferred_slots":
+                mock_chain.select.return_value.eq.return_value.execute.return_value = preferred_slots_result
+
+            return mock_chain
+
+        mock_supabase.table.side_effect = mock_table_chain
+
+        # Act
+        result = time_proposal_service.get_cached_proposals(event_id)
+
+        # Assert
+        assert result["proposals"] is None
+        assert result["all_expired"] is True
+        assert result["total_cached"] == 1
+        assert result["filtered_count"] == 0
 
 
 # ============================================================================
@@ -538,7 +646,7 @@ class TestShouldRegenerate:
             if table_name == "events":
                 mock_chain.select.return_value.eq.return_value.execute.return_value = event_result
             elif table_name == "proposed_times":
-                mock_chain.select.return_value.eq.return_value.limit.return_value.execute.return_value = proposals_result
+                mock_chain.select.return_value.eq.return_value.execute.return_value = proposals_result
 
             return mock_chain
 
@@ -550,10 +658,14 @@ class TestShouldRegenerate:
         # Assert
         assert result["needs_regeneration"] is True
         assert result["has_proposals"] is False
+        assert result["all_expired"] is False
 
     def test_should_regenerate_false_with_proposals(self, time_proposal_service, mock_supabase):
         """Test should_regenerate returns false when proposals exist and flag is false."""
         # Arrange
+        # Use future date to avoid expiration
+        future_date = (datetime.now(timezone.utc) + timedelta(days=30)).isoformat()
+
         event_result = Mock()
         event_result.data = [{
             "proposals_needs_regeneration": False,
@@ -561,7 +673,7 @@ class TestShouldRegenerate:
         }]
 
         proposals_result = Mock()
-        proposals_result.data = [{"id": "proposal-1"}]
+        proposals_result.data = [{"id": "proposal-1", "start_time_utc": future_date}]
 
         def mock_table_chain(*args, **kwargs):
             mock_chain = Mock()
@@ -570,7 +682,7 @@ class TestShouldRegenerate:
             if table_name == "events":
                 mock_chain.select.return_value.eq.return_value.execute.return_value = event_result
             elif table_name == "proposed_times":
-                mock_chain.select.return_value.eq.return_value.limit.return_value.execute.return_value = proposals_result
+                mock_chain.select.return_value.eq.return_value.execute.return_value = proposals_result
 
             return mock_chain
 
@@ -582,6 +694,43 @@ class TestShouldRegenerate:
         # Assert
         assert result["needs_regeneration"] is False
         assert result["has_proposals"] is True
+        assert result["all_expired"] is False
+
+    def test_should_regenerate_true_when_all_expired(self, time_proposal_service, mock_supabase):
+        """Test should_regenerate returns true when all proposals are expired."""
+        # Arrange
+        # Use past date to trigger expiration
+        past_date = "2020-01-01T14:00:00+00:00"
+
+        event_result = Mock()
+        event_result.data = [{
+            "proposals_needs_regeneration": False,
+            "proposals_last_generated_at": "2020-01-01T10:00:00Z"
+        }]
+
+        proposals_result = Mock()
+        proposals_result.data = [{"id": "proposal-1", "start_time_utc": past_date}]
+
+        def mock_table_chain(*args, **kwargs):
+            mock_chain = Mock()
+            table_name = args[0] if args else None
+
+            if table_name == "events":
+                mock_chain.select.return_value.eq.return_value.execute.return_value = event_result
+            elif table_name == "proposed_times":
+                mock_chain.select.return_value.eq.return_value.execute.return_value = proposals_result
+
+            return mock_chain
+
+        mock_supabase.table.side_effect = mock_table_chain
+
+        # Act
+        result = time_proposal_service.should_regenerate("event-123")
+
+        # Assert
+        assert result["needs_regeneration"] is True
+        assert result["has_proposals"] is True
+        assert result["all_expired"] is True
 
 
 # ============================================================================
