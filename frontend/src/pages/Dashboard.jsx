@@ -724,12 +724,7 @@ const Dashboard = () => {
               )}
             </HStack>
 
-            {loading ? (
-              <VStack align="stretch" spacing={2}>
-                <Skeleton height="60px" borderRadius="md" />
-                <Skeleton height="60px" borderRadius="md" />
-              </VStack>
-            ) : invitations.length > 0 ? (
+            {!loading && invitations.length > 0 ? (
               <VStack
                 align="stretch"
                 spacing={2}
