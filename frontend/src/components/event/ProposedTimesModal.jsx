@@ -117,6 +117,7 @@ const ProposedTimesModal = ({
                   }}
                   transition="all 0.3s"
                   backdropFilter="blur(10px)"
+                  mr={8}
                 >
                   Refresh
                 </Button>
