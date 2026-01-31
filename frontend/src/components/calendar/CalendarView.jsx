@@ -51,10 +51,26 @@ const MonthEvent = memo(({ event }) => {
 MonthEvent.displayName = 'MonthEvent';
 
 // Memoized Google-style date header component
-const GoogleStyleDateHeader = memo(({ date }) => {
+const GoogleStyleDateHeader = memo(({ date, highlightDate }) => {
   const isToday = isSameDay(date, new Date());
+  const isHighlighted = highlightDate && isSameDay(date, highlightDate);
   const dayOfWeek = format(date, 'EEE').toUpperCase();
   const dayNumber = format(date, 'd');
+
+  // Determine background and text colors based on state
+  let bgColor = "transparent";
+  let textColor = "#3c4043";
+  let fontWeightValue = "400";
+
+  if (isToday) {
+    bgColor = "#1a73e8"; // Blue for today
+    textColor = "white";
+    fontWeightValue = "500";
+  } else if (isHighlighted) {
+    bgColor = "#1e8e3e"; // Green for finalized event date
+    textColor = "white";
+    fontWeightValue = "500";
+  }
 
   return (
     <VStack spacing={0} py={2} px={2} h="70px" justify="center">
@@ -68,13 +84,13 @@ const GoogleStyleDateHeader = memo(({ date }) => {
         align="center"
         justify="center"
         borderRadius="full"
-        bg={isToday ? "#1a73e8" : "transparent"}
-        color={isToday ? "white" : "#3c4043"}
-        fontWeight={isToday ? "500" : "400"}
+        bg={bgColor}
+        color={textColor}
+        fontWeight={fontWeightValue}
         fontSize="24px"
         lineHeight="1"
         transition="all 0.2s"
-        _hover={!isToday ? { bg: "#f1f3f4" } : {}}
+        _hover={!isToday && !isHighlighted ? { bg: "#f1f3f4" } : {}}
       >
         {dayNumber}
       </Flex>
@@ -184,8 +200,11 @@ const CalendarView = ({
   selectable = true,
   minTime = new Date(0, 0, 0, 8, 0, 0),
   maxTime = new Date(0, 0, 0, 20, 0, 0),
+  defaultDate = null,
+  highlightDate = null,
 }) => {
   const [view, setView] = React.useState("week");
+  const [currentDate, setCurrentDate] = React.useState(defaultDate || new Date());
   const calendarRef = useRef(null);
 
   // Scroll to top whenever view changes or events change
@@ -331,14 +350,19 @@ const CalendarView = ({
     };
   }, []);
 
+  // Create header component that receives highlightDate
+  const DateHeaderWithHighlight = useCallback((props) => (
+    <GoogleStyleDateHeader {...props} highlightDate={highlightDate} />
+  ), [highlightDate]);
+
   // Memoize components object to prevent unnecessary re-renders
   const calendarComponents = useMemo(() => ({
     week: {
-      header: GoogleStyleDateHeader,
+      header: DateHeaderWithHighlight,
       event: GoogleStyleEvent,
     },
     day: {
-      header: GoogleStyleDateHeader,
+      header: DateHeaderWithHighlight,
       event: GoogleStyleEvent,
     },
     month: {
@@ -346,7 +370,7 @@ const CalendarView = ({
       event: MonthEvent,
       dateHeader: MonthDateHeader,
     },
-  }), []);
+  }), [DateHeaderWithHighlight]);
 
   return (
     <Box
@@ -552,6 +576,8 @@ const CalendarView = ({
         onView={setView}
         views={["month", "week", "day"]}
         defaultView="week"
+        date={currentDate}
+        onNavigate={setCurrentDate}
         min={minTime}
         max={maxTime}
         eventPropGetter={eventStyleGetter}

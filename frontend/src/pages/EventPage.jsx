@@ -593,6 +593,8 @@ const EventPage = () => {
                   selectable={event?.status !== "finalized"}
                   minTime={extractCalendarTimeBound(event?.earliest_datetime_utc, event?.earliest_hour)}
                   maxTime={extractCalendarTimeBound(event?.latest_datetime_utc, event?.latest_hour)}
+                  defaultDate={event?.status === "finalized" && event?.finalized_start_time_utc ? new Date(event.finalized_start_time_utc) : null}
+                  highlightDate={event?.status === "finalized" && event?.finalized_start_time_utc ? new Date(event.finalized_start_time_utc) : null}
                 />
               </Box>
             </Box>
