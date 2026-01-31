@@ -187,6 +187,13 @@ def delete_preferred_slot(event_id, slot_id, user_id):
         # Use the database ID for operations
         db_event_id = event["id"]
 
+        # Check if event is finalized
+        if event.get("status") == "finalized":
+            return jsonify({
+                "error": "Event finalized",
+                "message": "Cannot modify preferred slots on a finalized event"
+            }), 400
+
         # Get the slot
         slot = preferred_slots_service.get_slot_by_id(slot_id)
         if not slot:
