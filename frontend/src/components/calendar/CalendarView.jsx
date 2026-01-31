@@ -355,6 +355,19 @@ const CalendarView = ({
     <GoogleStyleDateHeader {...props} highlightDate={highlightDate} />
   ), [highlightDate]);
 
+  // Day prop getter for highlighting the finalized event day column
+  const dayPropGetter = useCallback((date) => {
+    const isHighlighted = highlightDate && isSameDay(date, highlightDate);
+    if (isHighlighted) {
+      return {
+        style: {
+          backgroundColor: '#e6f4ea', // Light green background for finalized event day
+        }
+      };
+    }
+    return {};
+  }, [highlightDate]);
+
   // Memoize components object to prevent unnecessary re-renders
   const calendarComponents = useMemo(() => ({
     week: {
@@ -581,6 +594,7 @@ const CalendarView = ({
         min={minTime}
         max={maxTime}
         eventPropGetter={eventStyleGetter}
+        dayPropGetter={dayPropGetter}
         components={calendarComponents}
       />
     </Box>
