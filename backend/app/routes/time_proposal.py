@@ -221,6 +221,12 @@ def propose_times(event_uid, user_id):
                     "error": "No availability",
                     "message": "Could not find any time slots when all participants are available. Try adjusting event constraints or participant availability."
                 }), 400
+
+            if "date range has passed" in error_message.lower():
+                return jsonify({
+                    "error": "Event dates expired",
+                    "message": "The event's date range has passed. Please update the event to include future dates."
+                }), 400
             
             if "rate limit" in error_message.lower() or "quota" in error_message.lower():
                 return jsonify({

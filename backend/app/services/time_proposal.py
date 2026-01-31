@@ -85,7 +85,17 @@ class TimeProposalService:
         # Validate we have participants
         if data["participant_count"] == 0:
             raise Exception("Event has no participants")
-        
+
+        # Check if event date range is entirely in the past
+        from datetime import timezone as tz
+        event = data["event"]
+        latest_dt = event.get("latest_datetime_utc")
+        if latest_dt:
+            latest_datetime = datetime.fromisoformat(latest_dt.replace("Z", "+00:00"))
+            min_allowed_time = datetime.now(tz.utc) + timedelta(minutes=self.MIN_BUFFER_MINUTES)
+            if latest_datetime < min_allowed_time:
+                raise Exception("Event date range has passed. Please update the event's date range to include future dates.")
+
         # 2. Calculate free time windows (for validation/logging)
         free_windows = self._calculate_free_windows(data)
         print(f"[TIME_PROPOSAL] Found {len(free_windows)} free time windows")
@@ -371,7 +381,18 @@ class TimeProposalService:
         earliest_dt = event.get('earliest_datetime_utc', 'N/A')
         latest_dt = event.get('latest_datetime_utc', 'N/A')
 
+        # Get current time for the AI to know what's "future"
+        from datetime import timezone as tz
+        current_time_utc = datetime.now(tz.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+        min_start_time = (datetime.now(tz.utc) + timedelta(minutes=self.MIN_BUFFER_MINUTES)).strftime('%Y-%m-%dT%H:%M:%SZ')
+
         prompt = f"""You are an expert meeting scheduling assistant. Analyze the following data and suggest the best {num_suggestions} meeting times.
+
+CURRENT TIME: {current_time_utc} (UTC)
+
+TIME CONSTRAINTS:
+- Earliest allowed start: {min_start_time} (UTC) - Do NOT suggest any times before this.
+- Latest allowed start: {latest_dt} (UTC) - Do NOT suggest any times starting after this.
 
 EVENT DETAILS:
 - Event Name: {event['name']}
