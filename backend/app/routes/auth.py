@@ -248,13 +248,45 @@ def google_callback():
                 else:
                     logging.warning(f"[AUTH] Failed to enrich profile for user {user_id}")
 
+            # Sync calendar sources from provider (multi-calendar support)
+            try:
+                from ..services.calendar_accounts import CalendarAccountsService
+                calendar_accounts_service = CalendarAccountsService()
+
+                # Get or create the calendar account
+                google_email = profile_updates.get("google_calendar_id") or user_metadata.get("email")
+                if google_email:
+                    # Ensure account exists
+                    account = calendar_accounts_service.ensure_account_exists(
+                        user_id=user_id,
+                        provider="google",
+                        provider_email=google_email,
+                        credentials={
+                            "token": credentials.token,
+                            "refresh_token": credentials.refresh_token,
+                            "token_uri": credentials.token_uri,
+                            "client_id": credentials.client_id,
+                            "client_secret": credentials.client_secret,
+                            "scopes": list(credentials.scopes) if credentials.scopes else [],
+                        }
+                    )
+
+                    if account:
+                        # Sync calendar list from Google
+                        calendar_accounts_service.sync_calendars_from_provider(account["id"])
+                        logging.info(f"[AUTH] Synced calendar sources for user {user_id}")
+
+            except Exception as e:
+                logging.error(f"[AUTH] Failed to sync calendar sources: {e}")
+                # Don't fail the entire flow
+
             # Auto-sync Google Calendar on connection
             try:
                 from ..background_jobs.calendar_sync import sync_user_calendar_job
                 from datetime import datetime
-                
+
                 logging.info(f"[AUTH] Scheduling calendar sync job for user {user_id}")
-                
+
                 # Schedule job to run immediately
                 current_app.scheduler.add_job(
                     id=f'sync_calendar_{user_id}_{int(datetime.now(timezone.utc).timestamp())}',
@@ -263,9 +295,9 @@ def google_callback():
                     trigger='date',
                     run_date=datetime.now(timezone.utc)
                 )
-                
+
                 logging.info(f"[AUTH] Calendar sync job scheduled for user {user_id}")
-                
+
             except Exception as e:
                 logging.error(f"[AUTH] Failed to schedule calendar sync: {e}")
                 

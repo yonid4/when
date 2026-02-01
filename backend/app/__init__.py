@@ -27,6 +27,7 @@ from .routes.event_finalization import event_finalization_bp
 from .routes.notifications import notifications_bp
 from .routes.invitations import invitations_bp
 from .routes.time_proposal import time_proposal_bp
+from .routes.calendar_accounts import calendar_accounts_bp
 from .utils.supabase_client import init_supabase
 
 def create_app(config_name="development"):
@@ -90,6 +91,7 @@ def create_app(config_name="development"):
     app.register_blueprint(notifications_bp)
     app.register_blueprint(invitations_bp)
     app.register_blueprint(time_proposal_bp)
+    app.register_blueprint(calendar_accounts_bp)
 
     # Initialize background jobs
     from .background_jobs import init_background_jobs

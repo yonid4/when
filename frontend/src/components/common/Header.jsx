@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button, Icon } from "@chakra-ui/react";
-import { FiPlus } from "react-icons/fi";
+import { Button, Icon, IconButton, Tooltip } from "@chakra-ui/react";
+import { FiPlus, FiSettings } from "react-icons/fi";
 import { supabase } from "../../services/supabaseClient";
 import { NotificationBell } from "../notifications";
 
@@ -116,6 +116,17 @@ const Header = () => {
                             currentUserId={currentUserId}
                             isAuthenticated={isAuthenticated}
                         />
+                        <Tooltip label="Settings">
+                            <IconButton
+                                icon={<Icon as={FiSettings} />}
+                                onClick={() => navigate("/settings")}
+                                size="sm"
+                                variant="ghost"
+                                color="white"
+                                _hover={{ bg: "rgba(255,255,255,0.1)" }}
+                                aria-label="Settings"
+                            />
+                        </Tooltip>
                     </>
                 )}
 
