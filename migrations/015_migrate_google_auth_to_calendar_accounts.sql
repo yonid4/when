@@ -22,13 +22,14 @@ SELECT
     p.id AS user_id,
     'google' AS provider,
     -- Use google_calendar_id as email if available, otherwise use a placeholder
-    COALESCE(p.google_calendar_id, p.email, 'unknown@gmail.com') AS provider_email,
+    COALESCE(p.google_calendar_id, au.email, 'unknown@gmail.com') AS provider_email,
     -- Use google_calendar_id as account ID (typically the primary calendar email)
-    COALESCE(p.google_calendar_id, p.email, p.id::text) AS provider_account_id,
+    COALESCE(p.google_calendar_id, au.email, p.id::text) AS provider_account_id,
     p.google_auth_token AS credentials,
     p.updated_at AS connected_at,
     NOW() AS last_synced_at
 FROM profiles p
+LEFT JOIN auth.users au ON au.id = p.id
 WHERE p.google_auth_token IS NOT NULL
   AND p.google_auth_token != 'null'::jsonb
   AND NOT EXISTS (
