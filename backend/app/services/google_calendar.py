@@ -107,30 +107,34 @@ def get_credentials_from_code(code: str) -> Credentials:
     except Exception as e:
         raise ValueError(f"Failed to get credentials: {str(e)}")
 
-def store_credentials(user_id: str, credentials: Credentials) -> None:
+def store_credentials(user_id: str, credentials: Credentials, provider_email: str = None) -> None:
     """
     Store user's Google credentials securely.
     Uses service role client to bypass RLS.
-    
+
+    Stores in both calendar_accounts (new) and profiles.google_auth_token (legacy)
+    for backwards compatibility during migration.
+
     Args:
         user_id (str): User's ID
         credentials (Credentials): Google API credentials
+        provider_email (str): Email from the Google account (optional)
     """
     from ..utils.supabase_client import get_supabase
     from supabase import create_client
     import logging
     import os
-    
+
     # Use service role client to bypass RLS
     supabase_url = os.getenv('SUPABASE_URL')
     supabase_service_key = os.getenv('SUPABASE_SERVICE_ROLE_KEY')
-    
+
     if supabase_url and supabase_service_key:
         supabase = create_client(supabase_url, supabase_service_key)
     else:
         # Fallback to regular client
         supabase = get_supabase()
-    
+
     if isinstance(credentials, dict):
         # Already a dict
         creds_dict = credentials
@@ -149,73 +153,139 @@ def store_credentials(user_id: str, credentials: Credentials) -> None:
     logging.debug(f"[DEBUG] Credentials dict keys: {creds_dict.keys()}")
 
     # First, check if the profile exists
-    check_response = supabase.table("profiles").select("id").eq("id", user_id).execute()
+    check_response = supabase.table("profiles").select("id, email, google_calendar_id").eq("id", user_id).execute()
     logging.debug(f"[DEBUG] Profile exists check: {check_response.data}")
 
     if not check_response.data:
         logging.error(f"[ERROR] No profile found for user {user_id}")
         return
-    
-    # Update user profile with credentials
+
+    profile = check_response.data[0]
+
+    # Store in profiles.google_auth_token (legacy - for backwards compatibility)
     try:
         response = supabase.table("profiles").update({
             "google_auth_token": creds_dict
         }).eq("id", user_id).execute()
-        
+
         logging.debug(f"[DEBUG] Store credentials response: {response}")
         logging.debug(f"[DEBUG] Response data: {response.data}")
-        
+
         if not response.data:
             logging.error(f"[ERROR] Update returned no data for user {user_id}")
     except Exception as e:
-        logging.error(f"[ERROR] Failed to store credentials: {e}")
-        raise e
+        logging.error(f"[ERROR] Failed to store credentials in profiles: {e}")
+
+    # Store in calendar_accounts (new multi-calendar system)
+    try:
+        # Determine provider email
+        email = provider_email or profile.get("google_calendar_id") or profile.get("email")
+
+        if email:
+            # Check if account exists
+            existing_account = (
+                supabase.table("calendar_accounts")
+                .select("id")
+                .eq("user_id", user_id)
+                .eq("provider", "google")
+                .eq("provider_account_id", email)
+                .execute()
+            )
+
+            if existing_account.data:
+                # Update existing account
+                supabase.table("calendar_accounts").update({
+                    "credentials": creds_dict
+                }).eq("id", existing_account.data[0]["id"]).execute()
+                logging.debug(f"[DEBUG] Updated calendar_accounts for user {user_id}")
+            else:
+                # Create new account
+                from datetime import datetime
+                supabase.table("calendar_accounts").insert({
+                    "user_id": user_id,
+                    "provider": "google",
+                    "provider_email": email,
+                    "provider_account_id": email,
+                    "credentials": creds_dict,
+                    "connected_at": datetime.utcnow().isoformat(),
+                }).execute()
+                logging.debug(f"[DEBUG] Created calendar_accounts for user {user_id}")
+    except Exception as e:
+        # Table might not exist yet during migration
+        logging.debug(f"[DEBUG] calendar_accounts storage failed (may not exist yet): {e}")
 
 def get_stored_credentials(user_id: str) -> Optional[Credentials]:
     """
     Retrieve stored Google credentials for a user.
     Uses service role client to bypass RLS.
-    
+
+    First checks calendar_accounts table (new multi-calendar system),
+    then falls back to profiles.google_auth_token (legacy).
+
     Args:
         user_id (str): User's ID
-        
+
     Returns:
         Optional[Credentials]: Stored credentials if found, None otherwise
     """
     from ..utils.supabase_client import get_supabase
     from supabase import create_client
     import os
-    
+
     # Use service role client to bypass RLS
     supabase_url = os.getenv('SUPABASE_URL')
     supabase_service_key = os.getenv('SUPABASE_SERVICE_ROLE_KEY')
-    
+
     if supabase_url and supabase_service_key:
         supabase = create_client(supabase_url, supabase_service_key)
     else:
         # Fallback to regular client
         supabase = get_supabase()
-    
-    # Get user profile with stored credentials
-    response = (
-        supabase.table("profiles")
-        .select("google_auth_token")
-        .eq("id", user_id)
-        .execute()
-    )
-    
-    if not response.data or not response.data[0].get("google_auth_token"):
+
+    creds_dict = None
+
+    # Try calendar_accounts first (new multi-calendar system)
+    try:
+        accounts_response = (
+            supabase.table("calendar_accounts")
+            .select("credentials")
+            .eq("user_id", user_id)
+            .eq("provider", "google")
+            .limit(1)
+            .execute()
+        )
+
+        if accounts_response.data and accounts_response.data[0].get("credentials"):
+            creds_dict = accounts_response.data[0]["credentials"]
+    except Exception as e:
+        # Table might not exist yet during migration
+        import logging
+        logging.debug(f"calendar_accounts lookup failed (may not exist yet): {e}")
+
+    # Fall back to profiles.google_auth_token (legacy)
+    if not creds_dict:
+        response = (
+            supabase.table("profiles")
+            .select("google_auth_token")
+            .eq("id", user_id)
+            .execute()
+        )
+
+        if not response.data or not response.data[0].get("google_auth_token"):
+            return None
+
+        creds_dict = response.data[0]["google_auth_token"]
+
+    if not creds_dict:
         return None
-        
-    creds_dict = response.data[0]["google_auth_token"]
-    
+
     return Credentials(
         token=creds_dict["token"],
-        refresh_token=creds_dict["refresh_token"],
-        token_uri=creds_dict["token_uri"],
-        client_id=creds_dict["client_id"],
-        client_secret=creds_dict["client_secret"],
-        scopes=creds_dict["scopes"]
+        refresh_token=creds_dict.get("refresh_token"),
+        token_uri=creds_dict.get("token_uri", "https://oauth2.googleapis.com/token"),
+        client_id=creds_dict.get("client_id"),
+        client_secret=creds_dict.get("client_secret"),
+        scopes=creds_dict.get("scopes", [])
     )
 
 def refresh_credentials_if_needed(credentials: Credentials) -> Credentials:
@@ -321,3 +391,65 @@ def get_user_calendars(user_id: str) -> list:
             break
     # Optionally, extract only relevant fields
     return [{"id": c["id"], "summary": c.get("summary"), "primary": c.get("primary", False)} for c in calendars]
+
+
+def get_user_calendars_list(credentials: Credentials) -> list:
+    """
+    Lists all available calendars using provided credentials.
+
+    This is used by the multi-calendar system to fetch calendars for a specific account.
+
+    Args:
+        credentials (Credentials): Google OAuth credentials
+
+    Returns:
+        list: List of calendar dicts with detailed info
+    """
+    if not validate_credentials(credentials):
+        raise Exception("Invalid Google credentials")
+
+    service = build("calendar", "v3", credentials=credentials)
+    calendars = []
+    page_token = None
+
+    while True:
+        calendar_list = service.calendarList().list(pageToken=page_token).execute()
+        items = calendar_list.get('items', [])
+        calendars.extend(items)
+        page_token = calendar_list.get('nextPageToken')
+        if not page_token:
+            break
+
+    # Return detailed calendar info for the settings UI
+    return [
+        {
+            "id": c["id"],
+            "summary": c.get("summary", c["id"]),
+            "primary": c.get("primary", False),
+            "backgroundColor": c.get("backgroundColor"),
+            "foregroundColor": c.get("foregroundColor"),
+            "accessRole": c.get("accessRole"),
+            "selected": c.get("selected", True),
+        }
+        for c in calendars
+    ]
+
+
+def get_credentials_from_dict(creds_dict: dict) -> Credentials:
+    """
+    Create a Credentials object from a dictionary.
+
+    Args:
+        creds_dict (dict): Credentials stored as dictionary
+
+    Returns:
+        Credentials: Google OAuth credentials object
+    """
+    return Credentials(
+        token=creds_dict["token"],
+        refresh_token=creds_dict.get("refresh_token"),
+        token_uri=creds_dict.get("token_uri", "https://oauth2.googleapis.com/token"),
+        client_id=creds_dict.get("client_id"),
+        client_secret=creds_dict.get("client_secret"),
+        scopes=creds_dict.get("scopes", [])
+    )

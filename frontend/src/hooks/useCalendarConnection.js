@@ -11,15 +11,37 @@ export const useCalendarConnection = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
 
-  // ✅ Check if user has Google Calendar connected via API
+  // Check if user has Google Calendar connected via API
+  // Checks both legacy endpoint and new calendar-accounts endpoint for backwards compatibility
   const checkGoogleCalendarConnection = async () => {
     try {
       setIsChecking(true);
-      const response = await api.get('/api/calendar/connection-status');
-      const connected = response.data.connected || false;
-      setIsConnected(connected);
 
-      return connected;
+      // Try the legacy connection-status endpoint first
+      try {
+        const response = await api.get('/api/calendar/connection-status');
+        if (response.data.connected) {
+          setIsConnected(true);
+          return true;
+        }
+      } catch (legacyError) {
+        // Legacy endpoint may fail, continue to check new endpoint
+        console.debug('Legacy connection check failed, trying new endpoint');
+      }
+
+      // Also check the new calendar-accounts endpoint
+      try {
+        const accountsResponse = await api.get('/api/calendar-accounts/');
+        const hasAccounts = (accountsResponse.data.accounts?.length || 0) > 0;
+        setIsConnected(hasAccounts);
+        return hasAccounts;
+      } catch (accountsError) {
+        // New endpoint may not exist yet during migration
+        console.debug('Calendar accounts check failed:', accountsError.message);
+      }
+
+      setIsConnected(false);
+      return false;
     } catch (error) {
       console.error('Failed to check calendar connection:', error);
       setIsConnected(false);

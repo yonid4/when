@@ -211,7 +211,10 @@ class BusySlotService():
     def sync_user_google_calendar(self, user_id: str, start_date: datetime, end_date: datetime) -> bool:
         """
         Sync busy slots from user's Google Calendar using differential logic.
-        
+
+        Supports multi-calendar: syncs from all enabled calendar sources.
+        Falls back to legacy behavior (primary calendar only) if no sources found.
+
         Actions:
         1. Add new events that are in Google Calendar but not in DB.
         2. Delete events from DB that are not in Google Calendar anymore.
@@ -219,91 +222,244 @@ class BusySlotService():
         """
         try:
             from . import google_calendar
-            get_stored_credentials = google_calendar.get_stored_credentials
-            get_calendar_service = google_calendar.get_calendar_service
-            
-            # Get user's Google credentials
-            credentials = get_stored_credentials(user_id)
-            if not credentials:
-                print(f"No Google credentials found for user {user_id}")
-                return False
-            
-            # Create Google Calendar service
-            service = get_calendar_service(credentials=credentials, user_id=user_id)
-            
-            # Query Google Calendar for events
-            events_result = service.events().list(
-                calendarId='primary',
-                timeMin=start_date.isoformat(),
-                timeMax=end_date.isoformat(),
-                singleEvents=True,
-                orderBy='startTime'
-            ).execute()
-            
-            google_events = events_result.get('items', [])
-            
-            # 1. Map Google Events by ID
-            google_event_map = {}
-            for event in google_events:
-                event_id = event.get('id')
-                if event_id:
-                    google_event_map[event_id] = event
-            
-            # 2. Fetch existing DB slots for this user in this range
-            # We use service_role_client to ensure we see everything
-            db_slots_result = (
-                self.service_role_client.table("busy_slots")
-                .select("id, google_event_id")
-                .eq("user_id", user_id)
-                .gte("start_time_utc", start_date.isoformat())
-                .lte("end_time_utc", end_date.isoformat())
-                .not_.is_("google_event_id", "null")
-                .execute()
-            )
-            db_slots = db_slots_result.data if db_slots_result.data else []
-            db_event_ids = {slot["google_event_id"] for slot in db_slots}
-            
-            # 3. Calculate Diff
-            google_ids = set(google_event_map.keys())
-            
-            ids_to_add = google_ids - db_event_ids
-            ids_to_delete = db_event_ids - google_ids
-            # ids_to_ignore = google_ids & db_event_ids (Intersection)
-            
-            print(f"[SYNC] User {user_id}: Adding {len(ids_to_add)}, Deleting {len(ids_to_delete)}, Ignoring {len(google_ids & db_event_ids)}")
-            
-            # 4. Execute Deletes
-            if ids_to_delete:
-                (
-                    self.service_role_client.table("busy_slots")
-                    .delete()
-                    .eq("user_id", user_id)
-                    .in_("google_event_id", list(ids_to_delete))
-                    .execute()
-                )
-            
-            # 5. Execute Adds
-            slots_to_add = []
-            for event_id in ids_to_add:
-                event = google_event_map[event_id]
-                try:
-                    busy_slot = BusySlot.from_google_event(user_id, event)
-                    slots_to_add.append(busy_slot.to_dict())
-                except ValueError:
-                    continue  # Skip invalid/all-day events
-            
-            if slots_to_add:
-                (
-                    self.service_role_client.table("busy_slots")
-                    .insert(slots_to_add)
-                    .execute()
-                )
-            
-            return True
-            
+            from .calendar_accounts import CalendarAccountsService
+
+            calendar_accounts_service = CalendarAccountsService()
+
+            # Try to get enabled sources from multi-calendar system
+            enabled_sources = []
+            try:
+                enabled_sources = calendar_accounts_service.get_enabled_sources(user_id)
+            except Exception as e:
+                print(f"[SYNC] Could not get enabled sources (may not be migrated): {e}")
+
+            if enabled_sources:
+                # Multi-calendar sync: sync from each enabled source
+                return self._sync_multi_calendar(user_id, start_date, end_date, enabled_sources)
+            else:
+                # Legacy sync: use primary calendar only
+                return self._sync_legacy_primary_calendar(user_id, start_date, end_date)
+
         except Exception as e:
             print(f"Error syncing Google Calendar for user {user_id}: {str(e)}")
             return False
+
+    def _sync_legacy_primary_calendar(self, user_id: str, start_date: datetime, end_date: datetime) -> bool:
+        """
+        Legacy sync method: sync only from the primary calendar.
+
+        Used for backwards compatibility with users not yet migrated to multi-calendar.
+        """
+        from . import google_calendar
+
+        # Get user's Google credentials
+        credentials = google_calendar.get_stored_credentials(user_id)
+        if not credentials:
+            print(f"No Google credentials found for user {user_id}")
+            return False
+
+        # Create Google Calendar service
+        service = google_calendar.get_calendar_service(credentials=credentials, user_id=user_id)
+
+        # Query Google Calendar for events
+        events_result = service.events().list(
+            calendarId='primary',
+            timeMin=start_date.isoformat(),
+            timeMax=end_date.isoformat(),
+            singleEvents=True,
+            orderBy='startTime'
+        ).execute()
+
+        google_events = events_result.get('items', [])
+
+        # 1. Map Google Events by ID
+        google_event_map = {}
+        for event in google_events:
+            event_id = event.get('id')
+            if event_id:
+                google_event_map[event_id] = event
+
+        # 2. Fetch existing DB slots for this user in this range
+        db_slots_result = (
+            self.service_role_client.table("busy_slots")
+            .select("id, google_event_id")
+            .eq("user_id", user_id)
+            .gte("start_time_utc", start_date.isoformat())
+            .lte("end_time_utc", end_date.isoformat())
+            .not_.is_("google_event_id", "null")
+            .execute()
+        )
+        db_slots = db_slots_result.data if db_slots_result.data else []
+        db_event_ids = {slot["google_event_id"] for slot in db_slots}
+
+        # 3. Calculate Diff
+        google_ids = set(google_event_map.keys())
+        ids_to_add = google_ids - db_event_ids
+        ids_to_delete = db_event_ids - google_ids
+
+        print(f"[SYNC] User {user_id} (legacy): Adding {len(ids_to_add)}, Deleting {len(ids_to_delete)}, Ignoring {len(google_ids & db_event_ids)}")
+
+        # 4. Execute Deletes
+        if ids_to_delete:
+            (
+                self.service_role_client.table("busy_slots")
+                .delete()
+                .eq("user_id", user_id)
+                .in_("google_event_id", list(ids_to_delete))
+                .execute()
+            )
+
+        # 5. Execute Adds
+        slots_to_add = []
+        for event_id in ids_to_add:
+            event = google_event_map[event_id]
+            try:
+                busy_slot = BusySlot.from_google_event(user_id, event)
+                slots_to_add.append(busy_slot.to_dict())
+            except ValueError:
+                continue  # Skip invalid/all-day events
+
+        if slots_to_add:
+            (
+                self.service_role_client.table("busy_slots")
+                .insert(slots_to_add)
+                .execute()
+            )
+
+        return True
+
+    def _sync_multi_calendar(
+        self, user_id: str, start_date: datetime, end_date: datetime, enabled_sources: List[dict]
+    ) -> bool:
+        """
+        Multi-calendar sync: sync from all enabled calendar sources.
+
+        Each source has its own calendar_id and credentials (via account).
+        """
+        from . import google_calendar
+        from googleapiclient.discovery import build
+
+        total_added = 0
+        total_deleted = 0
+
+        for source in enabled_sources:
+            try:
+                source_id = source["id"]
+                calendar_id = source["calendar_id"]
+                account = source.get("account", {})
+                creds_dict = account.get("credentials")
+
+                if not creds_dict:
+                    print(f"[SYNC] No credentials for source {source_id}")
+                    continue
+
+                # Create credentials object
+                credentials = google_calendar.get_credentials_from_dict(creds_dict)
+                credentials = google_calendar.refresh_credentials_if_needed(credentials)
+
+                # Create Google Calendar service
+                service = build("calendar", "v3", credentials=credentials)
+
+                # Query Google Calendar for events from this specific calendar
+                events_result = service.events().list(
+                    calendarId=calendar_id,
+                    timeMin=start_date.isoformat(),
+                    timeMax=end_date.isoformat(),
+                    singleEvents=True,
+                    orderBy='startTime'
+                ).execute()
+
+                google_events = events_result.get('items', [])
+
+                # 1. Map Google Events by ID (include calendar_id to make unique)
+                google_event_map = {}
+                for event in google_events:
+                    event_id = event.get('id')
+                    if event_id:
+                        # Composite key: calendar_id + event_id
+                        composite_key = f"{calendar_id}:{event_id}"
+                        google_event_map[composite_key] = event
+
+                # 2. Fetch existing DB slots for this source
+                db_slots_result = (
+                    self.service_role_client.table("busy_slots")
+                    .select("id, google_event_id, google_calendar_id")
+                    .eq("user_id", user_id)
+                    .eq("google_calendar_id", calendar_id)
+                    .gte("start_time_utc", start_date.isoformat())
+                    .lte("end_time_utc", end_date.isoformat())
+                    .not_.is_("google_event_id", "null")
+                    .execute()
+                )
+                db_slots = db_slots_result.data if db_slots_result.data else []
+                db_event_keys = {
+                    f"{slot['google_calendar_id']}:{slot['google_event_id']}"
+                    for slot in db_slots
+                }
+
+                # 3. Calculate Diff
+                google_keys = set(google_event_map.keys())
+                keys_to_add = google_keys - db_event_keys
+                keys_to_delete = db_event_keys - google_keys
+
+                print(f"[SYNC] User {user_id}, Calendar {calendar_id}: Adding {len(keys_to_add)}, Deleting {len(keys_to_delete)}")
+
+                # 4. Execute Deletes
+                if keys_to_delete:
+                    event_ids_to_delete = [k.split(":")[1] for k in keys_to_delete]
+                    (
+                        self.service_role_client.table("busy_slots")
+                        .delete()
+                        .eq("user_id", user_id)
+                        .eq("google_calendar_id", calendar_id)
+                        .in_("google_event_id", event_ids_to_delete)
+                        .execute()
+                    )
+                    total_deleted += len(keys_to_delete)
+
+                # 5. Execute Adds
+                slots_to_add = []
+                for composite_key in keys_to_add:
+                    event = google_event_map[composite_key]
+                    try:
+                        busy_slot = BusySlot.from_google_event(user_id, event, google_calendar_id=calendar_id)
+                        slot_dict = busy_slot.to_dict()
+                        # Add calendar_source_id for tracking
+                        slot_dict["calendar_source_id"] = source_id
+                        slots_to_add.append(slot_dict)
+                    except ValueError:
+                        continue  # Skip invalid/all-day events
+
+                if slots_to_add:
+                    (
+                        self.service_role_client.table("busy_slots")
+                        .insert(slots_to_add)
+                        .execute()
+                    )
+                    total_added += len(slots_to_add)
+
+                # Update credentials if refreshed
+                if credentials.token != creds_dict.get("token"):
+                    from .calendar_accounts import CalendarAccountsService
+                    calendar_accounts_service = CalendarAccountsService()
+                    calendar_accounts_service.update_account_credentials(
+                        account["id"],
+                        {
+                            "token": credentials.token,
+                            "refresh_token": credentials.refresh_token,
+                            "token_uri": credentials.token_uri,
+                            "client_id": credentials.client_id,
+                            "client_secret": credentials.client_secret,
+                            "scopes": list(credentials.scopes) if credentials.scopes else [],
+                        }
+                    )
+
+            except Exception as e:
+                print(f"[SYNC] Error syncing source {source.get('id')}: {e}")
+                continue
+
+        print(f"[SYNC] User {user_id} multi-calendar total: Added {total_added}, Deleted {total_deleted}")
+        return True
 
     def delete_user_google_events(self, user_id: str) -> bool:
         """Delete all Google Calendar synced events for a user."""
