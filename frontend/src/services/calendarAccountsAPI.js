@@ -34,6 +34,15 @@ export const calendarAccountsAPI = {
     async getWriteCalendar() {
         const res = await api.get("/api/calendar-accounts/write-calendar");
         return res.data;
+    },
+
+    async batchUpdateSources(updates) {
+        const results = await Promise.all(
+            updates.map(({ sourceId, is_enabled }) =>
+                this.updateSource(sourceId, { is_enabled })
+            )
+        );
+        return results;
     }
 };
 
