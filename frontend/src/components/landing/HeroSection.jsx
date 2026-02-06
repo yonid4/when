@@ -166,11 +166,11 @@ function HeroSection({ onSignIn, reducedMotion }) {
             <VStack spacing={4}>
               <HStack>
                 <AvatarGroup size="md" max={5}>
-                  <Avatar src="https://i.pravatar.cc/150?img=1" />
-                  <Avatar src="https://i.pravatar.cc/150?img=5" />
-                  <Avatar src="https://i.pravatar.cc/150?img=9" />
-                  <Avatar src="https://i.pravatar.cc/150?img=12" />
-                  <Avatar src="https://i.pravatar.cc/150?img=15" />
+                  <Avatar name="Sarah K" />
+                  <Avatar name="Mike R" />
+                  <Avatar name="Emma L" />
+                  <Avatar name="Alex T" />
+                  <Avatar name="Jordan P" />
                 </AvatarGroup>
                 <Text fontWeight="medium">
                   Join 10,000+ teams using When
