@@ -1,25 +1,27 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
   Button,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
   Text,
-  useToast
+  useToast,
 } from "@chakra-ui/react";
 import { format } from "date-fns";
 
 /**
- * Popup shown to participants when they drag to select a time slot
+ * Popup shown to participants when they drag to select a time slot.
  */
-const ParticipantSlotPopup = ({ isOpen, onClose, slotInfo, onConfirm }) => {
+function ParticipantSlotPopup({ isOpen, onClose, slotInfo, onConfirm }) {
   const [isLoading, setIsLoading] = useState(false);
   const toast = useToast();
 
-  const handleConfirm = async () => {
+  if (!slotInfo) return null;
+
+  async function handleConfirm() {
     setIsLoading(true);
     try {
       await onConfirm(slotInfo);
@@ -41,9 +43,9 @@ const ParticipantSlotPopup = ({ isOpen, onClose, slotInfo, onConfirm }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }
 
-  if (!slotInfo) return null;
+  const timeDisplay = `${format(slotInfo.start, "EEEE, MMM d")} \u2022 ${format(slotInfo.start, "h:mm a")} - ${format(slotInfo.end, "h:mm a")}`;
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="md" isCentered>
@@ -52,8 +54,7 @@ const ParticipantSlotPopup = ({ isOpen, onClose, slotInfo, onConfirm }) => {
         <ModalHeader>Add Preferred Time?</ModalHeader>
         <ModalBody>
           <Text fontSize="lg" fontWeight="semibold" color="gray.700">
-            {format(slotInfo.start, "EEEE, MMM d")} • {format(slotInfo.start, "h:mm a")} -{" "}
-            {format(slotInfo.end, "h:mm a")}
+            {timeDisplay}
           </Text>
           <Text fontSize="sm" color="gray.500" mt={2}>
             This will be saved as one of your preferred times for this event.
@@ -70,7 +71,7 @@ const ParticipantSlotPopup = ({ isOpen, onClose, slotInfo, onConfirm }) => {
       </ModalContent>
     </Modal>
   );
-};
+}
 
 export default ParticipantSlotPopup;
 

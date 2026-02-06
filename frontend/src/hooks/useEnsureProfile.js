@@ -1,8 +1,12 @@
 import { useEffect, useState } from "react";
-import { supabase } from "../services/supabaseClient";
-import api from "../services/api";
 
-export const useEnsureProfile = () => {
+import api from "../services/api.js";
+import { supabase } from "../services/supabaseClient.js";
+
+const PROFILE_ERROR_MESSAGE =
+  "Your account is being set up or there was a problem fetching your profile. Please refresh the page in a few seconds or contact support if this persists.";
+
+export function useEnsureProfile() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -10,63 +14,62 @@ export const useEnsureProfile = () => {
     let timeoutId = null;
     let mounted = true;
 
-    const ensureProfile = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session || !mounted) return;
+    async function fetchOrCreateProfile(session) {
+      if (!mounted) return;
+
       const userId = session.user.id;
 
-      const fetchOrCreateProfile = async () => {
+      try {
+        const profileResponse = await api.get(`/api/users/${userId}`);
         if (!mounted) return;
 
-        try {
-          const profileResponse = await api.get(`/api/users/${userId}`);
-          if (!mounted) return;
+        const profile = profileResponse.data;
+        const isGoogleUser = session.user.app_metadata?.provider === "google";
 
-          // Profile exists, check if it needs enrichment with Google data
-          const profile = profileResponse.data;
-
-          // If profile exists but doesn't have Google data, enrich it
-          if (profile && !profile.google_auth_token && session.user.app_metadata?.provider === 'google') {
-            try {
-              await api.post('/api/auth/enrich-profile');
-            } catch (enrichErr) {
-              // Don't fail the entire flow if enrichment fails
-            }
+        if (profile && !profile.google_auth_token && isGoogleUser) {
+          try {
+            await api.post("/api/auth/enrich-profile");
+          } catch {
+            // Don't fail the entire flow if enrichment fails
           }
-        } catch (err) {
-          if (!mounted) return;
+        }
+      } catch (err) {
+        if (!mounted) return;
 
-          const status = err?.response?.status;
-          if (status === 404) {
-            try {
-              const email = session.user.email;
-              const full_name = session.user.user_metadata?.full_name || email;
-              const avatar_url = session.user.user_metadata?.avatar_url;
-              await api.post(`/api/users`, {
-                email_address: email,
-                full_name,
-                avatar_url
-              });
+        if (err?.response?.status === 404) {
+          try {
+            const { email, user_metadata } = session.user;
+            await api.post("/api/users", {
+              email_address: email,
+              full_name: user_metadata?.full_name || email,
+              avatar_url: user_metadata?.avatar_url,
+            });
+            return;
+          } catch {
+            if (retryCount < 3 && mounted) {
+              retryCount++;
+              timeoutId = setTimeout(() => fetchOrCreateProfile(session), 500 * retryCount);
               return;
-            } catch (createErr) {
-              if (retryCount < 3 && mounted) {
-                retryCount++;
-                timeoutId = setTimeout(fetchOrCreateProfile, 500 * retryCount);
-                return;
-              }
-            }
-            if (mounted) {
-              setError("Your account is being set up or there was a problem fetching your profile. Please refresh the page in a few seconds or contact support if this persists.");
-            }
-          } else {
-            if (mounted) {
-              setError("Your account is being set up or there was a problem fetching your profile. Please refresh the page in a few seconds or contact support if this persists.");
             }
           }
         }
-      };
-      fetchOrCreateProfile();
-    };
+
+        if (mounted) {
+          setError(PROFILE_ERROR_MESSAGE);
+        }
+      }
+    }
+
+    async function ensureProfile() {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (session && mounted) {
+        fetchOrCreateProfile(session);
+      }
+    }
+
     ensureProfile();
 
     return () => {
@@ -78,4 +81,4 @@ export const useEnsureProfile = () => {
   }, []);
 
   return { error };
-}; 
+} 

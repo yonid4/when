@@ -1,25 +1,24 @@
-"""
-Notification model for managing user notifications.
-"""
-from datetime import datetime
-from typing import Optional, Dict, Any
-from pydantic import BaseModel, Field
+"""Notification model for managing user notifications."""
 import uuid
+from datetime import datetime
+from typing import Any, Dict, Optional
+
+from pydantic import BaseModel, Field
 
 
 class Notification(BaseModel):
     """Notification model for Supabase."""
-    
+
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    user_id: str = Field(...)  # UUID of the user who receives this notification
-    event_id: Optional[str] = Field(default=None)  # UUID of related event (can be null)
-    notification_type: str = Field(...)  # 'event_invitation', 'event_finalized', etc.
+    user_id: str = Field(...)
+    event_id: Optional[str] = Field(default=None)
+    notification_type: str = Field(...)
     title: str = Field(...)
     message: str = Field(...)
     is_read: bool = Field(default=False)
     action_taken: bool = Field(default=False)
-    action_type: Optional[str] = Field(default=None)  # 'accept', 'decline', null
-    metadata: Dict[str, Any] = Field(default_factory=dict)  # Additional context
+    action_type: Optional[str] = Field(default=None)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     read_at: Optional[datetime] = Field(default=None)
     action_at: Optional[datetime] = Field(default=None)
@@ -30,7 +29,7 @@ class Notification(BaseModel):
             datetime: lambda v: v.isoformat()
         }
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'<Notification {self.notification_type} for user {self.user_id}>'
 
     def to_dict(self) -> dict:
@@ -50,7 +49,3 @@ class Notification(BaseModel):
             "read_at": self.read_at.isoformat() if self.read_at else None,
             "action_at": self.action_at.isoformat() if self.action_at else None,
         }
-
-
-
-

@@ -1,13 +1,3 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import {
-  Box,
-  Container,
-  Progress,
-  useToast
-} from "@chakra-ui/react";
-import { motion, AnimatePresence } from "framer-motion";
-import { FiEdit, FiCalendar, FiUsers, FiMapPin, FiCheck } from "react-icons/fi";
 import { eventsAPI, usersAPI } from "../services/apiService";
 import { useApiCall } from "../hooks/useApiCall";
 import {
@@ -19,6 +9,17 @@ import {
 } from "../components/event/forms";
 import { StepProgressIndicator, FormStepNavigation, WizardHeader } from "../components/common";
 import { colors, shadows } from "../styles/designSystem";
+
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  Box,
+  Container,
+  Progress,
+  useToast
+} from "@chakra-ui/react";
+import { motion, AnimatePresence } from "framer-motion";
+import { FiEdit, FiCalendar, FiUsers, FiMapPin, FiCheck } from "react-icons/fi";
 
 const MotionBox = motion(Box);
 
@@ -212,52 +213,34 @@ const EventCreate = () => {
 
   const handleSubmit = async () => {
     try {
-      console.log("[EventCreate] Starting event creation...");
-      console.log("[EventCreate] User timezone:", userTimezone);
-      console.log("[EventCreate] Form data:", formData);
 
       // Helper: Convert local date + time to UTC ISO string
       const dateTimeToUTC = (dateStr, timeStr) => {
         if (!dateStr || timeStr === null || timeStr === undefined) {
-          console.warn("[EventCreate] dateTimeToUTC called with missing data:", { dateStr, timeStr });
           return null;
         }
 
-        // Handle hour-only format (e.g., "9" or 9)
-        let timeFormatted = timeStr;
+        // Normalize time to HH:mm:ss format
+        let timeFormatted;
         if (!isNaN(timeStr) && timeStr.toString().length <= 2) {
-          const hour = parseInt(timeStr);
-          timeFormatted = `${hour.toString().padStart(2, '0')}:00`;
-        } else if (typeof timeStr === 'string' && timeStr.length === 5) {
-          // Already in HH:mm format, add :00 for seconds
+          // Hour-only format (e.g., "9" or 9)
+          timeFormatted = `${parseInt(timeStr).toString().padStart(2, "0")}:00:00`;
+        } else if (typeof timeStr === "string" && timeStr.length === 5) {
+          // HH:mm format
           timeFormatted = `${timeStr}:00`;
-        } else if (typeof timeStr === 'string' && timeStr.length >= 8) {
+        } else if (typeof timeStr === "string" && timeStr.length >= 8) {
           // Already has seconds (HH:mm:ss)
           timeFormatted = timeStr;
         } else {
-          // Default to 00:00:00 if format is unexpected
           timeFormatted = "00:00:00";
-          console.warn("[EventCreate] Unexpected time format:", timeStr);
         }
 
-        // Create local datetime string
-        const localDatetimeStr = `${dateStr}T${timeFormatted}`;
-        console.log(`[EventCreate] Converting local datetime: ${localDatetimeStr}`);
-
-        // Create Date object (browser interprets as local time)
-        const localDate = new Date(localDatetimeStr);
-
-        // Validate date is valid
+        const localDate = new Date(`${dateStr}T${timeFormatted}`);
         if (isNaN(localDate.getTime())) {
-          console.error("[EventCreate] Invalid date created:", localDatetimeStr);
           return null;
         }
 
-        // Convert to UTC ISO string
-        const utcISO = localDate.toISOString();
-        console.log(`[EventCreate] Converted to UTC: ${utcISO}`);
-
-        return utcISO;
+        return localDate.toISOString();
       };
 
       // 1. Create Event payload with new UTC format
@@ -274,86 +257,48 @@ const EventCreate = () => {
 
       // 2. Add datetime fields based on mode
       if (formData.schedulingMode === "multiple") {
-        // Convert local date + time to UTC timestamps
-        const earliestUTC = dateTimeToUTC(formData.startDate, formData.earliestHour);
-        const latestUTC = dateTimeToUTC(formData.endDate, formData.latestHour);
-
-        console.log("[EventCreate] Multiple mode - UTC conversion:");
-        console.log("  Earliest:", formData.startDate, formData.earliestHour, "->", earliestUTC);
-        console.log("  Latest:", formData.endDate, formData.latestHour, "->", latestUTC);
-
-        // NEW FORMAT: UTC timestamps
-        eventPayload.earliest_datetime_utc = earliestUTC;
-        eventPayload.latest_datetime_utc = latestUTC;
+        eventPayload.earliest_datetime_utc = dateTimeToUTC(formData.startDate, formData.earliestHour);
+        eventPayload.latest_datetime_utc = dateTimeToUTC(formData.endDate, formData.latestHour);
       } else {
-        // Single mode
         const startUTC = dateTimeToUTC(formData.date, formData.time);
-
-        // Calculate end time in UTC
         const startDate = new Date(startUTC);
         const endDate = new Date(startDate.getTime() + parseInt(formData.duration) * 60000);
-        const endUTC = endDate.toISOString();
 
-        console.log("[EventCreate] Single mode - UTC conversion:");
-        console.log("  Start:", formData.date, formData.time, "->", startUTC);
-        console.log("  End (calculated):", endUTC);
-
-        // NEW FORMAT: UTC timestamps
         eventPayload.earliest_datetime_utc = startUTC;
-        eventPayload.latest_datetime_utc = endUTC;
+        eventPayload.latest_datetime_utc = endDate.toISOString();
       }
 
-      console.log("[EventCreate] Final payload:", eventPayload);
-
-      // Validate UTC fields are present
+      // Validate required fields
       if (!eventPayload.earliest_datetime_utc || !eventPayload.latest_datetime_utc) {
-        console.error("[EventCreate] ERROR: UTC fields missing from payload!");
-        console.error("  earliest_datetime_utc:", eventPayload.earliest_datetime_utc);
-        console.error("  latest_datetime_utc:", eventPayload.latest_datetime_utc);
         throw new Error("Failed to convert datetime to UTC format");
       }
 
       if (!eventPayload.coordinator_timezone) {
-        console.error("[EventCreate] ERROR: coordinator_timezone missing!");
         throw new Error("Failed to detect user timezone");
       }
-
-      console.log("[EventCreate] ✓ Validation passed - UTC fields present");
 
       const createdEvent = await execute(() => eventsAPI.create(eventPayload));
 
       if (!createdEvent) throw new Error("Failed to create event");
 
-      console.log("[EventCreate] Event created successfully:", createdEvent);
-
-      // 2. Send invitations if guests were added
+      // Send invitations if guests were added
       if (formData.guests && formData.guests.length > 0) {
-        console.log('Sending invitations to:', formData.guests);
-
         try {
-          // Extract emails from guest objects - handle both email and email_address fields
-          const guestEmails = formData.guests.map(guest => {
-            if (typeof guest === 'object') {
-              return guest.email_address || guest.email;
-            }
-            return guest;
-          }).filter(email => email); // Filter out any undefined/null values
-
-          console.log('Extracted emails:', guestEmails);
+          const guestEmails = formData.guests
+            .map(guest => typeof guest === "object" ? (guest.email_address || guest.email) : guest)
+            .filter(Boolean);
 
           if (guestEmails.length > 0) {
             await execute(() => eventsAPI.sendInvitations(createdEvent.uid, guestEmails), {
               showSuccessToast: false
             });
-            console.log('Invitations sent successfully');
           }
         } catch (inviteError) {
-          console.error('Failed to send invitations:', inviteError);
-          // Don't fail - event already created
+          console.error("Failed to send invitations:", inviteError);
           toast({
-            title: 'Event created but invitations failed',
-            description: 'You can invite people from the event page',
-            status: 'warning',
+            title: "Event created but invitations failed",
+            description: "You can invite people from the event page",
+            status: "warning",
             duration: 5000,
             isClosable: true
           });

@@ -4,7 +4,6 @@ set -e
 echo "Starting deployment process..."
 
 # Configuration
-# EC2_HOST="ubuntu@54.189.130.216"
 EC2_HOST="ubuntu@44.249.146.152"
 SSH_KEY="/Users/yoni/Downloads/when-keypair-2.pem"
 PROJECT_DIR="/Users/yoni/Desktop/Projects/when"
@@ -12,14 +11,14 @@ PROJECT_DIR="/Users/yoni/Desktop/Projects/when"
 # Colors for output
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
 # Step 1: Build images locally
-echo -e "${YELLOW}📦 Step 1: Building Docker images locally...${NC}"
+echo -e "${YELLOW}Step 1: Building Docker images locally...${NC}"
 cd "$PROJECT_DIR"
 
-# Load environment variables for frontend build (filter out comments and empty lines)
-export $(cat .env | grep -E '^REACT_APP' | grep -v '^#' | xargs)
+# Load REACT_APP environment variables for frontend build
+export $(grep -E '^REACT_APP' .env | xargs)
 
 # Build backend
 docker build -t when-backend:latest -f Dockerfile.backend .
@@ -32,24 +31,24 @@ docker build --no-cache \
   -f Dockerfile.frontend \
   .
 
-echo -e "${GREEN}✅ Images built successfully${NC}"
+echo -e "${GREEN}Images built successfully${NC}"
 
 # Step 2: Save images to TAR files
-echo -e "${YELLOW}💾 Step 2: Saving images to TAR files...${NC}"
+echo -e "${YELLOW}Step 2: Saving images to TAR files...${NC}"
 docker save when-backend:latest -o when-backend.tar
 docker save when-frontend:latest -o when-frontend.tar
 
-echo -e "${GREEN}✅ Images saved${NC}"
+echo -e "${GREEN}Images saved${NC}"
 
 # Step 3: Transfer to EC2
-echo -e "${YELLOW}📤 Step 3: Transferring images to EC2...${NC}"
+echo -e "${YELLOW}Step 3: Transferring images to EC2...${NC}"
 scp -i "$SSH_KEY" when-backend.tar "$EC2_HOST:/home/ubuntu/"
 scp -i "$SSH_KEY" when-frontend.tar "$EC2_HOST:/home/ubuntu/"
 
-echo -e "${GREEN}✅ Images transferred${NC}"
+echo -e "${GREEN}Images transferred${NC}"
 
 # Step 4: Deploy on EC2
-echo -e "${YELLOW}🚢 Step 4: Deploying on EC2...${NC}"
+echo -e "${YELLOW}Step 4: Deploying on EC2...${NC}"
 ssh -i "$SSH_KEY" "$EC2_HOST" << 'ENDSSH'
     set -e
     
@@ -89,11 +88,11 @@ ssh -i "$SSH_KEY" "$EC2_HOST" << 'ENDSSH'
     docker ps
 ENDSSH
 
-echo -e "${GREEN}✅ Deployment complete!${NC}"
+echo -e "${GREEN}Deployment complete!${NC}"
 
 # Step 5: Clean up local TAR files
-echo -e "${YELLOW}🧹 Step 5: Cleaning up local files...${NC}"
+echo -e "${YELLOW}Step 5: Cleaning up local files...${NC}"
 rm when-backend.tar when-frontend.tar
 
-echo -e "${GREEN}🎉 All done! Your application is now running on EC2${NC}"
+echo -e "${GREEN}All done! Your application is now running on EC2${NC}"
 echo -e "Visit: ${GREEN}https://when-now.com${NC}"

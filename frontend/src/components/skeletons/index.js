@@ -1,2 +1,2 @@
-export { default as DashboardSkeleton } from "./DashboardSkeleton";
-export { default as EventPageSkeleton } from "./EventPageSkeleton";
+export { default as DashboardSkeleton } from "./DashboardSkeleton.jsx";
+export { default as EventPageSkeleton } from "./EventPageSkeleton.jsx";

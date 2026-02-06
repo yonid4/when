@@ -13,49 +13,24 @@ import {
 } from "@chakra-ui/react";
 import { shadows } from "../../styles/designSystem";
 
-/**
- * Calculate RSVP percentages for the progress bar
- */
-const calculateRsvpPercentages = (rsvpStats) => {
-  const totalResponses = rsvpStats.going + rsvpStats.maybe + rsvpStats.declined;
+function calculateRsvpPercentages(rsvpStats) {
+  const total = rsvpStats.going + rsvpStats.maybe + rsvpStats.declined;
+  if (!total) return { going: 0, maybe: 0, declined: 0 };
   return {
-    going: totalResponses ? (rsvpStats.going / totalResponses) * 100 : 0,
-    maybe: totalResponses ? (rsvpStats.maybe / totalResponses) * 100 : 0,
-    declined: totalResponses ? (rsvpStats.declined / totalResponses) * 100 : 0
+    going: (rsvpStats.going / total) * 100,
+    maybe: (rsvpStats.maybe / total) * 100,
+    declined: (rsvpStats.declined / total) * 100
   };
+}
+
+const RSVP_CONFIG = {
+  going: { color: "green", label: "Going" },
+  maybe: { color: "yellow", label: "Maybe" },
+  not_going: { color: "red", label: "Can't" }
 };
 
-/**
- * Get RSVP badge color scheme
- */
-const getRsvpColorScheme = (status) => {
-  switch (status) {
-    case "going":
-      return "green";
-    case "maybe":
-      return "yellow";
-    case "not_going":
-      return "red";
-    default:
-      return "gray";
-  }
-};
-
-/**
- * Get RSVP display label
- */
-const getRsvpLabel = (status) => {
-  switch (status) {
-    case "going":
-      return "Going";
-    case "maybe":
-      return "Maybe";
-    case "not_going":
-      return "Can't";
-    default:
-      return "Pending";
-  }
-};
+const getRsvpColorScheme = (status) => RSVP_CONFIG[status]?.color || "gray";
+const getRsvpLabel = (status) => RSVP_CONFIG[status]?.label || "Pending";
 
 /**
  * ParticipantsList - Displays event participants with RSVP breakdown

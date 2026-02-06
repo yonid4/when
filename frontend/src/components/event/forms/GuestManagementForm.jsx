@@ -29,12 +29,8 @@ import { colors, shadows } from "../../../styles/designSystem";
 const MotionBox = motion(Box);
 const MotionTag = motion(Tag);
 
-/**
- * Validate email format
- */
-const isValidEmail = (email) => {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-};
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const isValidEmail = (email) => EMAIL_REGEX.test(email);
 
 /**
  * GuestManagementForm - Third step of event creation
@@ -65,10 +61,6 @@ const GuestManagementForm = ({
   const inputRef = useRef(null);
   const [emailInput, setEmailInput] = useState("");
   const [emailError, setEmailError] = useState("");
-
-  const handleInputChange = (field, value) => {
-    onChange(field, value);
-  };
 
   // Handle adding email directly (for when user types email manually)
   const handleAddEmail = useCallback((email) => {
@@ -425,7 +417,7 @@ const GuestManagementForm = ({
                   <Switch
                     isChecked={formData.guestPermissions.canInviteOthers}
                     onChange={(e) =>
-                      handleInputChange("guestPermissions", {
+                      onChange("guestPermissions", {
                         ...formData.guestPermissions,
                         canInviteOthers: e.target.checked
                       })
@@ -451,7 +443,7 @@ const GuestManagementForm = ({
                   <Switch
                     isChecked={formData.guestPermissions.canSeeGuestList}
                     onChange={(e) =>
-                      handleInputChange("guestPermissions", {
+                      onChange("guestPermissions", {
                         ...formData.guestPermissions,
                         canSeeGuestList: e.target.checked
                       })

@@ -1,4 +1,28 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { eventsAPI, preferredSlotsAPI, busySlotsAPI } from "../services/apiService";
+import api from "../services/api";
+import { useApiCall } from "../hooks/useApiCall";
+import { useAuth } from "../hooks/useAuth";
+import { colors, shadows } from "../styles/designSystem";
+import { EventPageSkeleton } from "../components/skeletons";
+import { CalendarView } from "../components/calendar";
+import {
+  InviteModal,
+  EditEventModal,
+  ProposedTimesModal,
+  FinalizeEventModal,
+  EventHeader,
+  EventDetailsCard,
+  ActionsPanel,
+  ParticipantsList
+} from "../components/event";
+import { extractCalendarTimeBound } from "../utils/dateUtils";
+import {
+  transformBusySlotsForCalendar,
+  transformPreferredSlotsForCalendar,
+  detectOverlaps
+} from "../utils/calendarEventUtils";
+
+import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Box,
@@ -13,33 +37,6 @@ import {
   useColorModeValue,
   useToast
 } from "@chakra-ui/react";
-import { eventsAPI, preferredSlotsAPI, busySlotsAPI } from "../services/apiService";
-import api from "../services/api";
-import { useApiCall } from "../hooks/useApiCall";
-import { useAuth } from "../hooks/useAuth";
-import { colors, shadows } from "../styles/designSystem";
-import { EventPageSkeleton } from "../components/skeletons";
-
-// Components
-import { CalendarView } from "../components/calendar";
-import {
-  InviteModal,
-  EditEventModal,
-  ProposedTimesModal,
-  FinalizeEventModal,
-  EventHeader,
-  EventDetailsCard,
-  ActionsPanel,
-  ParticipantsList
-} from "../components/event";
-
-// Utils
-import { extractCalendarTimeBound } from "../utils/dateUtils";
-import {
-  transformBusySlotsForCalendar,
-  transformPreferredSlotsForCalendar,
-  detectOverlaps
-} from "../utils/calendarEventUtils";
 
 // Demo data for local testing (add ?demo=true to URL)
 const DEMO_EVENT = {
@@ -242,33 +239,42 @@ const EventPage = () => {
 
   // Computed values
   const host = participants.find(p => p.user_id === event?.coordinator_id) || { name: "Coordinator", avatar: null };
-  const isCoordinator = isDemo ? true : (user?.id === event?.coordinator_id);
-  const rsvpStats = {
-    going: participants.filter(p => p.rsvp_status === "going").length,
-    maybe: participants.filter(p => p.rsvp_status === "maybe").length,
-    declined: participants.filter(p => p.rsvp_status === "not_going").length,
-    noResponse: participants.filter(p => !p.rsvp_status).length
-  };
+  const isCoordinator = isDemo || user?.id === event?.coordinator_id;
+
+  const rsvpStats = useMemo(() => {
+    const counts = { going: 0, maybe: 0, declined: 0, noResponse: 0 };
+    for (const p of participants) {
+      if (p.rsvp_status === "going") counts.going++;
+      else if (p.rsvp_status === "maybe") counts.maybe++;
+      else if (p.rsvp_status === "not_going") counts.declined++;
+      else counts.noResponse++;
+    }
+    return counts;
+  }, [participants]);
 
   // Handlers
   const handleRsvp = async (status) => {
     const previousStatus = userRsvp;
     setUserRsvp(status);
 
+    const statusMessages = {
+      going: "confirmed your attendance",
+      maybe: "marked yourself as tentative",
+      not_going: "declined"
+    };
+
     if (isDemo) {
-      const statusMessages = { going: "confirmed your attendance", maybe: "marked yourself as tentative", not_going: "declined" };
       toast({ title: "RSVP Updated (Demo)", description: `You have ${statusMessages[status]} for this event.`, status: "success", duration: 3000, isClosable: true });
       return;
     }
 
-    try {
-      if (!user) {
-        toast({ title: "Please log in", status: "warning", duration: 3000 });
-        return;
-      }
+    if (!user) {
+      toast({ title: "Please log in", status: "warning", duration: 3000 });
+      return;
+    }
 
+    try {
       await execute(() => eventsAPI.updateRsvpStatus(eventUid, status), { showSuccessToast: false });
-      const statusMessages = { going: "confirmed your attendance", maybe: "marked yourself as tentative", not_going: "declined" };
       toast({ title: "RSVP Updated", description: `You have ${statusMessages[status]} for this event.`, status: "success", duration: 3000, isClosable: true });
       loadEventData();
     } catch (error) {
@@ -330,11 +336,17 @@ const EventPage = () => {
         description += `\n\nNeeds reconnection: ${names}`;
       }
 
-      let status = "success", title = "Calendars synced successfully";
-      if (syncResults.synced === 0) { status = "warning"; title = "No calendars synced"; }
-      else if (syncResults.failed > 0) { status = "warning"; title = "Calendars partially synced"; }
+      let toastStatus = "success";
+      let title = "Calendars synced successfully";
+      if (syncResults.synced === 0) {
+        toastStatus = "warning";
+        title = "No calendars synced";
+      } else if (syncResults.failed > 0) {
+        toastStatus = "warning";
+        title = "Calendars partially synced";
+      }
 
-      toast({ title, description, status, duration: 7000, isClosable: true });
+      toast({ title, description, status: toastStatus, duration: 7000, isClosable: true });
       await loadEventData();
     } catch (error) {
       console.error("Sync error:", error);

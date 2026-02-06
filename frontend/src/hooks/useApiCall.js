@@ -1,122 +1,75 @@
 import { useState } from "react";
+
 import { useToast } from "@chakra-ui/react";
 
-/**
- * Custom hook for API calls with loading states and error handling
- * Provides consistent error display via Chakra UI toasts
- * 
- * @example
- * const { execute, loading, error } = useApiCall();
- * 
- * const handleAction = async () => {
- *   await execute(
- *     () => eventsAPI.create(formData),
- *     {
- *       successMessage: "Event created!",
- *       errorMessage: "Failed to create event",
- *       onSuccess: (result) => navigate(`/events/${result.uid}`)
- *     }
- *   );
- * };
- */
-export const useApiCall = () => {
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
-    const toast = useToast();
+function extractErrorMessage(err, fallbackMessage) {
+  if (err.response?.data?.message) return err.response.data.message;
+  if (err.response?.data?.error) return err.response.data.error;
+  if (err.message) return err.message;
+  return fallbackMessage;
+}
 
-    /**
-     * Execute an API call with automatic error handling
-     * @param {Function} apiFunction - Async function that makes the API call
-     * @param {Object} options - Configuration options
-     * @param {string} options.successMessage - Toast message on success (optional)
-     * @param {string} options.errorMessage - Toast message on error (default: 'An error occurred')
-     * @param {Function} options.onSuccess - Callback on success with result (optional)
-     * @param {Function} options.onError - Callback on error with error object (optional)
-     * @param {boolean} options.showSuccessToast - Show success toast (default: true if successMessage provided)
-     * @param {boolean} options.showErrorToast - Show error toast (default: true)
-     * @returns {Promise<any>} Result from API function or null on error
-     */
-    const execute = async (apiFunction, options = {}) => {
-        const {
-            successMessage,
-            errorMessage = "An error occurred",
-            onSuccess,
-            onError,
-            showSuccessToast = !!successMessage,
-            showErrorToast = true
-        } = options;
+export function useApiCall() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const toast = useToast();
 
-        setLoading(true);
-        setError(null);
+  async function execute(apiFunction, options = {}) {
+    const {
+      successMessage,
+      errorMessage = "An error occurred",
+      onSuccess,
+      onError,
+      showSuccessToast = !!successMessage,
+      showErrorToast = true,
+    } = options;
 
-        try {
-            const result = await apiFunction();
+    setLoading(true);
+    setError(null);
 
-            // Show success toast if configured
-            if (showSuccessToast && successMessage) {
-                toast({
-                    title: "Success",
-                    description: successMessage,
-                    status: "success",
-                    duration: 3000,
-                    isClosable: true,
-                    position: "top"
-                });
-            }
+    try {
+      const result = await apiFunction();
 
-            // Call success callback if provided
-            if (onSuccess) {
-                onSuccess(result);
-            }
+      if (showSuccessToast && successMessage) {
+        toast({
+          title: "Success",
+          description: successMessage,
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+          position: "top",
+        });
+      }
 
-            setLoading(false);
-            return result;
-        } catch (err) {
-            console.error("API call error:", err);
+      onSuccess?.(result);
+      setLoading(false);
+      return result;
+    } catch (err) {
+      console.error("API call error:", err);
 
-            // Extract error message from response
-            let displayMessage = errorMessage;
-            if (err.response?.data?.message) {
-                displayMessage = err.response.data.message;
-            } else if (err.response?.data?.error) {
-                displayMessage = err.response.data.error;
-            } else if (err.message) {
-                displayMessage = err.message;
-            }
+      const displayMessage = extractErrorMessage(err, errorMessage);
+      setError(displayMessage);
 
-            setError(displayMessage);
+      if (showErrorToast) {
+        toast({
+          title: "Error",
+          description: displayMessage,
+          status: "error",
+          duration: 5000,
+          isClosable: true,
+          position: "top",
+        });
+      }
 
-            // Show error toast if configured
-            if (showErrorToast) {
-                toast({
-                    title: "Error",
-                    description: displayMessage,
-                    status: "error",
-                    duration: 5000,
-                    isClosable: true,
-                    position: "top"
-                });
-            }
+      onError?.(err);
+      setLoading(false);
+      return null;
+    }
+  }
 
-            // Call error callback if provided
-            if (onError) {
-                onError(err);
-            }
+  function clearError() {
+    setError(null);
+  }
 
-            setLoading(false);
-            return null;
-        }
-    };
-
-    /**
-     * Reset error state
-     */
-    const clearError = () => setError(null);
-
-    return {
-        execute,
-        loading,
-        error,
-        clearError
-    };
-};
+  return { execute, loading, error, clearError };
+}

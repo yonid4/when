@@ -16,9 +16,10 @@ import {
   Heading,
   Card,
   CardBody,
-  Flex,
-  Spacer,
+  Flex
 } from "@chakra-ui/react";
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const UserList = ({ participants, onUserSelect, isCoordinator = false, onInviteUser }) => {
   const [email, setEmail] = useState("");
@@ -26,22 +27,18 @@ const UserList = ({ participants, onUserSelect, isCoordinator = false, onInviteU
   const [inviteStatus, setInviteStatus] = useState("");
   const [pendingInvites, setPendingInvites] = useState([]);
 
-  // Email validation regex
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-  const validateEmail = (email) => {
-    if (!email) {
+  const validateEmail = (emailToValidate) => {
+    if (!emailToValidate) {
       return "Email is required";
     }
-    if (!emailRegex.test(email)) {
+    if (!EMAIL_REGEX.test(emailToValidate)) {
       return "Please enter a valid email address";
     }
-    // Check if email is already invited or in participants
     const allEmails = [
       ...participants.map(p => p.email),
       ...pendingInvites.map(p => p.email)
     ];
-    if (allEmails.includes(email)) {
+    if (allEmails.includes(emailToValidate)) {
       return "This email has already been invited or is already a participant";
     }
     return "";
@@ -62,34 +59,28 @@ const UserList = ({ participants, onUserSelect, isCoordinator = false, onInviteU
       return;
     }
 
-    try {
-      setInviteStatus("sending");
-      
-      // Add to pending invites (simulate invitation sent)
-      const newInvite = {
-        id: Date.now(),
-        email: email,
-        status: "pending",
-        sentAt: new Date()
-      };
-      
-      setPendingInvites(prev => [...prev, newInvite]);
-      
-      // Call parent callback if provided
-      if (onInviteUser) {
-        await onInviteUser(email);
-      }
-      
-      setEmail("");
-      setEmailError("");
-      setInviteStatus("sent");
-      
-      // Clear status after 3 seconds
-      setTimeout(() => setInviteStatus(""), 3000);
-    } catch (error) {
-      setInviteStatus("error");
-      console.error("Error sending invite:", error);
+    setInviteStatus("sending");
+
+    const newInvite = {
+      id: Date.now(),
+      email: email,
+      status: "pending",
+      sentAt: new Date()
+    };
+
+    setPendingInvites(prev => [...prev, newInvite]);
+
+    if (onInviteUser) {
+      await onInviteUser(email).catch(() => {
+        setInviteStatus("error");
+        return;
+      });
     }
+
+    setEmail("");
+    setEmailError("");
+    setInviteStatus("sent");
+    setTimeout(() => setInviteStatus(""), 3000);
   };
 
   const handleKeyPress = (e) => {

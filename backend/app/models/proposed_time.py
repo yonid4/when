@@ -1,14 +1,14 @@
-"""
-Proposed Time model for managing cached AI-generated time proposals.
-"""
+"""Proposed Time model for managing cached AI-generated time proposals."""
+import uuid
 from datetime import datetime
 from typing import Optional
+
 from pydantic import BaseModel, Field
-import uuid
+
 
 class ProposedTime(BaseModel):
     """Model for cached AI-generated time proposals."""
-    
+
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     event_id: str = Field(...)
     start_time_utc: datetime = Field(...)
@@ -17,7 +17,7 @@ class ProposedTime(BaseModel):
     reasoning: Optional[str] = Field(default=None)
     rank: int = Field(...)
     created_at: datetime = Field(default_factory=datetime.utcnow)
-    
+
     def to_dict(self) -> dict:
         """Convert to dictionary for Supabase operations."""
         return {

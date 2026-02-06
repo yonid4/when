@@ -1,8 +1,10 @@
-import React, { useRef } from "react";
+import { useRef } from "react";
+
 import { Box, Container, Heading, Text, VStack } from "@chakra-ui/react";
 import { motion, useScroll, useTransform } from "framer-motion";
-import CalendarIllustration from "./CalendarIllustration";
+
 import { gradients } from "../../styles/designSystem";
+import CalendarIllustration from "./CalendarIllustration";
 
 const MotionBox = motion(Box);
 
@@ -11,7 +13,7 @@ const MotionBox = motion(Box);
  * The calendar scales from 0.6 to 1.2 as user scrolls through the section.
  * Falls back to a static display on mobile or when reduced motion is preferred.
  */
-const ScrollZoomSection = ({ reducedMotion, isMobile }) => {
+function ScrollZoomSection({ reducedMotion, isMobile }) {
   const sectionRef = useRef(null);
 
   const { scrollYProgress } = useScroll({
@@ -92,6 +94,6 @@ const ScrollZoomSection = ({ reducedMotion, isMobile }) => {
       </Box>
     </Box>
   );
-};
+}
 
 export default ScrollZoomSection;

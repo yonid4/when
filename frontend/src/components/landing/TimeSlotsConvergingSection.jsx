@@ -1,22 +1,23 @@
-import React, { useRef } from "react";
+import { useRef } from "react";
+
 import {
+  Avatar,
   Box,
   Container,
   Heading,
-  Text,
-  VStack,
   HStack,
-  Avatar,
-  Icon
+  Icon,
+  Text,
+  VStack
 } from "@chakra-ui/react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { FiCheck } from "react-icons/fi";
-import { colors, shadows, gradients } from "../../styles/designSystem";
+
+import { colors, gradients, shadows } from "../../styles/designSystem";
 
 const MotionBox = motion(Box);
 
-// Person data with their availability
-const people = [
+const PEOPLE = [
   {
     name: "Sarah",
     avatar: "https://i.pravatar.cc/150?img=1",
@@ -39,13 +40,12 @@ const people = [
   }
 ];
 
-const timeLabels = ["9 AM", "10 AM", "11 AM", "12 PM", "1 PM", "2 PM", "3 PM", "4 PM"];
+const TIME_LABELS = ["9 AM", "10 AM", "11 AM", "12 PM", "1 PM", "2 PM", "3 PM", "4 PM"];
 
-// Find the "perfect" slot where everyone is available (index 2 = 11 AM)
-const perfectSlotIndex = 2;
+// The "perfect" slot where everyone is available (index 2 = 11 AM)
+const PERFECT_SLOT_INDEX = 2;
 
-// Column component for each person's availability
-const PersonColumn = ({ person, index, totalPeople, scrollProgress }) => {
+function PersonColumn({ person, index, totalPeople, scrollProgress }) {
   // Calculate spread offset - columns spread out from center
   const centerOffset = index - (totalPeople - 1) / 2;
   const spreadAmount = 100;
@@ -102,7 +102,7 @@ const PersonColumn = ({ person, index, totalPeople, scrollProgress }) => {
       {/* Time slots */}
       <VStack spacing={1}>
         {person.slots.map((available, slotIndex) => {
-          const isPerfectSlot = slotIndex === perfectSlotIndex;
+          const isPerfectSlot = slotIndex === PERFECT_SLOT_INDEX;
           return (
             <MotionBox
               key={slotIndex}
@@ -139,47 +139,47 @@ const PersonColumn = ({ person, index, totalPeople, scrollProgress }) => {
       </VStack>
     </MotionBox>
   );
-};
+}
 
-// Static version for mobile/reduced motion
-const StaticVersion = () => (
-  <Box py={20} bg="gray.50">
-    <Container maxW="container.xl">
-      <VStack spacing={8} textAlign="center">
-        <Heading size="xl" bgGradient={gradients.ocean} bgClip="text">
-          Everyone's availability, one view
-        </Heading>
-        <Text fontSize="lg" color="gray.600" maxW="2xl">
-          See when everyone is free and find the perfect meeting time instantly.
-        </Text>
-        <HStack spacing={4} justify="center" flexWrap="wrap">
-          {people.map((person, index) => (
-            <VStack key={index} spacing={2}>
-              <Avatar src={person.avatar} name={person.name} size="lg" />
-              <Text fontSize="sm" color="gray.600">{person.name}</Text>
-            </VStack>
-          ))}
-        </HStack>
-        <Box
-          bg={colors.secondary}
-          color="white"
-          px={6}
-          py={3}
-          borderRadius="xl"
-          fontWeight="bold"
-        >
-          <HStack>
-            <Icon as={FiCheck} />
-            <Text>Perfect time found: 11 AM</Text>
+function StaticVersion() {
+  return (
+    <Box py={20} bg="gray.50">
+      <Container maxW="container.xl">
+        <VStack spacing={8} textAlign="center">
+          <Heading size="xl" bgGradient={gradients.ocean} bgClip="text">
+            Everyone's availability, one view
+          </Heading>
+          <Text fontSize="lg" color="gray.600" maxW="2xl">
+            See when everyone is free and find the perfect meeting time instantly.
+          </Text>
+          <HStack spacing={4} justify="center" flexWrap="wrap">
+            {PEOPLE.map((person, index) => (
+              <VStack key={index} spacing={2}>
+                <Avatar src={person.avatar} name={person.name} size="lg" />
+                <Text fontSize="sm" color="gray.600">{person.name}</Text>
+              </VStack>
+            ))}
           </HStack>
-        </Box>
-      </VStack>
-    </Container>
-  </Box>
-);
+          <Box
+            bg={colors.secondary}
+            color="white"
+            px={6}
+            py={3}
+            borderRadius="xl"
+            fontWeight="bold"
+          >
+            <HStack>
+              <Icon as={FiCheck} />
+              <Text>Perfect time found: 11 AM</Text>
+            </HStack>
+          </Box>
+        </VStack>
+      </Container>
+    </Box>
+  );
+}
 
-// Animated version with scroll effects
-const AnimatedVersion = ({ sectionRef, scrollYProgress }) => {
+function AnimatedVersion({ sectionRef, scrollYProgress }) {
   // All transforms defined at top level
   const titleOpacity = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [0.5, 1, 1, 0.5]);
   const findingOpacity = useTransform(scrollYProgress, [0.6, 0.8], [1, 0]);
@@ -243,7 +243,7 @@ const AnimatedVersion = ({ sectionRef, scrollYProgress }) => {
             <HStack spacing={0} align="start" justify="center">
               {/* Time labels */}
               <VStack spacing={1} mr={4} mt="72px">
-                {timeLabels.map((time, idx) => (
+                {TIME_LABELS.map((time, idx) => (
                   <Box
                     key={idx}
                     h="28px"
@@ -259,12 +259,12 @@ const AnimatedVersion = ({ sectionRef, scrollYProgress }) => {
 
               {/* Person columns */}
               <HStack spacing={2}>
-                {people.map((person, index) => (
+                {PEOPLE.map((person, index) => (
                   <PersonColumn
                     key={index}
                     person={person}
                     index={index}
-                    totalPeople={people.length}
+                    totalPeople={PEOPLE.length}
                     scrollProgress={scrollYProgress}
                   />
                 ))}
@@ -298,14 +298,14 @@ const AnimatedVersion = ({ sectionRef, scrollYProgress }) => {
       </Box>
     </Box>
   );
-};
+}
 
 /**
  * Time Slots Converging Section
  * Multiple calendar columns representing different people converge
  * as the user scrolls, highlighting the perfect meeting time.
  */
-const TimeSlotsConvergingSection = ({ reducedMotion, isMobile }) => {
+function TimeSlotsConvergingSection({ reducedMotion, isMobile }) {
   const sectionRef = useRef(null);
 
   const { scrollYProgress } = useScroll({
@@ -324,6 +324,6 @@ const TimeSlotsConvergingSection = ({ reducedMotion, isMobile }) => {
       scrollYProgress={scrollYProgress}
     />
   );
-};
+}
 
 export default TimeSlotsConvergingSection;

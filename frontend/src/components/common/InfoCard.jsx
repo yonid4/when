@@ -1,25 +1,15 @@
-import React from "react";
-import { Box, VStack, HStack, Text, Icon} from "@chakra-ui/react";
+import { Box, HStack, Text } from "@chakra-ui/react";
+
 import { shadows } from "../../styles/designSystem";
 
-/**
- * InfoCard - Compact info display card for sidebars
- *
- * @param {Object} props
- * @param {string} props.title - Section title (uppercase label)
- * @param {React.ReactNode} props.children - Card content
- * @param {React.ReactNode} props.headerRight - Optional content for header right side
- * @param {string} props.bg - Background color
- * @param {number} props.p - Padding
- */
-const InfoCard = ({
+function InfoCard({
   title,
   children,
   headerRight,
   bg = "white",
   p = 4,
   ...boxProps
-}) => {
+}) {
   return (
     <Box
       borderWidth="1px"
@@ -46,6 +36,6 @@ const InfoCard = ({
       {children}
     </Box>
   );
-};
+}
 
 export default InfoCard;

@@ -51,11 +51,6 @@ const getDefaultDates = () => {
  * @param {Function} props.onChange - Handler for input changes
  */
 const EventSchedulingForm = ({ formData, onChange }) => {
-  const handleInputChange = (field, value) => {
-    onChange(field, value);
-  };
-
-  // Set smart defaults on mount if dates are empty
   useEffect(() => {
     if (formData.schedulingMode === "multiple" && !formData.startDate && !formData.endDate) {
       const defaults = getDefaultDates();
@@ -120,7 +115,7 @@ const EventSchedulingForm = ({ formData, onChange }) => {
               borderWidth={2}
               borderColor={isSingleMode ? colors.primary : "gray.200"}
               bg={isSingleMode ? colors.primarySoft : "white"}
-              onClick={() => handleInputChange("schedulingMode", "single")}
+              onClick={() => onChange("schedulingMode", "single")}
               _hover={{ borderColor: isSingleMode ? colors.primary : "gray.300" }}
               transition="all 0.15s ease"
               borderRadius="lg"
@@ -163,7 +158,7 @@ const EventSchedulingForm = ({ formData, onChange }) => {
               borderWidth={2}
               borderColor={isMultipleMode ? colors.primary : "gray.200"}
               bg={isMultipleMode ? colors.primarySoft : "white"}
-              onClick={() => handleInputChange("schedulingMode", "multiple")}
+              onClick={() => onChange("schedulingMode", "multiple")}
               _hover={{ borderColor: isMultipleMode ? colors.primary : "gray.300" }}
               transition="all 0.15s ease"
               borderRadius="lg"
@@ -233,7 +228,7 @@ const EventSchedulingForm = ({ formData, onChange }) => {
                     <Input
                       type="date"
                       value={formData.date}
-                      onChange={(e) => handleInputChange("date", e.target.value)}
+                      onChange={(e) => onChange("date", e.target.value)}
                       bg="white"
                       borderRadius="lg"
                       size="lg"
@@ -244,7 +239,7 @@ const EventSchedulingForm = ({ formData, onChange }) => {
                     <Input
                       type="time"
                       value={formData.time}
-                      onChange={(e) => handleInputChange("time", e.target.value)}
+                      onChange={(e) => onChange("time", e.target.value)}
                       bg="white"
                       borderRadius="lg"
                       size="lg"
@@ -284,7 +279,7 @@ const EventSchedulingForm = ({ formData, onChange }) => {
                       <Input
                         type="date"
                         value={formData.startDate}
-                        onChange={(e) => handleInputChange("startDate", e.target.value)}
+                        onChange={(e) => onChange("startDate", e.target.value)}
                         bg="white"
                         borderRadius="lg"
                         size="lg"
@@ -295,7 +290,7 @@ const EventSchedulingForm = ({ formData, onChange }) => {
                       <Input
                         type="date"
                         value={formData.endDate}
-                        onChange={(e) => handleInputChange("endDate", e.target.value)}
+                        onChange={(e) => onChange("endDate", e.target.value)}
                         bg="white"
                         borderRadius="lg"
                         size="lg"
@@ -322,7 +317,7 @@ const EventSchedulingForm = ({ formData, onChange }) => {
                       <FormLabel fontSize="sm" color="gray.600">Earliest</FormLabel>
                       <Select
                         value={formData.earliestHour}
-                        onChange={(e) => handleInputChange("earliestHour", e.target.value)}
+                        onChange={(e) => onChange("earliestHour", e.target.value)}
                         bg="white"
                         borderRadius="lg"
                         size="lg"
@@ -338,7 +333,7 @@ const EventSchedulingForm = ({ formData, onChange }) => {
                       <FormLabel fontSize="sm" color="gray.600">Latest</FormLabel>
                       <Select
                         value={formData.latestHour}
-                        onChange={(e) => handleInputChange("latestHour", e.target.value)}
+                        onChange={(e) => onChange("latestHour", e.target.value)}
                         bg="white"
                         borderRadius="lg"
                         size="lg"
@@ -384,7 +379,7 @@ const EventSchedulingForm = ({ formData, onChange }) => {
                   variant={isSelected ? "solid" : "outline"}
                   colorScheme={isSelected ? "purple" : "gray"}
                   borderRadius="full"
-                  onClick={() => handleInputChange("duration", option.value)}
+                  onClick={() => onChange("duration", option.value)}
                   px={5}
                   fontWeight={isSelected ? "bold" : "medium"}
                   mb={2}

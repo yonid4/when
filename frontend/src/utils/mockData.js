@@ -1,5 +1,7 @@
-// Mock data for When Application UI
-// This data is used for the redesigned pages to showcase the new UI
+/**
+ * Mock data for When Application UI
+ * Used for redesigned pages to showcase the new UI
+ */
 
 export const mockUsers = [
   {
@@ -394,27 +396,24 @@ export const mockStats = {
   eventsAttended: 34
 };
 
-// Helper function to get event by ID
-export const getEventById = (id) => {
+export function getEventById(id) {
   return mockEvents.find(event => event.id === parseInt(id) || event.uid === id);
-};
+}
 
-// Helper function to get comments for an event
-export const getCommentsByEventId = (eventId) => {
+export function getCommentsByEventId(eventId) {
   return mockComments.filter(comment => comment.eventId === parseInt(eventId));
-};
+}
 
-// Helper function to filter events by status
-export const getEventsByStatus = (status) => {
+export function getEventsByStatus(status) {
   return mockEvents.filter(event => event.status === status);
-};
+}
 
-// Helper function to get upcoming events
-export const getUpcomingEvents = () => {
+export function getUpcomingEvents() {
   const today = new Date();
-  return mockEvents.filter(event => new Date(event.date) >= today)
+  return mockEvents
+    .filter(event => new Date(event.date) >= today)
     .sort((a, b) => new Date(a.date) - new Date(b.date));
-};
+}
 
 export default {
   mockUsers,

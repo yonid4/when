@@ -1,34 +1,36 @@
-import React, { useRef } from "react";
+import { useRef } from "react";
+
 import {
+  Badge,
   Box,
-  Container,
-  Heading,
-  Text,
-  VStack,
-  HStack,
-  Icon,
-  Grid,
   Card,
   CardBody,
-  Badge,
-  SimpleGrid
+  Container,
+  Grid,
+  Heading,
+  HStack,
+  Icon,
+  SimpleGrid,
+  Text,
+  VStack
 } from "@chakra-ui/react";
 import { motion, useInView } from "framer-motion";
 import {
-  FiZap,
-  FiUsers,
-  FiGlobe,
   FiBell,
   FiCheck,
   FiClock,
-  FiTrendingUp
+  FiGlobe,
+  FiTrendingUp,
+  FiUsers,
+  FiZap
 } from "react-icons/fi";
+
 import { colors, gradients } from "../../styles/designSystem";
 
 const MotionBox = motion(Box);
 const MotionCard = motion(Card);
 
-const AnimatedSection = ({ children, delay = 0, reducedMotion }) => {
+function AnimatedSection({ children, delay = 0, reducedMotion }) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
 
@@ -36,17 +38,19 @@ const AnimatedSection = ({ children, delay = 0, reducedMotion }) => {
     return <Box ref={ref}>{children}</Box>;
   }
 
+  const animateState = isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 };
+
   return (
     <MotionBox
       ref={ref}
       initial={{ opacity: 0, y: 50 }}
-      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
+      animate={animateState}
       transition={{ duration: 0.6, delay }}
     >
       {children}
     </MotionBox>
   );
-};
+}
 
 const valueProps = [
   {
@@ -75,13 +79,14 @@ const valueProps = [
   }
 ];
 
+const CARD_BG = "white";
+const FEATURE_BG_COLOR = "gray.50";
+
 /**
  * Features section with value proposition cards.
  * Simple fade-in animations on scroll, no complex pinned scrolling.
  */
-const FeaturesSection = ({ reducedMotion }) => {
-  const cardBg = "white";
-  const featureBgColor = "gray.50";
+function FeaturesSection({ reducedMotion }) {
 
   return (
     <>
@@ -104,7 +109,7 @@ const FeaturesSection = ({ reducedMotion }) => {
             <AnimatedSection key={index} delay={index * 0.1} reducedMotion={reducedMotion}>
               <MotionCard
                 h="full"
-                bg={cardBg}
+                bg={CARD_BG}
                 _hover={{ transform: "translateY(-8px)", shadow: "xl" }}
                 transition="all 0.3s"
               >
@@ -128,7 +133,7 @@ const FeaturesSection = ({ reducedMotion }) => {
       </Container>
 
       {/* Features Showcase */}
-      <Box bg={featureBgColor} py={16}>
+      <Box bg={FEATURE_BG_COLOR} py={16}>
         <Container maxW="container.xl">
           <VStack spacing={16}>
             {/* Feature 1: Scheduling */}
@@ -164,7 +169,7 @@ const FeaturesSection = ({ reducedMotion }) => {
                   </VStack>
                 </VStack>
 
-                <Card bg={cardBg} overflow="hidden" boxShadow="xl">
+                <Card bg={CARD_BG} overflow="hidden" boxShadow="xl">
                   <Box p={8} bgGradient={gradients.primary}>
                     <VStack spacing={4}>
                       <Card w="full" bg="white">
@@ -205,7 +210,7 @@ const FeaturesSection = ({ reducedMotion }) => {
                 alignItems="center"
               >
                 <Card
-                  bg={cardBg}
+                  bg={CARD_BG}
                   overflow="hidden"
                   boxShadow="xl"
                   order={{ base: 2, lg: 1 }}
@@ -298,7 +303,7 @@ const FeaturesSection = ({ reducedMotion }) => {
                   </VStack>
                 </VStack>
 
-                <Card bg={cardBg} overflow="hidden" boxShadow="xl">
+                <Card bg={CARD_BG} overflow="hidden" boxShadow="xl">
                   <Box p={8}>
                     <VStack spacing={4}>
                       <HStack w="full" p={4} bg="red.50" borderRadius="lg">
@@ -335,6 +340,6 @@ const FeaturesSection = ({ reducedMotion }) => {
       </Box>
     </>
   );
-};
+}
 
 export default FeaturesSection;

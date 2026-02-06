@@ -136,11 +136,6 @@ const EditEventModal = ({ isOpen, onClose, event, onSuccess }) => {
     setIsSaving(true);
 
     try {
-      console.log(`[EDIT_EVENT] Updating event ${event.uid}`);
-      console.log(`[EDIT_EVENT] Form data:`, formData);
-      console.log(`[EDIT_EVENT] User timezone:`, userTimezone);
-
-      // Build complete update payload
       const payload = {
         name: formData.name,
         description: formData.description || '',
@@ -150,30 +145,13 @@ const EditEventModal = ({ isOpen, onClose, event, onSuccess }) => {
         location: formData.location || null,
       };
 
-      // Handle datetime updates - always send both fields together
       if (formData.earliest_datetime_utc && formData.latest_datetime_utc) {
-        // Convert datetime-local inputs to UTC ISO strings
-        const earliestUTC = localDatetimeInputToUtc(formData.earliest_datetime_utc);
-        const latestUTC = localDatetimeInputToUtc(formData.latest_datetime_utc);
-
-        payload.earliest_datetime_utc = earliestUTC;
-        payload.latest_datetime_utc = latestUTC;
+        payload.earliest_datetime_utc = localDatetimeInputToUtc(formData.earliest_datetime_utc);
+        payload.latest_datetime_utc = localDatetimeInputToUtc(formData.latest_datetime_utc);
         payload.coordinator_timezone = userTimezone;
-
-        console.log('[EDIT_EVENT] Datetime conversion:', {
-          earliest_local: formData.earliest_datetime_utc,
-          earliest_utc: earliestUTC,
-          latest_local: formData.latest_datetime_utc,
-          latest_utc: latestUTC,
-          timezone: userTimezone
-        });
       }
 
-      console.log('[EDIT_EVENT] Sending complete payload:', payload);
-
       const result = await eventsAPI.update(event.uid, payload);
-
-      console.log("[EDIT_EVENT] Update successful:", result);
 
       toast({
         title: "Event updated!",
@@ -184,15 +162,8 @@ const EditEventModal = ({ isOpen, onClose, event, onSuccess }) => {
       });
 
       onClose();
-
-      if (onSuccess) {
-        onSuccess(result);
-      }
-
+      onSuccess?.(result);
     } catch (error) {
-      console.error("[EDIT_EVENT] Error updating event:", error);
-
-      // Extract more detailed error information
       const errorMessage = error.response?.data?.error
         || error.response?.data?.message
         || error.message

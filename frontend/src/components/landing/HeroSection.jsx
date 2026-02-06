@@ -1,21 +1,21 @@
-import React from "react";
 import {
-  Box,
-  Button,
-  Container,
-  Heading,
-  Text,
-  VStack,
-  HStack,
-  Badge,
   Avatar,
   AvatarGroup,
-  SimpleGrid,
+  Badge,
+  Box,
+  Button,
   Card,
-  Icon
+  Container,
+  Heading,
+  HStack,
+  Icon,
+  SimpleGrid,
+  Text,
+  VStack
 } from "@chakra-ui/react";
 import { motion } from "framer-motion";
-import { FiCalendar, FiUsers, FiCheck, FiArrowRight } from "react-icons/fi";
+import { FiArrowRight, FiCalendar, FiCheck, FiUsers } from "react-icons/fi";
+
 import { colors, gradients } from "../../styles/designSystem";
 
 const MotionBox = motion(Box);
@@ -23,23 +23,17 @@ const MotionBox = motion(Box);
 /**
  * Create animation props for framer-motion components.
  * Returns empty object if reduced motion is preferred.
- *
- * @param {boolean} reducedMotion - Whether user prefers reduced motion
- * @param {Object} initial - Initial animation state
- * @param {Object} animate - Target animation state
- * @param {Object} transition - Transition configuration
- * @returns {Object} Animation props for MotionBox
  */
-const createAnimationProps = (reducedMotion, initial, animate, transition) => {
+function createAnimationProps(reducedMotion, initial, animate, transition) {
   if (reducedMotion) return {};
   return { initial, animate, transition };
-};
+}
 
 /**
  * Hero section with badge, heading, CTA, and social proof.
  * Features subtle entrance animations.
  */
-const HeroSection = ({ onSignIn, reducedMotion }) => {
+function HeroSection({ onSignIn, reducedMotion }) {
   const animationProps = createAnimationProps(
     reducedMotion,
     { opacity: 0, y: 30 },
@@ -188,6 +182,6 @@ const HeroSection = ({ onSignIn, reducedMotion }) => {
       </Container>
     </Box>
   );
-};
+}
 
 export default HeroSection;

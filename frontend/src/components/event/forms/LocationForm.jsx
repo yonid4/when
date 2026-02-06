@@ -33,11 +33,6 @@ const MotionBox = motion(Box);
  * @param {Function} props.onChange - Handler for input changes
  */
 const LocationForm = ({ formData, onChange }) => {
-  const handleInputChange = (field, value) => {
-    onChange(field, value);
-  };
-
-  // Determine location type from form data
   const getLocationType = () => {
     if (formData.isVirtual && formData.location) return LOCATION_TYPES.BOTH;
     if (formData.isVirtual) return LOCATION_TYPES.VIRTUAL;
@@ -45,23 +40,17 @@ const LocationForm = ({ formData, onChange }) => {
   };
 
   const handleLocationTypeChange = (type) => {
-    switch (type) {
-      case LOCATION_TYPES.IN_PERSON:
-        handleInputChange("isVirtual", false);
-        handleInputChange("videoLink", "");
-        handleInputChange("noLocation", false);
-        break;
-      case LOCATION_TYPES.VIRTUAL:
-        handleInputChange("isVirtual", true);
-        handleInputChange("location", "");
-        handleInputChange("noLocation", false);
-        break;
-      case LOCATION_TYPES.BOTH:
-        handleInputChange("isVirtual", true);
-        handleInputChange("noLocation", false);
-        break;
-      default:
-        break;
+    if (type === LOCATION_TYPES.IN_PERSON) {
+      onChange("isVirtual", false);
+      onChange("videoLink", "");
+      onChange("noLocation", false);
+    } else if (type === LOCATION_TYPES.VIRTUAL) {
+      onChange("isVirtual", true);
+      onChange("location", "");
+      onChange("noLocation", false);
+    } else if (type === LOCATION_TYPES.BOTH) {
+      onChange("isVirtual", true);
+      onChange("noLocation", false);
     }
   };
 
@@ -190,7 +179,7 @@ const LocationForm = ({ formData, onChange }) => {
                     <Input
                       placeholder="Enter address or place name..."
                       value={formData.location}
-                      onChange={(e) => handleInputChange("location", e.target.value)}
+                      onChange={(e) => onChange("location", e.target.value)}
                       bg="white"
                       borderRadius="lg"
                       pl={10}
@@ -204,9 +193,9 @@ const LocationForm = ({ formData, onChange }) => {
                 <Checkbox
                   isChecked={formData.noLocation}
                   onChange={(e) => {
-                    handleInputChange("noLocation", e.target.checked);
+                    onChange("noLocation", e.target.checked);
                     if (e.target.checked) {
-                      handleInputChange("location", "");
+                      onChange("location", "");
                     }
                   }}
                   colorScheme="purple"
@@ -246,7 +235,7 @@ const LocationForm = ({ formData, onChange }) => {
                     <Input
                       placeholder="https://zoom.us/j/... or meet.google.com/..."
                       value={formData.videoLink}
-                      onChange={(e) => handleInputChange("videoLink", e.target.value)}
+                      onChange={(e) => onChange("videoLink", e.target.value)}
                       bg="white"
                       borderRadius="lg"
                       pl={10}

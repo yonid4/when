@@ -1,50 +1,37 @@
-import time
-from typing import Optional, Dict, Any, Tuple
-import json
 import base64
+import json
+import time
+from typing import Any, Dict, Optional, Tuple
+
 from ..utils.supabase_client import get_supabase
 from . import google_calendar as gc
 
 
-class AuthService():
-    """Service for auth-related operations and Google OAuth helpers.
-
-    Notes:
-    - Delegates Google OAuth flows and credential storage to `services_simple.google_calendar`.
-    - Supabase auth client is accessed via `get_supabase()`; callers should pass tokens via headers.
-    """
+class AuthService:
+    """Service for auth-related operations and Google OAuth helpers."""
 
     def __init__(self):
         self.supabase = get_supabase()
 
-    # -----------------------------
-    # Google OAuth helpers (delegate to google_calendar service)
-    # -----------------------------
-    def get_google_auth_url(self, user_token=None, return_url='/') -> str:
+    def get_google_auth_url(self, user_token: Optional[str] = None, return_url: str = '/') -> str:
         """Return Google OAuth authorization URL with state."""
-        # return gc.get_auth_url()
         flow = gc.create_flow()
-        
-        # Include user token in state for callback
+
         state_data = {
             'user_token': user_token,
             'return_url': return_url,
             'timestamp': time.time()
         }
         state = base64.urlsafe_b64encode(json.dumps(state_data).encode()).decode()
-        
+
         authorization_url, _ = flow.authorization_url(
             access_type='offline',
             include_granted_scopes='true',
             prompt='consent',
-            state=state  # Pass the state
+            state=state
         )
-        
+
         return authorization_url
-
-        # auth_url = gc.get_auth_url()
-        # return f"{auth_url}&state={state}"
-
 
     def exchange_code_for_credentials(self, code: str) -> Dict[str, Any]:
         """Exchange authorization code for Google credentials object."""
@@ -54,14 +41,10 @@ class AuthService():
         """Persist Google credentials in profile."""
         return gc.store_credentials(user_id, credentials)
 
-    # -----------------------------
-    # Supabase session helpers
-    # -----------------------------
     def get_session(self) -> Optional[Dict[str, Any]]:
         """Get current Supabase auth session if any."""
         try:
-            session = self.supabase.auth.get_session()
-            return session
+            return self.supabase.auth.get_session()
         except Exception as e:
             print(f"Error getting session: {str(e)}")
             return None
@@ -77,10 +60,7 @@ class AuthService():
 
     def verify_token(self, token: str) -> bool:
         """Return True if token is valid, else False."""
-        try:
-            return self.get_user_from_token(token) is not None
-        except Exception:
-            return False
+        return self.get_user_from_token(token) is not None
 
     def refresh_session(self, refresh_token: str) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
         """Refresh a session given a refresh token."""

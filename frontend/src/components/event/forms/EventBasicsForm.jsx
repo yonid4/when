@@ -32,16 +32,9 @@ const MotionBox = motion(Box);
 const EventBasicsForm = ({ formData, onChange }) => {
   const titleInputRef = useRef(null);
 
-  // Auto-focus title input on mount
   useEffect(() => {
-    if (titleInputRef.current) {
-      titleInputRef.current.focus();
-    }
+    titleInputRef.current?.focus();
   }, []);
-
-  const handleInputChange = (field, value) => {
-    onChange(field, value);
-  };
 
   return (
     <VStack spacing={8} align="stretch">
@@ -92,7 +85,7 @@ const EventBasicsForm = ({ formData, onChange }) => {
             size="lg"
             placeholder="e.g. Team Planning Meeting, Coffee Chat, Birthday Party"
             value={formData.title}
-            onChange={(e) => handleInputChange("title", e.target.value)}
+            onChange={(e) => onChange("title", e.target.value)}
             fontSize="xl"
             fontWeight="medium"
             h="56px"
@@ -138,7 +131,7 @@ const EventBasicsForm = ({ formData, onChange }) => {
                   borderWidth={2}
                   borderColor={isSelected ? colors.primary : "gray.200"}
                   bg={isSelected ? colors.primarySoft : "white"}
-                  onClick={() => handleInputChange("type", type.value)}
+                  onClick={() => onChange("type", type.value)}
                   _hover={{
                     borderColor: isSelected ? colors.primary : "gray.300",
                     shadow: shadows.card
@@ -194,7 +187,7 @@ const EventBasicsForm = ({ formData, onChange }) => {
           <Textarea
             placeholder="Add any details, agenda items, or context that guests should know..."
             value={formData.description}
-            onChange={(e) => handleInputChange("description", e.target.value)}
+            onChange={(e) => onChange("description", e.target.value)}
             rows={4}
             resize="vertical"
             borderRadius="lg"

@@ -1,6 +1,3 @@
-import React, { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { Box, useBreakpointValue } from "@chakra-ui/react";
 import { useAuth } from "../hooks/useAuth";
 import { useReducedMotion } from "../hooks/useReducedMotion";
 import { supabase } from "../services/supabaseClient";
@@ -11,6 +8,10 @@ import {
   HowItWorksSection,
   CtaSection
 } from "../components/landing";
+
+import React, { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Box, useBreakpointValue } from "@chakra-ui/react";
 
 /**
  * Landing page with Apple-style scroll-driven animations.

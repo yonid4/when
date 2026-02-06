@@ -1,219 +1,174 @@
-import { useState, useEffect, useCallback } from "react";
-import { calendarAccountsAPI } from "../services/calendarAccountsAPI";
+import { useCallback, useEffect, useState } from "react";
 
-/**
- * Hook for managing calendar accounts and sources.
- *
- * Provides:
- * - accounts: List of connected accounts with sources
- * - writeCalendar: Current write calendar source
- * - Loading and error states
- * - Methods to manage accounts and sources
- */
-export const useCalendarAccounts = () => {
-    const [accounts, setAccounts] = useState([]);
-    const [writeCalendar, setWriteCalendar] = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [isSyncing, setIsSyncing] = useState(false);
+import { calendarAccountsAPI } from "../services/calendarAccountsAPI.js";
 
-    /**
-     * Fetch all accounts and write calendar
-     */
-    const fetchAccounts = useCallback(async () => {
-        try {
-            setIsLoading(true);
-            setError(null);
+function getErrorMessage(err, fallback) {
+  return err.response?.data?.message || fallback;
+}
 
-            const [accountsRes, writeCalendarRes] = await Promise.all([
-                calendarAccountsAPI.getAccounts(),
-                calendarAccountsAPI.getWriteCalendar(),
-            ]);
+function updateSourceInAccounts(accounts, sourceId, updates) {
+  return accounts.map((account) => ({
+    ...account,
+    calendar_sources: account.calendar_sources?.map((source) =>
+      source.id === sourceId ? { ...source, ...updates } : source
+    ),
+  }));
+}
 
-            setAccounts(accountsRes.accounts || []);
-            setWriteCalendar(writeCalendarRes.write_calendar || null);
-        } catch (err) {
-            console.error("Failed to fetch calendar accounts:", err);
-            setError(err.response?.data?.message || "Failed to load calendar accounts");
-            setAccounts([]);
-            setWriteCalendar(null);
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
+export function useCalendarAccounts() {
+  const [accounts, setAccounts] = useState([]);
+  const [writeCalendar, setWriteCalendar] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isSyncing, setIsSyncing] = useState(false);
 
-    // Fetch on mount
-    useEffect(() => {
-        fetchAccounts();
-    }, [fetchAccounts]);
+  const fetchAccounts = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
 
-    /**
-     * Disconnect a calendar account
-     * @param {string} accountId - Account to disconnect
-     */
-    const disconnectAccount = async (accountId) => {
-        try {
-            setError(null);
-            await calendarAccountsAPI.deleteAccount(accountId);
+      const [accountsRes, writeCalendarRes] = await Promise.all([
+        calendarAccountsAPI.getAccounts(),
+        calendarAccountsAPI.getWriteCalendar(),
+      ]);
 
-            // Remove from local state
-            setAccounts((prev) => prev.filter((a) => a.id !== accountId));
+      setAccounts(accountsRes.accounts || []);
+      setWriteCalendar(writeCalendarRes.write_calendar || null);
+    } catch (err) {
+      console.error("Failed to fetch calendar accounts:", err);
+      setError(getErrorMessage(err, "Failed to load calendar accounts"));
+      setAccounts([]);
+      setWriteCalendar(null);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
-            // Refresh write calendar in case it was on deleted account
-            const writeCalendarRes = await calendarAccountsAPI.getWriteCalendar();
-            setWriteCalendar(writeCalendarRes.write_calendar || null);
+  useEffect(() => {
+    fetchAccounts();
+  }, [fetchAccounts]);
 
-            return true;
-        } catch (err) {
-            console.error("Failed to disconnect account:", err);
-            setError(err.response?.data?.message || "Failed to disconnect account");
-            return false;
-        }
-    };
+  async function disconnectAccount(accountId) {
+    try {
+      setError(null);
+      await calendarAccountsAPI.deleteAccount(accountId);
 
-    /**
-     * Toggle a calendar source enabled/disabled
-     * @param {string} sourceId - Source to toggle
-     * @param {boolean} isEnabled - New enabled state
-     */
-    const toggleSourceEnabled = async (sourceId, isEnabled) => {
-        try {
-            setError(null);
-            await calendarAccountsAPI.updateSource(sourceId, { is_enabled: isEnabled });
+      setAccounts((prev) => prev.filter((a) => a.id !== accountId));
 
-            // Update local state
-            setAccounts((prev) =>
-                prev.map((account) => ({
-                    ...account,
-                    calendar_sources: account.calendar_sources?.map((source) =>
-                        source.id === sourceId ? { ...source, is_enabled: isEnabled } : source
-                    ),
-                }))
-            );
+      const writeCalendarRes = await calendarAccountsAPI.getWriteCalendar();
+      setWriteCalendar(writeCalendarRes.write_calendar || null);
 
-            return true;
-        } catch (err) {
-            console.error("Failed to toggle source:", err);
-            setError(err.response?.data?.message || "Failed to update calendar");
-            return false;
-        }
-    };
+      return true;
+    } catch (err) {
+      console.error("Failed to disconnect account:", err);
+      setError(getErrorMessage(err, "Failed to disconnect account"));
+      return false;
+    }
+  }
 
-    /**
-     * Set a calendar source as the write calendar
-     * @param {string} sourceId - Source to set as write calendar
-     */
-    const setWriteCalendarSource = async (sourceId) => {
-        try {
-            setError(null);
-            await calendarAccountsAPI.updateSource(sourceId, { is_write_calendar: true });
+  async function toggleSourceEnabled(sourceId, isEnabled) {
+    try {
+      setError(null);
+      await calendarAccountsAPI.updateSource(sourceId, { is_enabled: isEnabled });
 
-            // Update local state - unset all others, set this one
-            setAccounts((prev) =>
-                prev.map((account) => ({
-                    ...account,
-                    calendar_sources: account.calendar_sources?.map((source) => ({
-                        ...source,
-                        is_write_calendar: source.id === sourceId,
-                    })),
-                }))
-            );
+      setAccounts((prev) => updateSourceInAccounts(prev, sourceId, { is_enabled: isEnabled }));
 
-            // Refresh write calendar
-            const writeCalendarRes = await calendarAccountsAPI.getWriteCalendar();
-            setWriteCalendar(writeCalendarRes.write_calendar || null);
+      return true;
+    } catch (err) {
+      console.error("Failed to toggle source:", err);
+      setError(getErrorMessage(err, "Failed to update calendar"));
+      return false;
+    }
+  }
 
-            return true;
-        } catch (err) {
-            console.error("Failed to set write calendar:", err);
-            setError(err.response?.data?.message || "Failed to set write calendar");
-            return false;
-        }
-    };
+  async function setWriteCalendarSource(sourceId) {
+    try {
+      setError(null);
+      await calendarAccountsAPI.updateSource(sourceId, { is_write_calendar: true });
 
-    /**
-     * Sync calendars from provider for an account
-     * @param {string} accountId - Account to sync
-     */
-    const syncAccountCalendars = async (accountId) => {
-        try {
-            setError(null);
-            setIsSyncing(true);
-
-            const result = await calendarAccountsAPI.syncCalendars(accountId);
-
-            // Refresh accounts to get updated sources
-            await fetchAccounts();
-
-            return result;
-        } catch (err) {
-            console.error("Failed to sync calendars:", err);
-            setError(err.response?.data?.message || "Failed to sync calendars");
-            return null;
-        } finally {
-            setIsSyncing(false);
-        }
-    };
-
-    /**
-     * Check if user has any connected accounts
-     */
-    const hasConnectedAccounts = accounts.length > 0;
-
-    /**
-     * Check if user has any enabled calendars
-     */
-    const hasEnabledCalendars = accounts.some((account) =>
-        account.calendar_sources?.some((source) => source.is_enabled)
-    );
-
-    /**
-     * Get total number of enabled calendars
-     */
-    const enabledCalendarsCount = accounts.reduce(
-        (count, account) =>
-            count + (account.calendar_sources?.filter((source) => source.is_enabled)?.length || 0),
-        0
-    );
-
-    /**
-     * Get all sources flattened with account info
-     */
-    const allSources = accounts.flatMap((account) =>
-        (account.calendar_sources || []).map((source) => ({
+      setAccounts((prev) =>
+        prev.map((account) => ({
+          ...account,
+          calendar_sources: account.calendar_sources?.map((source) => ({
             ...source,
-            account: {
-                id: account.id,
-                provider: account.provider,
-                provider_email: account.provider_email,
-            },
+            is_write_calendar: source.id === sourceId,
+          })),
         }))
-    );
+      );
 
-    return {
-        // State
-        accounts,
-        writeCalendar,
-        isLoading,
-        isSyncing,
-        error,
+      const writeCalendarRes = await calendarAccountsAPI.getWriteCalendar();
+      setWriteCalendar(writeCalendarRes.write_calendar || null);
 
-        // Computed
-        hasConnectedAccounts,
-        hasEnabledCalendars,
-        enabledCalendarsCount,
-        allSources,
+      return true;
+    } catch (err) {
+      console.error("Failed to set write calendar:", err);
+      setError(getErrorMessage(err, "Failed to set write calendar"));
+      return false;
+    }
+  }
 
-        // Actions
-        refetch: fetchAccounts,
-        disconnectAccount,
-        toggleSourceEnabled,
-        setWriteCalendarSource,
-        syncAccountCalendars,
+  async function syncAccountCalendars(accountId) {
+    try {
+      setError(null);
+      setIsSyncing(true);
 
-        // Clear error
-        clearError: () => setError(null),
-    };
-};
+      const result = await calendarAccountsAPI.syncCalendars(accountId);
+      await fetchAccounts();
+
+      return result;
+    } catch (err) {
+      console.error("Failed to sync calendars:", err);
+      setError(getErrorMessage(err, "Failed to sync calendars"));
+      return null;
+    } finally {
+      setIsSyncing(false);
+    }
+  }
+
+  const hasConnectedAccounts = accounts.length > 0;
+
+  const hasEnabledCalendars = accounts.some((account) =>
+    account.calendar_sources?.some((source) => source.is_enabled)
+  );
+
+  const enabledCalendarsCount = accounts.reduce(
+    (count, account) =>
+      count + (account.calendar_sources?.filter((source) => source.is_enabled)?.length || 0),
+    0
+  );
+
+  const allSources = accounts.flatMap((account) =>
+    (account.calendar_sources || []).map((source) => ({
+      ...source,
+      account: {
+        id: account.id,
+        provider: account.provider,
+        provider_email: account.provider_email,
+      },
+    }))
+  );
+
+  function clearError() {
+    setError(null);
+  }
+
+  return {
+    accounts,
+    writeCalendar,
+    isLoading,
+    isSyncing,
+    error,
+    hasConnectedAccounts,
+    hasEnabledCalendars,
+    enabledCalendarsCount,
+    allSources,
+    refetch: fetchAccounts,
+    disconnectAccount,
+    toggleSourceEnabled,
+    setWriteCalendarSource,
+    syncAccountCalendars,
+    clearError,
+  };
+}
 
 export default useCalendarAccounts;

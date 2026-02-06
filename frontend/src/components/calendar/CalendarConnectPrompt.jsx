@@ -1,76 +1,58 @@
-import React from "react";
 import {
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  ModalCloseButton,
-  Button,
-  VStack,
-  Text,
   Box,
-  HStack
+  Button,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
+  Text,
+  VStack,
 } from "@chakra-ui/react";
 
-const CalendarConnectPrompt = ({ 
-  context, 
-  onConnect, 
-  onSkip, 
-  onClose,
-  isVisible = false 
-}) => {
+const PROMPT_CONTENT = {
+  create: {
+    title: "Create Your First Event",
+    description:
+      "To help you find the best time for your event, we'd like to check your Google Calendar availability.",
+    benefits: [
+      "Automatic availability checking",
+      "Smart time suggestions",
+      "No double bookings",
+    ],
+  },
+  view: {
+    title: "View Availability",
+    description: "Connect your Google Calendar to see when everyone is free for your event.",
+    benefits: [
+      "See everyone's availability",
+      "Find the best meeting time",
+      "Avoid scheduling conflicts",
+    ],
+  },
+  default: {
+    title: "Connect Your Calendar",
+    description: "Connect your Google Calendar to get the most out of your event coordination.",
+    benefits: [
+      "Smart availability checking",
+      "Automatic time suggestions",
+      "Seamless scheduling",
+    ],
+  },
+};
+
+function CalendarConnectPrompt({ context, onConnect, onSkip, onClose, isVisible = false }) {
   if (!isVisible) return null;
 
-  const getPromptContent = (context) => {
-    switch (context) {
-      case 'create':
-        return {
-          title: "🗓️ Create Your First Event",
-          description: "To help you find the best time for your event, we'd like to check your Google Calendar availability.",
-          benefits: [
-            "✓ Automatic availability checking",
-            "✓ Smart time suggestions", 
-            "✓ No double bookings"
-          ]
-        };
-      case 'view':
-        return {
-          title: "📅 View Availability",
-          description: "Connect your Google Calendar to see when everyone is free for your event.",
-          benefits: [
-            "✓ See everyone's availability",
-            "✓ Find the best meeting time",
-            "✓ Avoid scheduling conflicts"
-          ]
-        };
-      default:
-        return {
-          title: "📅 Connect Your Calendar",
-          description: "Connect your Google Calendar to get the most out of your event coordination.",
-          benefits: [
-            "✓ Smart availability checking",
-            "✓ Automatic time suggestions",
-            "✓ Seamless scheduling"
-          ]
-        };
-    }
-  };
-
-  const content = getPromptContent(context);
+  const content = PROMPT_CONTENT[context] || PROMPT_CONTENT.default;
 
   return (
     <Modal isOpen={isVisible} onClose={onClose} isCentered size="lg">
       <ModalOverlay backdropFilter="blur(4px)" />
       <ModalContent borderRadius="xl" overflow="hidden">
-        {/* Gradient Header */}
-        <Box
-          bgGradient="linear(to-r, blue.500, cyan.400)"
-          position="relative"
-          overflow="hidden"
-        >
-          {/* Background Pattern */}
+        <Box bgGradient="linear(to-r, blue.500, cyan.400)" position="relative" overflow="hidden">
           <Box
             position="absolute"
             top={0}
@@ -87,16 +69,16 @@ const CalendarConnectPrompt = ({
           </ModalHeader>
           <ModalCloseButton color="white" _hover={{ bg: "whiteAlpha.200" }} />
         </Box>
-        
+
         <ModalBody py={6} px={6}>
           <VStack spacing={5} align="stretch">
             <Text color="gray.700" fontSize="md" fontWeight="medium" textAlign="center">
               {content.description}
             </Text>
-            
+
             <VStack spacing={3} align="stretch">
               {content.benefits.map((benefit, index) => (
-                <Box 
+                <Box
                   key={index}
                   p={4}
                   bg="blue.50"
@@ -107,29 +89,30 @@ const CalendarConnectPrompt = ({
                   _hover={{
                     bg: "blue.100",
                     transform: "translateX(4px)",
-                    boxShadow: "md"
+                    boxShadow: "md",
                   }}
                 >
-                  <Text fontWeight="medium" color="gray.700">{benefit}</Text>
+                  <Text fontWeight="medium" color="gray.700">
+                    {benefit}
+                  </Text>
                 </Box>
               ))}
             </VStack>
           </VStack>
         </ModalBody>
-        
+
         <ModalFooter bg="gray.50" py={6} justifyContent="center">
           <VStack spacing={3} w="full">
-            <Button 
+            <Button
               bgGradient="linear(to-r, blue.500, cyan.400)"
               color="white"
               size="lg"
               w="full"
               onClick={onConnect}
-              leftIcon={<Text fontSize="xl">📅</Text>}
               _hover={{
                 bgGradient: "linear(to-r, blue.600, cyan.500)",
                 transform: "translateY(-2px)",
-                boxShadow: "xl"
+                boxShadow: "xl",
               }}
               transition="all 0.3s"
               py={6}
@@ -138,13 +121,7 @@ const CalendarConnectPrompt = ({
             >
               Connect Google Calendar
             </Button>
-            <Button 
-              variant="ghost"
-              size="sm"
-              onClick={onSkip}
-              color="gray.600"
-              _hover={{ bg: "gray.100" }}
-            >
+            <Button variant="ghost" size="sm" onClick={onSkip} color="gray.600" _hover={{ bg: "gray.100" }}>
               Skip for now
             </Button>
           </VStack>
@@ -152,6 +129,6 @@ const CalendarConnectPrompt = ({
       </ModalContent>
     </Modal>
   );
-};
+}
 
 export default CalendarConnectPrompt;

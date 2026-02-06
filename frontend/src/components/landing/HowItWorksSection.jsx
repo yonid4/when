@@ -1,17 +1,19 @@
-import React, { useRef } from "react";
+import { useRef } from "react";
+
 import {
   Box,
-  Container,
-  Heading,
-  Text,
-  VStack,
-  Icon,
   Card,
   CardBody,
-  SimpleGrid
+  Container,
+  Heading,
+  Icon,
+  SimpleGrid,
+  Text,
+  VStack
 } from "@chakra-ui/react";
 import { motion, useInView } from "framer-motion";
-import { FiCalendar, FiUsers, FiCheck, FiArrowRight } from "react-icons/fi";
+import { FiArrowRight, FiCalendar, FiCheck, FiUsers } from "react-icons/fi";
+
 import { colors, shadows } from "../../styles/designSystem";
 
 const MotionBox = motion(Box);
@@ -47,11 +49,23 @@ const steps = [
   }
 ];
 
+function getHeaderAnimateState(reducedMotion, isInView) {
+  if (reducedMotion) return {};
+  if (isInView) return { opacity: 1, y: 0 };
+  return { opacity: 0, y: 20 };
+}
+
+function getCardAnimateState(reducedMotion, isInView) {
+  if (reducedMotion) return {};
+  if (isInView) return { opacity: 1, y: 0 };
+  return { opacity: 0, y: 30 };
+}
+
 /**
  * How It Works section with 3 staggered step cards.
  * Uses whileInView for entrance animation with 0.15s stagger.
  */
-const HowItWorksSection = ({ reducedMotion }) => {
+function HowItWorksSection({ reducedMotion }) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
 
@@ -61,13 +75,7 @@ const HowItWorksSection = ({ reducedMotion }) => {
         <VStack spacing={4} textAlign="center" mb={16}>
           <MotionBox
             initial={reducedMotion ? {} : { opacity: 0, y: 20 }}
-            animate={
-              reducedMotion
-                ? {}
-                : isInView
-                ? { opacity: 1, y: 0 }
-                : { opacity: 0, y: 20 }
-            }
+            animate={getHeaderAnimateState(reducedMotion, isInView)}
             transition={{ duration: 0.6 }}
             ref={ref}
           >
@@ -85,13 +93,7 @@ const HowItWorksSection = ({ reducedMotion }) => {
             <MotionCard
               key={index}
               initial={reducedMotion ? {} : { opacity: 0, y: 30 }}
-              animate={
-                reducedMotion
-                  ? {}
-                  : isInView
-                  ? { opacity: 1, y: 0 }
-                  : { opacity: 0, y: 30 }
-              }
+              animate={getCardAnimateState(reducedMotion, isInView)}
               transition={{
                 duration: 0.5,
                 delay: reducedMotion ? 0 : 0.2 + index * 0.15
@@ -157,6 +159,6 @@ const HowItWorksSection = ({ reducedMotion }) => {
       </Container>
     </Box>
   );
-};
+}
 
 export default HowItWorksSection;

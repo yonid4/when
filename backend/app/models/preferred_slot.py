@@ -1,20 +1,25 @@
-"""
-Preferred slot model for managing user-selected preferred time slots for events.
-"""
-from datetime import datetime
-from typing import Optional
-from pydantic import BaseModel, Field, validator
+"""Preferred slot model for managing user-selected preferred time slots for events."""
 import uuid
+from datetime import datetime
+
+from pydantic import BaseModel, Field, validator
+
 
 class PreferredSlot(BaseModel):
     """Preferred slot model for Supabase."""
-    
+
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    user_id: str = Field(...)  # UUID of the user who created this slot
-    event_id: str = Field(...)  # UUID of the event this slot belongs to
+    user_id: str = Field(...)
+    event_id: str = Field(...)
     start_time_utc: datetime = Field(...)
     end_time_utc: datetime = Field(...)
     created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    class Config:
+        """Pydantic configuration."""
+        json_encoders = {
+            datetime: lambda v: v.isoformat()
+        }
 
     @validator("end_time_utc")
     def end_time_must_be_after_start_time(cls, v, values):
@@ -23,18 +28,12 @@ class PreferredSlot(BaseModel):
             raise ValueError("end_time_utc must be after start_time_utc")
         return v
 
-    class Config:
-        """Pydantic configuration."""
-        json_encoders = {
-            datetime: lambda v: v.isoformat()
-        }
-
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<PreferredSlot user_id={self.user_id} event_id={self.event_id} {self.start_time_utc} - {self.end_time_utc}>"
 
     def overlaps_with(self, other: "PreferredSlot") -> bool:
         """Check if this preferred slot overlaps with another preferred slot."""
-        return (self.start_time_utc < other.end_time_utc and 
+        return (self.start_time_utc < other.end_time_utc and
                 self.end_time_utc > other.start_time_utc)
 
     def duration_minutes(self) -> int:
@@ -51,5 +50,3 @@ class PreferredSlot(BaseModel):
             "end_time_utc": self.end_time_utc.isoformat(),
             "created_at": self.created_at.isoformat(),
         }
-
-

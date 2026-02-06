@@ -124,7 +124,6 @@ const TimeSlotDisplay = ({
         return markers;
     }, [minHour, maxHour]);
 
-    // Color scheme based on participant count
     const getSlotColor = useCallback((count) => {
         if (count <= 0) return 'transparent';
         if (count <= 2) return '#efbbff';
@@ -134,9 +133,7 @@ const TimeSlotDisplay = ({
         return '#660066';
     }, []);
 
-    const getTextColor = useCallback((count) => {
-        return count >= 7 ? 'white' : 'black';
-    }, []);
+    const getTextColor = useCallback((count) => count >= 7 ? 'white' : 'black', []);
 
     // Process slots to calculate density and merge adjacent blocks
     const processedBlocks = useMemo(() => {

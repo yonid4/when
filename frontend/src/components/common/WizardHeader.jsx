@@ -1,23 +1,18 @@
-import React from "react";
-import { Flex, Heading, IconButton, Button, Box } from "@chakra-ui/react";
+import { Box, Button, Flex, Heading, IconButton } from "@chakra-ui/react";
 import { FiArrowLeft, FiSave } from "react-icons/fi";
+
 import { shadows } from "../../styles/designSystem";
 
-/**
- * WizardHeader - Minimal header for wizard/multi-step forms
- *
- * @param {Object} props
- * @param {string} props.title - Title to display
- * @param {Function} props.onBack - Handler for back arrow click
- * @param {Function} props.onSaveDraft - Handler for save draft button
- * @param {boolean} props.showSaveDraft - Whether to show save draft button
- */
-const WizardHeader = ({
+const GHOST_HOVER_STYLE = { bg: "gray.100" };
+
+function WizardHeader({
   title = "Create Event",
   onBack,
   onSaveDraft,
   showSaveDraft = true
-}) => {
+}) {
+  const canShowSaveDraft = showSaveDraft && onSaveDraft;
+
   return (
     <Box
       bg="white"
@@ -44,21 +39,21 @@ const WizardHeader = ({
             onClick={onBack}
             size="md"
             color="gray.600"
-            _hover={{ bg: "gray.100" }}
+            _hover={GHOST_HOVER_STYLE}
           />
           <Heading size="md" color="gray.800">
             {title}
           </Heading>
         </Flex>
 
-        {showSaveDraft && onSaveDraft && (
+        {canShowSaveDraft && (
           <Button
             leftIcon={<FiSave />}
             variant="ghost"
             size="sm"
             color="gray.600"
             onClick={onSaveDraft}
-            _hover={{ bg: "gray.100" }}
+            _hover={GHOST_HOVER_STYLE}
           >
             Save Draft
           </Button>
@@ -66,6 +61,6 @@ const WizardHeader = ({
       </Flex>
     </Box>
   );
-};
+}
 
 export default WizardHeader;

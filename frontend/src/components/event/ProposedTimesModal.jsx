@@ -15,14 +15,14 @@ import {
   HStack,
   Badge,
   Button,
-  Icon,
-  useColorModeValue
+  Icon
 } from "@chakra-ui/react";
 import { FiRefreshCw, FiClock, FiUsers } from "react-icons/fi";
 import { motion } from "framer-motion";
-import { colors } from "../../styles/designSystem";
 
 const MotionCard = motion(Card);
+
+const LOCAL_TIMEZONE = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 const ProposedTimesModal = ({
   isOpen,
@@ -36,45 +36,35 @@ const ProposedTimesModal = ({
   onRefresh,
   onSelectTime
 }) => {
-  const cardBg = useColorModeValue("white", "gray.800");
-  const borderColor = useColorModeValue("gray.200", "gray.700");
-
-  // Convert UTC time to local time for display
   const formatDate = (dateString) => {
-    // Parse as UTC and convert to local timezone
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
+    return new Date(dateString).toLocaleDateString("en-US", {
       weekday: "long",
       year: "numeric",
       month: "long",
       day: "numeric",
-      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+      timeZone: LOCAL_TIMEZONE
     });
   };
 
   const formatTime = (timeString) => {
-    // Parse as UTC and convert to local timezone
-    const date = new Date(timeString);
-    return date.toLocaleTimeString("en-US", {
+    return new Date(timeString).toLocaleTimeString("en-US", {
       hour: "numeric",
       minute: "2-digit",
-      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+      timeZone: LOCAL_TIMEZONE
     });
   };
 
   const formatTimeAgo = (timestamp) => {
     if (!timestamp) return "";
-    const date = new Date(timestamp);
-    const now = new Date();
-    const seconds = Math.floor((now - date) / 1000);
-    
+    const seconds = Math.floor((Date.now() - new Date(timestamp)) / 1000);
+
     if (seconds < 60) return "just now";
     const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `${minutes} minute${minutes > 1 ? "s" : ""} ago`;
+    if (minutes < 60) return `${minutes} minute${minutes !== 1 ? "s" : ""} ago`;
     const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours} hour${hours > 1 ? "s" : ""} ago`;
+    if (hours < 24) return `${hours} hour${hours !== 1 ? "s" : ""} ago`;
     const days = Math.floor(hours / 24);
-    return `${days} day${days > 1 ? "s" : ""} ago`;
+    return `${days} day${days !== 1 ? "s" : ""} ago`;
   };
 
   return (
@@ -194,11 +184,6 @@ const ProposedTimesModal = ({
             <VStack spacing={3} maxH="600px" overflowY="auto" pr={2}>
               {timeOptions.map((option, index) => {
                 const isWinner = index === 0;
-
-                // Convert UTC times to local timezone for display
-                const startDate = new Date(option.start_time_utc);
-                const endDate = new Date(option.end_time_utc);
-
                 const localDate = formatDate(option.start_time_utc);
                 const localTime = `${formatTime(option.start_time_utc)} - ${formatTime(option.end_time_utc)}`;
 

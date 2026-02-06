@@ -32,26 +32,18 @@ import { formatHour } from "../../../utils/dateTimeUtils";
 
 const MotionBox = motion(Box);
 
-/** Maximum number of guest avatars to display before showing "+X more" */
 const MAX_VISIBLE_GUESTS = 8;
 
-/**
- * Format date for display
- */
-const formatDate = (dateStr) => {
+function formatDate(dateStr) {
   if (!dateStr) return "Not set";
-  const date = new Date(dateStr);
-  return date.toLocaleDateString("en-US", {
+  return new Date(dateStr).toLocaleDateString("en-US", {
     weekday: "short",
     month: "short",
     day: "numeric",
     year: "numeric"
   });
-};
+}
 
-/**
- * Section Card Component
- */
 const SectionCard = ({ title, icon, onEdit, stepIndex, children }) => (
   <Card variant="outline" borderRadius="lg" bg="white">
     <CardBody>
@@ -76,14 +68,6 @@ const SectionCard = ({ title, icon, onEdit, stepIndex, children }) => (
   </Card>
 );
 
-/**
- * EventReviewCard - Fifth step of event creation
- * Concept B: Split Summary + Actions Sidebar
- *
- * @param {Object} props
- * @param {Object} props.formData - Complete form data
- * @param {Function} props.onEditStep - Handler to navigate to a specific step
- */
 const EventReviewCard = ({ formData, onEditStep }) => {
   const currentEventType = eventTypes.find((t) => t.value === formData.type);
   const guestCount = formData.guests?.length || 0;

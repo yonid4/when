@@ -1,6 +1,7 @@
-import { useEffect, useState, useCallback } from "react";
-import { supabase } from "../services/supabaseClient";
-import { getGoogleAuthUrl, logout } from "../services/authService";
+import { useCallback, useEffect, useState } from "react";
+
+import { getGoogleAuthUrl, logout } from "../services/authService.js";
+import { supabase } from "../services/supabaseClient.js";
 
 export function useAuth() {
   const [session, setSession] = useState(null);
@@ -9,19 +10,24 @@ export function useAuth() {
 
   useEffect(() => {
     let mounted = true;
-    const init = async () => {
+
+    async function init() {
       const { data } = await supabase.auth.getSession();
       if (!mounted) return;
       setSession(data?.session || null);
       setUser(data?.session?.user || null);
       setLoading(false);
-    };
+    }
+
     init();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
       setUser(nextSession?.user || null);
     });
+
     return () => {
       mounted = false;
       subscription?.unsubscribe();
@@ -30,18 +36,13 @@ export function useAuth() {
 
   const signInWithGoogle = useCallback(async () => {
     const cfg = await getGoogleAuthUrl();
-    if (cfg?.auth_url) {
-      window.location.href = cfg.auth_url;
-    } else if (typeof cfg === "string") {
-      window.location.href = cfg;
+    const authUrl = cfg?.auth_url || (typeof cfg === "string" ? cfg : null);
+    if (authUrl) {
+      window.location.href = authUrl;
     }
   }, []);
 
-  const signOut = useCallback(async () => {
-    await logout();
-  }, []);
+  const signOut = useCallback(() => logout(), []);
 
   return { session, user, loading, signInWithGoogle, signOut };
 }
-
-
