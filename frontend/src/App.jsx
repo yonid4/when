@@ -1,6 +1,3 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import { Box } from "@chakra-ui/react";
-
 import Layout from "./layout.js";
 import { ProtectedRoute } from "./components/auth";
 import Landing from "./pages/Landing";
@@ -8,6 +5,10 @@ import Dashboard from "./pages/Dashboard";
 import EventPage from "./pages/EventPage";
 import EventCreate from "./pages/EventCreate";
 import Settings from "./pages/Settings";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { Box } from "@chakra-ui/react";
 
 function App() {
   return (
@@ -42,6 +43,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Layout>

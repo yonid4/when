@@ -26,6 +26,7 @@ import { colors, shadows } from "../../styles/designSystem.js";
  */
 function CalendarAccountCard({
   account,
+  pendingToggles,
   onToggleSource,
   onSetWriteCalendar,
   onSyncCalendars,
@@ -34,16 +35,16 @@ function CalendarAccountCard({
   isSyncing,
 }) {
   const { isOpen, onToggle } = useDisclosure({ defaultIsOpen: true });
-  const [togglingSourceId, setTogglingSourceId] = useState(null);
   const [settingWriteId, setSettingWriteId] = useState(null);
 
   const sources = account.calendar_sources || [];
-  const enabledCount = sources.filter((s) => s.is_enabled).length;
+  const enabledCount = sources.filter((s) => {
+    const effective = pendingToggles[s.id] ?? s.is_enabled;
+    return effective;
+  }).length;
 
-  async function handleToggleSource(sourceId, currentEnabled) {
-    setTogglingSourceId(sourceId);
-    await onToggleSource(sourceId, !currentEnabled);
-    setTogglingSourceId(null);
+  function handleToggleSource(sourceId, currentEffectiveEnabled) {
+    onToggleSource(sourceId, !currentEffectiveEnabled);
   }
 
   async function handleSetWriteCalendar(sourceId) {
@@ -130,16 +131,21 @@ function CalendarAccountCard({
                 </Text>
               </Box>
             ) : (
-              sources.map((source) => (
-                <CalendarSourceRow
-                  key={source.id}
-                  source={source}
-                  isToggling={togglingSourceId === source.id}
-                  isSettingWrite={settingWriteId === source.id}
-                  onToggle={() => handleToggleSource(source.id, source.is_enabled)}
-                  onSetWriteCalendar={() => handleSetWriteCalendar(source.id)}
-                />
-              ))
+              sources.map((source) => {
+                const effectiveEnabled = pendingToggles[source.id] ?? source.is_enabled;
+                const isPending = source.id in pendingToggles;
+                return (
+                  <CalendarSourceRow
+                    key={source.id}
+                    source={source}
+                    isEnabled={effectiveEnabled}
+                    isPending={isPending}
+                    isSettingWrite={settingWriteId === source.id}
+                    onToggle={() => handleToggleSource(source.id, effectiveEnabled)}
+                    onSetWriteCalendar={() => handleSetWriteCalendar(source.id)}
+                  />
+                );
+              })
             )}
           </VStack>
         </Collapse>
@@ -148,9 +154,9 @@ function CalendarAccountCard({
   );
 }
 
-function CalendarSourceRow({ source, isToggling, isSettingWrite, onToggle, onSetWriteCalendar }) {
+function CalendarSourceRow({ source, isEnabled, isPending, isSettingWrite, onToggle, onSetWriteCalendar }) {
   const calendarLabel = source.calendar_id === "primary" ? "Primary calendar" : source.calendar_id;
-  const showWriteButton = !source.is_write_calendar && source.is_enabled;
+  const showWriteButton = !source.is_write_calendar && isEnabled;
 
   function handleSetWriteClick(e) {
     e.stopPropagation();
@@ -166,6 +172,7 @@ function CalendarSourceRow({ source, isToggling, isSettingWrite, onToggle, onSet
       borderTop="1px solid"
       borderColor={colors.borderLight}
       _hover={{ bg: colors.surfaceHover }}
+      bg={isPending ? "purple.50" : "transparent"}
     >
       <HStack spacing={3} flex={1}>
         <Box w={3} h={3} borderRadius="full" bg={source.color || colors.primary} flexShrink={0} />
@@ -175,7 +182,7 @@ function CalendarSourceRow({ source, isToggling, isSettingWrite, onToggle, onSet
             <Text
               fontSize="sm"
               fontWeight="medium"
-              color={source.is_enabled ? colors.textPrimary : colors.textMuted}
+              color={isEnabled ? colors.textPrimary : colors.textMuted}
               noOfLines={1}
             >
               {source.calendar_name}
@@ -184,6 +191,9 @@ function CalendarSourceRow({ source, isToggling, isSettingWrite, onToggle, onSet
               <Badge colorScheme="purple" size="sm" fontSize="xs" px={1.5} py={0.5}>
                 Write
               </Badge>
+            )}
+            {isPending && (
+              <Box w={1.5} h={1.5} borderRadius="full" bg="purple.400" flexShrink={0} />
             )}
           </HStack>
           <Text fontSize="xs" color={colors.textFaint} noOfLines={1}>
@@ -210,9 +220,8 @@ function CalendarSourceRow({ source, isToggling, isSettingWrite, onToggle, onSet
         <Switch
           size="sm"
           colorScheme="purple"
-          isChecked={source.is_enabled}
+          isChecked={isEnabled}
           onChange={onToggle}
-          isDisabled={isToggling}
         />
       </HStack>
     </Flex>

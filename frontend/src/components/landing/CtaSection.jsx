@@ -12,6 +12,7 @@ import {
   Text,
   VStack
 } from "@chakra-ui/react";
+import { useNavigate } from "react-router-dom";
 import { motion, useInView } from "framer-motion";
 import { FiArrowRight } from "react-icons/fi";
 
@@ -47,6 +48,7 @@ function FooterLink({ children, onClick }) {
 function CtaSection({ onSignIn, reducedMotion }) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
+  const navigate = useNavigate();
 
   function scrollToAbout(e) {
     e.preventDefault();
@@ -54,6 +56,10 @@ function CtaSection({ onSignIn, reducedMotion }) {
     if (target) {
       target.scrollIntoView({ behavior: "smooth", block: "start" });
     }
+  }
+
+  function goToPrivacy() {
+    navigate("/privacy");
   }
 
   return (
@@ -130,7 +136,7 @@ function CtaSection({ onSignIn, reducedMotion }) {
               <Text fontWeight="bold">Support</Text>
               <FooterLink>Help Center</FooterLink>
               <FooterLink>Contact</FooterLink>
-              <FooterLink>Privacy</FooterLink>
+              <FooterLink onClick={goToPrivacy}>Privacy</FooterLink>
             </VStack>
           </Grid>
 
@@ -147,7 +153,7 @@ function CtaSection({ onSignIn, reducedMotion }) {
             </Text>
             <HStack spacing={6}>
               <FooterLink>Terms</FooterLink>
-              <FooterLink>Privacy</FooterLink>
+              <FooterLink onClick={goToPrivacy}>Privacy</FooterLink>
               <FooterLink>Cookies</FooterLink>
             </HStack>
           </Flex>

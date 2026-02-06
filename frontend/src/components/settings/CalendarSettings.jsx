@@ -21,6 +21,7 @@ import { FcGoogle } from "react-icons/fc";
 
 import { useCalendarAccounts } from "../../hooks/useCalendarAccounts.js";
 import { useCalendarConnection } from "../../hooks/useCalendarConnection.js";
+import { busySlotsAPI } from "../../services/apiService.js";
 import { colors } from "../../styles/designSystem.js";
 import CalendarAccountCard from "./CalendarAccountCard.jsx";
 
@@ -36,18 +37,118 @@ function CalendarSettings() {
     isSyncing,
     error,
     hasConnectedAccounts,
-    enabledCalendarsCount,
     disconnectAccount,
     toggleSourceEnabled,
     setWriteCalendarSource,
     syncAccountCalendars,
     clearError,
+    refetch,
   } = useCalendarAccounts();
 
   const { connectGoogleCalendar } = useCalendarConnection();
 
   const [disconnectingAccountId, setDisconnectingAccountId] = useState(null);
   const [syncingAccountId, setSyncingAccountId] = useState(null);
+  const [pendingToggles, setPendingToggles] = useState({});
+  const [isSaving, setIsSaving] = useState(false);
+
+  const hasPendingChanges = Object.keys(pendingToggles).length > 0;
+
+  const effectiveEnabledCount = accounts.reduce(
+    (count, account) =>
+      count +
+      (account.calendar_sources?.filter((source) => {
+        const effective = pendingToggles[source.id] ?? source.is_enabled;
+        return effective;
+      })?.length || 0),
+    0
+  );
+
+  const allWouldBeDisabled = hasPendingChanges && effectiveEnabledCount === 0;
+
+  function handleToggleSource(sourceId, newEnabled) {
+    setPendingToggles((prev) => {
+      const savedState = accounts
+        .flatMap((a) => a.calendar_sources || [])
+        .find((s) => s.id === sourceId)?.is_enabled;
+
+      // If toggling back to saved state, remove from pending
+      if (savedState === newEnabled) {
+        const next = { ...prev };
+        delete next[sourceId];
+        return next;
+      }
+      return { ...prev, [sourceId]: newEnabled };
+    });
+  }
+
+  function getPendingUpdates() {
+    return Object.entries(pendingToggles).map(([sourceId, isEnabled]) => {
+      const allSources = accounts.flatMap((a) => a.calendar_sources || []);
+      const source = allSources.find((s) => String(s.id) === String(sourceId));
+      return { sourceId: source ? source.id : sourceId, isEnabled };
+    });
+  }
+
+  function handleCancel() {
+    setPendingToggles({});
+  }
+
+  async function handleConfirm() {
+    setIsSaving(true);
+    try {
+      const updates = getPendingUpdates();
+      const results = await Promise.all(
+        updates.map(({ sourceId, isEnabled }) => toggleSourceEnabled(sourceId, isEnabled))
+      );
+
+      const allSucceeded = results.every(Boolean);
+      if (!allSucceeded) {
+        await refetch();
+        toast({
+          title: "Some updates failed",
+          description: "Not all calendar changes could be saved. Please try again.",
+          status: "error",
+          duration: 5000,
+          isClosable: true,
+        });
+        setIsSaving(false);
+        return;
+      }
+
+      try {
+        await busySlotsAPI.syncCalendar();
+        toast({
+          title: "Calendars updated and availability synced",
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
+      } catch {
+        toast({
+          title: "Calendars updated but sync failed",
+          description: "Availability will update on next automatic sync.",
+          status: "warning",
+          duration: 5000,
+          isClosable: true,
+        });
+      }
+
+      setPendingToggles({});
+      await refetch();
+    } catch {
+      await refetch();
+      toast({
+        title: "Update failed",
+        description: "Failed to update calendars. Please try again.",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  }
 
   async function handleConnectGoogle() {
     try {
@@ -93,19 +194,6 @@ function CalendarSettings() {
       duration: result ? 3000 : 5000,
       isClosable: true,
     });
-  }
-
-  async function handleToggleSource(sourceId, isEnabled) {
-    const success = await toggleSourceEnabled(sourceId, isEnabled);
-    if (!success) {
-      toast({
-        title: "Update failed",
-        description: "Failed to update calendar. Please try again.",
-        status: "error",
-        duration: 5000,
-        isClosable: true,
-      });
-    }
   }
 
   async function handleSetWriteCalendar(sourceId) {
@@ -171,7 +259,7 @@ function CalendarSettings() {
             <Icon as={FiCalendar} color={colors.primary} />
             <Text fontSize="sm" color={colors.textSecondary}>
               <Text as="span" fontWeight="semibold" color={colors.textPrimary}>
-                {enabledCalendarsCount}
+                {effectiveEnabledCount}
               </Text>{" "}
               calendars enabled for busy detection
             </Text>
@@ -223,6 +311,7 @@ function CalendarSettings() {
           <CalendarAccountCard
             key={account.id}
             account={account}
+            pendingToggles={pendingToggles}
             onToggleSource={handleToggleSource}
             onSetWriteCalendar={handleSetWriteCalendar}
             onSyncCalendars={handleSyncCalendars}
@@ -232,6 +321,47 @@ function CalendarSettings() {
           />
         ))}
       </VStack>
+
+      {hasPendingChanges && (
+        <Box
+          p={4}
+          bg={colors.surfaceHover}
+          borderRadius="lg"
+          border="1px solid"
+          borderColor="purple.200"
+        >
+          <VStack spacing={3} align="stretch">
+            {allWouldBeDisabled && (
+              <Alert status="warning" borderRadius="md" size="sm">
+                <AlertIcon />
+                <AlertDescription fontSize="sm">
+                  At least one calendar must remain enabled
+                </AlertDescription>
+              </Alert>
+            )}
+            <HStack justify="flex-end" spacing={3}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleCancel}
+                isDisabled={isSaving}
+              >
+                Cancel
+              </Button>
+              <Button
+                colorScheme="purple"
+                size="sm"
+                onClick={handleConfirm}
+                isDisabled={allWouldBeDisabled || isSaving}
+                isLoading={isSaving}
+                loadingText="Saving..."
+              >
+                Confirm Changes
+              </Button>
+            </HStack>
+          </VStack>
+        </Box>
+      )}
 
       {hasConnectedAccounts && (
         <Box pt={2}>
