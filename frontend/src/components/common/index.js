@@ -6,3 +6,4 @@ export { default as GradientModalHeader } from "./GradientModalHeader";
 export { default as StepProgressIndicator } from "./StepProgressIndicator";
 export { default as FormStepNavigation } from "./FormStepNavigation";
 export { default as WizardHeader } from "./WizardHeader";
+export { default as RouteLoadingFallback } from "./RouteLoadingFallback";

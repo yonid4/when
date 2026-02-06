@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, Icon, IconButton, Tooltip } from "@chakra-ui/react";
 import { FiPlus, FiSettings } from "react-icons/fi";
 
 import { supabase } from "../../services/supabaseClient";
+import { useAuth } from "../../hooks/useAuth";
 import { NotificationBell } from "../notifications";
 
 const HEADER_STYLES = {
@@ -42,26 +43,10 @@ const PRIMARY_COLOR = "#7C3AED";
 
 function Header() {
   const navigate = useNavigate();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState(null);
+  const { session, user } = useAuth();
+  const isAuthenticated = !!session;
+  const currentUserId = user?.id ?? null;
   const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    async function checkAuth() {
-      const { data: { session } } = await supabase.auth.getSession();
-      setIsAuthenticated(!!session);
-      setCurrentUserId(session?.user?.id || null);
-    }
-
-    checkAuth();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsAuthenticated(!!session);
-      setCurrentUserId(session?.user?.id || null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
 
   async function handleGoogleLogin() {
     setIsLoading(true);

@@ -20,22 +20,18 @@ const MotionBox = motion(Box);
 const PEOPLE = [
   {
     name: "Sarah",
-    avatar: "https://i.pravatar.cc/150?img=1",
     slots: [false, true, true, false, true, false, true, true]
   },
   {
     name: "Mike",
-    avatar: "https://i.pravatar.cc/150?img=3",
     slots: [true, false, true, true, true, false, false, true]
   },
   {
     name: "Emma",
-    avatar: "https://i.pravatar.cc/150?img=5",
     slots: [false, true, true, true, false, true, true, false]
   },
   {
     name: "Alex",
-    avatar: "https://i.pravatar.cc/150?img=8",
     slots: [true, true, false, true, true, true, false, true]
   }
 ];
@@ -88,7 +84,6 @@ function PersonColumn({ person, index, totalPeople, scrollProgress }) {
     >
       {/* Avatar */}
       <Avatar
-        src={person.avatar}
         name={person.name}
         size="md"
         mb={3}
@@ -155,7 +150,7 @@ function StaticVersion() {
           <HStack spacing={4} justify="center" flexWrap="wrap">
             {PEOPLE.map((person, index) => (
               <VStack key={index} spacing={2}>
-                <Avatar src={person.avatar} name={person.name} size="lg" />
+                <Avatar name={person.name} size="lg" />
                 <Text fontSize="sm" color="gray.600">{person.name}</Text>
               </VStack>
             ))}
