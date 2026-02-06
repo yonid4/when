@@ -1,33 +1,36 @@
-import React from "react";
+import { Fragment } from "react";
+
 import {
   Box,
   Grid,
   GridItem,
-  Text,
   HStack,
-  VStack,
-  Icon
+  Icon,
+  Text,
+  VStack
 } from "@chakra-ui/react";
 import { FiCalendar, FiCheck } from "react-icons/fi";
+
 import { colors, shadows } from "../../styles/designSystem";
+
+const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri"];
+const TIMES = ["9 AM", "10 AM", "11 AM", "12 PM", "1 PM", "2 PM"];
+
+// Mock availability pattern
+const AVAILABLE_SLOTS = [
+  [false, true, false, true, false],
+  [true, true, false, false, true],
+  [false, false, true, true, true],
+  [true, false, true, false, false],
+  [false, true, true, true, false],
+  [true, true, false, true, true]
+];
 
 /**
  * A stylized calendar illustration used in the scroll zoom section.
  * Shows a mock calendar with some time slots marked as available.
  */
-const CalendarIllustration = () => {
-  const days = ["Mon", "Tue", "Wed", "Thu", "Fri"];
-  const times = ["9 AM", "10 AM", "11 AM", "12 PM", "1 PM", "2 PM"];
-
-  // Mock availability pattern
-  const availableSlots = [
-    [false, true, false, true, false],
-    [true, true, false, false, true],
-    [false, false, true, true, true],
-    [true, false, true, false, false],
-    [false, true, true, true, false],
-    [true, true, false, true, true]
-  ];
+function CalendarIllustration() {
 
   return (
     <Box
@@ -74,7 +77,7 @@ const CalendarIllustration = () => {
       >
         {/* Day headers */}
         <GridItem />
-        {days.map((day) => (
+        {DAYS.map((day) => (
           <GridItem key={day}>
             <Text
               fontSize="xs"
@@ -88,8 +91,8 @@ const CalendarIllustration = () => {
         ))}
 
         {/* Time slots */}
-        {times.map((time, timeIndex) => (
-          <React.Fragment key={time}>
+        {TIMES.map((time, timeIndex) => (
+          <Fragment key={time}>
             <GridItem>
               <Text
                 fontSize="xs"
@@ -100,8 +103,8 @@ const CalendarIllustration = () => {
                 {time}
               </Text>
             </GridItem>
-            {days.map((day, dayIndex) => {
-              const isAvailable = availableSlots[timeIndex][dayIndex];
+            {DAYS.map((day, dayIndex) => {
+              const isAvailable = AVAILABLE_SLOTS[timeIndex][dayIndex];
               return (
                 <GridItem key={`${day}-${time}`}>
                   <Box
@@ -126,7 +129,7 @@ const CalendarIllustration = () => {
                 </GridItem>
               );
             })}
-          </React.Fragment>
+          </Fragment>
         ))}
       </Grid>
 
@@ -152,6 +155,6 @@ const CalendarIllustration = () => {
       </HStack>
     </Box>
   );
-};
+}
 
 export default CalendarIllustration;

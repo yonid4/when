@@ -1,84 +1,40 @@
-/**
- * Calendar Accounts API service for multi-calendar support.
- *
- * Provides methods to:
- * - List and manage connected calendar accounts
- * - Toggle calendar sources on/off
- * - Set write calendar for event creation
- * - Sync calendars from provider
- */
-import api from "./api";
+import api from "./api.js";
 
 export const calendarAccountsAPI = {
-    /**
-     * Get all connected calendar accounts for the current user.
-     * @returns {Promise<Object>} { accounts: Array, count: number }
-     */
-    getAccounts: async () => {
+    async getAccounts() {
         const res = await api.get("/api/calendar-accounts/");
         return res.data;
     },
 
-    /**
-     * Get a single calendar account by ID.
-     * @param {string} accountId - Account's unique ID
-     * @returns {Promise<Object>} Account with sources
-     */
-    getAccount: async (accountId) => {
+    async getAccount(accountId) {
         const res = await api.get(`/api/calendar-accounts/${accountId}`);
         return res.data;
     },
 
-    /**
-     * Disconnect a calendar account (revokes token, deletes sources).
-     * @param {string} accountId - Account's unique ID
-     * @returns {Promise<Object>} Success message
-     */
-    deleteAccount: async (accountId) => {
+    async deleteAccount(accountId) {
         const res = await api.delete(`/api/calendar-accounts/${accountId}`);
         return res.data;
     },
 
-    /**
-     * Fetch available calendars from the provider API.
-     * This returns the current state from Google, not the DB.
-     * @param {string} accountId - Account's unique ID
-     * @returns {Promise<Object>} { calendars: Array, count: number }
-     */
-    getAccountCalendars: async (accountId) => {
+    async getAccountCalendars(accountId) {
         const res = await api.get(`/api/calendar-accounts/${accountId}/calendars`);
         return res.data;
     },
 
-    /**
-     * Sync calendar list from provider to database.
-     * @param {string} accountId - Account's unique ID
-     * @returns {Promise<Object>} { message, sources: Array, count: number }
-     */
-    syncCalendars: async (accountId) => {
+    async syncCalendars(accountId) {
         const res = await api.post(`/api/calendar-accounts/${accountId}/sync-calendars`);
         return res.data;
     },
 
-    /**
-     * Update a calendar source (toggle enabled, set write calendar).
-     * @param {string} sourceId - Source's unique ID
-     * @param {Object} updates - { is_enabled?: boolean, is_write_calendar?: boolean }
-     * @returns {Promise<Object>} Updated source
-     */
-    updateSource: async (sourceId, updates) => {
+    async updateSource(sourceId, updates) {
         const res = await api.put(`/api/calendar-accounts/sources/${sourceId}`, updates);
         return res.data;
     },
 
-    /**
-     * Get the user's write calendar (where events are created).
-     * @returns {Promise<Object>} { write_calendar: Object | null }
-     */
-    getWriteCalendar: async () => {
+    async getWriteCalendar() {
         const res = await api.get("/api/calendar-accounts/write-calendar");
         return res.data;
-    },
+    }
 };
 
 export default calendarAccountsAPI;

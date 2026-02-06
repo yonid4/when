@@ -1,38 +1,34 @@
-import React from "react";
 import {
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
   Button,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
   Text,
-  VStack
+  VStack,
 } from "@chakra-ui/react";
 import { format } from "date-fns";
 
 /**
- * Popup shown to coordinators when they drag to select a time slot
- * Offers two options: add as preferred time or finalize event
+ * Popup shown to coordinators when they drag to select a time slot.
+ * Offers two options: add as preferred time or finalize event.
  */
-const CoordinatorSlotPopup = ({ isOpen, onClose, slotInfo, onAddPreferred, onFinalize }) => {
-  const handleAddPreferred = async () => {
-    try {
-      await onAddPreferred(slotInfo);
-      onClose();
-    } catch (error) {
-      // Error handled by parent
-    }
-  };
+function CoordinatorSlotPopup({ isOpen, onClose, slotInfo, onAddPreferred, onFinalize }) {
+  if (!slotInfo) return null;
 
-  const handleFinalize = () => {
-    // Call parent's finalize handler which opens FinalizationModal
+  async function handleAddPreferred() {
+    await onAddPreferred(slotInfo).catch(() => {});
+    onClose();
+  }
+
+  function handleFinalize() {
     onFinalize(slotInfo);
     onClose();
-  };
+  }
 
-  if (!slotInfo) return null;
+  const timeDisplay = `${format(slotInfo.start, "EEEE, MMM d")} \u2022 ${format(slotInfo.start, "h:mm a")} - ${format(slotInfo.end, "h:mm a")}`;
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="md" isCentered>
@@ -41,23 +37,13 @@ const CoordinatorSlotPopup = ({ isOpen, onClose, slotInfo, onAddPreferred, onFin
         <ModalHeader>Choose Action</ModalHeader>
         <ModalBody>
           <Text fontSize="lg" fontWeight="semibold" mb={4} color="gray.700">
-            {format(slotInfo.start, "EEEE, MMM d")} • {format(slotInfo.start, "h:mm a")} -{" "}
-            {format(slotInfo.end, "h:mm a")}
+            {timeDisplay}
           </Text>
           <VStack spacing={3} width="100%">
-            <Button
-              width="100%"
-              variant="outline"
-              colorScheme="blue"
-              onClick={handleAddPreferred}
-            >
+            <Button width="100%" variant="outline" colorScheme="blue" onClick={handleAddPreferred}>
               Add as my preferred time
             </Button>
-            <Button
-              width="100%"
-              colorScheme="green"
-              onClick={handleFinalize}
-            >
+            <Button width="100%" colorScheme="green" onClick={handleFinalize}>
               Finalize event at this time
             </Button>
           </VStack>
@@ -70,7 +56,7 @@ const CoordinatorSlotPopup = ({ isOpen, onClose, slotInfo, onAddPreferred, onFin
       </ModalContent>
     </Modal>
   );
-};
+}
 
 export default CoordinatorSlotPopup;
 

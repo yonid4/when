@@ -34,22 +34,11 @@ import {
 import { shadows } from "../../styles/designSystem";
 import { formatEventDateTime, formatEventDateOnly } from "../../utils/dateUtils";
 
-/**
- * Get event type info (icon, label, color)
- */
-const getEventTypeInfo = (eventType) => {
-  switch (eventType) {
-    case "meeting":
-      return { icon: FiUsers, label: "Meeting", color: "blue" };
-    case "social":
-      return { icon: FiCoffee, label: "Social", color: "purple" };
-    case "birthday":
-      return { icon: FiGift, label: "Birthday", color: "pink" };
-    case "other":
-      return { icon: FiMoreHorizontal, label: "Other", color: "gray" };
-    default:
-      return null;
-  }
+const EVENT_TYPE_INFO = {
+  meeting: { icon: FiUsers, label: "Meeting", color: "blue" },
+  social: { icon: FiCoffee, label: "Social", color: "purple" },
+  birthday: { icon: FiGift, label: "Birthday", color: "pink" },
+  other: { icon: FiMoreHorizontal, label: "Other", color: "gray" }
 };
 
 /**
@@ -73,7 +62,7 @@ const EventDetailsCard = ({
   cardBg,
   isLoading = false
 }) => {
-  const eventTypeInfo = event?.event_type ? getEventTypeInfo(event.event_type) : null;
+  const eventTypeInfo = event?.event_type ? EVENT_TYPE_INFO[event.event_type] : null;
 
   // Skeleton loading state
   if (isLoading) {

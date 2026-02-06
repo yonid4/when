@@ -1,51 +1,90 @@
-import React from "react";
 import {
   Box,
   Flex,
-  Text,
   Icon,
-  useBreakpointValue,
-  Tooltip
+  Text,
+  Tooltip,
+  useBreakpointValue
 } from "@chakra-ui/react";
 import { FiCheck } from "react-icons/fi";
+
 import { colors, shadows } from "../../styles/designSystem";
 
-/** Maximum percentage width for the progress line (accounts for edge margins) */
 const PROGRESS_LINE_MAX_WIDTH = 76;
 
-/**
- * StepProgressIndicator - Horizontal stepper with connected nodes
- *
- * @param {Object} props
- * @param {Array} props.steps - Array of step objects { id, name, icon }
- * @param {number} props.currentStep - Current step index
- */
-const StepProgressIndicator = ({ steps, currentStep }) => {
-  const isMobile = useBreakpointValue({ base: true, md: false });
+function getStepBackground(isCompleted, isCurrent) {
+  if (isCompleted) return colors.secondary;
+  if (isCurrent) return colors.primary;
+  return "white";
+}
 
-  // Mobile: Collapsed text view
-  if (isMobile) {
+function getStepBorderColor(isCompleted, isCurrent) {
+  if (isCompleted) return colors.secondary;
+  if (isCurrent) return colors.primary;
+  return "gray.300";
+}
+
+function getStepLabelColor(isCompleted, isCurrent) {
+  if (isCompleted) return colors.secondary;
+  if (isCurrent) return colors.primary;
+  return "gray.400";
+}
+
+function StepNodeContent({ isCompleted, isCurrent, StepIcon, index }) {
+  if (isCompleted) {
+    return <Icon as={FiCheck} color="white" boxSize={5} />;
+  }
+
+  if (StepIcon) {
     return (
-      <Box py={2}>
-        <Text
-          fontSize="sm"
-          fontWeight="semibold"
-          color="gray.600"
-          textAlign="center"
-          textTransform="uppercase"
-          letterSpacing="0.5px"
-        >
-          Step {currentStep + 1} of {steps.length}: {steps[currentStep].name}
-        </Text>
-      </Box>
+      <Icon
+        as={StepIcon}
+        color={isCurrent ? "white" : "gray.400"}
+        boxSize={5}
+      />
     );
   }
 
-  // Desktop: Full horizontal stepper with icons
+  return (
+    <Text
+      fontSize="sm"
+      fontWeight="bold"
+      color={isCurrent ? "white" : "gray.400"}
+    >
+      {index + 1}
+    </Text>
+  );
+}
+
+function MobileStepIndicator({ steps, currentStep }) {
+  return (
+    <Box py={2}>
+      <Text
+        fontSize="sm"
+        fontWeight="semibold"
+        color="gray.600"
+        textAlign="center"
+        textTransform="uppercase"
+        letterSpacing="0.5px"
+      >
+        Step {currentStep + 1} of {steps.length}: {steps[currentStep].name}
+      </Text>
+    </Box>
+  );
+}
+
+function StepProgressIndicator({ steps, currentStep }) {
+  const isMobile = useBreakpointValue({ base: true, md: false });
+
+  if (isMobile) {
+    return <MobileStepIndicator steps={steps} currentStep={currentStep} />;
+  }
+
+  const progressWidth = Math.max(0, (currentStep / (steps.length - 1)) * PROGRESS_LINE_MAX_WIDTH);
+
   return (
     <Box py={5} px={8}>
       <Flex align="center" justify="center" position="relative">
-        {/* Connecting line behind nodes */}
         <Box
           position="absolute"
           top="20px"
@@ -55,19 +94,17 @@ const StepProgressIndicator = ({ steps, currentStep }) => {
           bg="gray.200"
           zIndex={0}
         />
-        {/* Progress fill line */}
         <Box
           position="absolute"
           top="20px"
           left="12%"
-          width={`${Math.max(0, ((currentStep) / (steps.length - 1)) * PROGRESS_LINE_MAX_WIDTH)}%`}
+          width={`${progressWidth}%`}
           height="2px"
           bg={colors.primary}
           zIndex={0}
           transition="width 0.3s ease"
         />
 
-        {/* Step nodes */}
         <Flex w="full" justify="space-between" position="relative" zIndex={1}>
           {steps.map((step, index) => {
             const isCompleted = index < currentStep;
@@ -88,65 +125,34 @@ const StepProgressIndicator = ({ steps, currentStep }) => {
                   flex={1}
                   cursor="default"
                 >
-                  {/* Node circle with icon */}
                   <Flex
                     w="40px"
                     h="40px"
                     borderRadius="full"
                     justify="center"
                     align="center"
-                    bg={
-                      isCompleted
-                        ? colors.secondary
-                        : isCurrent
-                        ? colors.primary
-                        : "white"
-                    }
+                    bg={getStepBackground(isCompleted, isCurrent)}
                     border="2px solid"
-                    borderColor={
-                      isCompleted
-                        ? colors.secondary
-                        : isCurrent
-                        ? colors.primary
-                        : "gray.300"
-                    }
+                    borderColor={getStepBorderColor(isCompleted, isCurrent)}
                     boxShadow={isCurrent ? shadows.md : shadows.sm}
                     transition="all 0.25s ease"
                     transform={isCurrent ? "scale(1.1)" : "scale(1)"}
                   >
-                    {isCompleted ? (
-                      <Icon as={FiCheck} color="white" boxSize={5} />
-                    ) : StepIcon ? (
-                      <Icon
-                        as={StepIcon}
-                        color={isCurrent ? "white" : "gray.400"}
-                        boxSize={5}
-                      />
-                    ) : (
-                      <Text
-                        fontSize="sm"
-                        fontWeight="bold"
-                        color={isCurrent ? "white" : "gray.400"}
-                      >
-                        {index + 1}
-                      </Text>
-                    )}
+                    <StepNodeContent
+                      isCompleted={isCompleted}
+                      isCurrent={isCurrent}
+                      StepIcon={StepIcon}
+                      index={index}
+                    />
                   </Flex>
 
-                  {/* Label */}
                   <Text
                     mt={2}
                     fontSize="xs"
                     fontWeight="semibold"
                     textTransform="uppercase"
                     letterSpacing="0.5px"
-                    color={
-                      isCompleted
-                        ? colors.secondary
-                        : isCurrent
-                        ? colors.primary
-                        : "gray.400"
-                    }
+                    color={getStepLabelColor(isCompleted, isCurrent)}
                     textAlign="center"
                     transition="color 0.2s ease"
                   >
@@ -160,6 +166,6 @@ const StepProgressIndicator = ({ steps, currentStep }) => {
       </Flex>
     </Box>
   );
-};
+}
 
 export default StepProgressIndicator;

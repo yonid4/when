@@ -1,17 +1,19 @@
 """
 Time proposal service using Gemini AI.
 
-This service aggregates participant availability data (busy slots, preferred slots)
-and uses Google's Gemini AI to intelligently suggest optimal meeting times.
+Aggregates participant availability data and uses Google's Gemini AI
+to suggest optimal meeting times.
 """
 
-import os
 import json
+import os
 import time
-from datetime import datetime, timedelta
-from typing import List, Optional, Dict, Any, Tuple
-from ..utils.supabase_client import get_supabase
+from datetime import datetime, timedelta, timezone as tz
+from typing import Any, Dict, List, Optional, Tuple
+
 from supabase import create_client
+
+from ..utils.supabase_client import get_supabase
 
 try:
     import google.generativeai as genai
@@ -24,70 +26,47 @@ except ImportError:
 class TimeProposalService:
     """Service for generating AI-powered time proposals using Gemini."""
 
-    # Minimum buffer time from now for proposed times (in minutes)
-    MIN_BUFFER_MINUTES = 45  # 45 minutes minimum from current time
+    MIN_BUFFER_MINUTES = 45
 
     def __init__(self, access_token: Optional[str] = None):
         self.supabase = get_supabase(access_token)
-        
-        # Initialize service role client for cross-user queries
+
         supabase_url = os.getenv("SUPABASE_URL")
         service_role_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-        
+
         if supabase_url and service_role_key:
             self.service_role_client = create_client(supabase_url, service_role_key)
         else:
-            print("[WARNING] SUPABASE_SERVICE_ROLE_KEY not found, using regular client")
             self.service_role_client = self.supabase
-        
-        # Configure Gemini API
+
         self.gemini_api_key = os.getenv("GEMINI_API_KEY")
         self.gemini_model = os.getenv("GEMINI_MODEL", "gemini-pro")
         self.max_retries = int(os.getenv("GEMINI_MAX_RETRIES", "3"))
-        
+
         if GENAI_AVAILABLE and self.gemini_api_key:
             genai.configure(api_key=self.gemini_api_key)
             self.model = genai.GenerativeModel(self.gemini_model)
         else:
             self.model = None
-            if not self.gemini_api_key:
-                print("[WARNING] GEMINI_API_KEY not set. AI proposals will not work.")
     
     def propose_times(self, event_id: str, num_suggestions: int = 5) -> List[Dict[str, Any]]:
-        """
-        Generate AI-powered time proposals for an event.
-        
-        Args:
-            event_id: Event ID (UUID)
-            num_suggestions: Number of time suggestions to generate
-            
-        Returns:
-            List of proposed time slots with reasoning
-            
-        Raises:
-            Exception: If proposal generation fails
-        """
+        """Generate AI-powered time proposals for an event."""
         print(f"[TIME_PROPOSAL] Generating {num_suggestions} proposals for event {event_id}")
-        
-        # Check if Gemini is available
+
         if not GENAI_AVAILABLE:
             raise Exception("Gemini AI library not installed. Please install google-generativeai.")
-        
+
         if not self.model:
             raise Exception("Gemini API not configured. Please set GEMINI_API_KEY environment variable.")
-        
-        # 1. Aggregate participant data
+
         data = self._aggregate_participant_data(event_id)
-        
+
         if not data:
             raise Exception("Failed to aggregate event data")
-        
-        # Validate we have participants
+
         if data["participant_count"] == 0:
             raise Exception("Event has no participants")
 
-        # Check if event date range is entirely in the past
-        from datetime import timezone as tz
         event = data["event"]
         latest_dt = event.get("latest_datetime_utc")
         if latest_dt:
@@ -96,91 +75,74 @@ class TimeProposalService:
             if latest_datetime < min_allowed_time:
                 raise Exception("Event date range has passed. Please update the event's date range to include future dates.")
 
-        # 2. Calculate free time windows (for validation/logging)
         free_windows = self._calculate_free_windows(data)
         print(f"[TIME_PROPOSAL] Found {len(free_windows)} free time windows")
 
-        # Store free windows info in data for prompt generation
         data["free_windows"] = free_windows
         data["has_conflict_free_slots"] = len(free_windows) > 0
 
-        # 3. Format prompt for Gemini (AI will find gaps in busy slots)
         prompt = self._format_gemini_prompt(data, num_suggestions)
-        
-        # 4. Call Gemini API
         response_text = self._call_gemini_api(prompt)
-        
-        # 5. Parse response
         proposals = self._parse_gemini_response(response_text)
-        
-        # 6. Validate proposals
         validated_proposals = self._validate_proposed_times(proposals, data)
-        
-        # 7. Format for frontend
         formatted_proposals = self._format_for_frontend(validated_proposals, data)
-        
+
         print(f"[TIME_PROPOSAL] Successfully generated {len(formatted_proposals)} proposals")
-        
+
         return formatted_proposals
     
     def _aggregate_participant_data(self, event_id: str) -> Optional[Dict[str, Any]]:
         """Aggregate all data needed for time proposals."""
         try:
-            # Get event details
             event_result = (
                 self.service_role_client.table("events")
                 .select("*")
                 .eq("id", event_id)
                 .execute()
             )
-            
+
             if not event_result.data:
                 print(f"[ERROR] Event {event_id} not found")
                 return None
-            
+
             event = event_result.data[0]
-            
-            # Get participants
+
             participants_result = (
                 self.service_role_client.table("event_participants")
                 .select("user_id")
                 .eq("event_id", event_id)
                 .execute()
             )
-            
+
             participant_ids = [p["user_id"] for p in participants_result.data]
-            
+
             if not participant_ids:
                 print(f"[ERROR] No participants found for event {event_id}")
                 return None
-            
-            # Get participant profiles (including timezone)
+
             profiles_result = (
                 self.service_role_client.table("profiles")
                 .select("id, full_name, email_address, timezone")
                 .in_("id", participant_ids)
                 .execute()
             )
-            
+
             profiles_map = {p["id"]: p for p in profiles_result.data}
-            
-            # Get busy slots for all participants
+
             busy_slots_result = (
                 self.service_role_client.table("busy_slots")
                 .select("*")
                 .in_("user_id", participant_ids)
                 .execute()
             )
-            
-            # Get preferred slots for all participants
+
             preferred_slots_result = (
                 self.service_role_client.table("preferred_slots")
                 .select("*")
                 .eq("event_id", event_id)
                 .execute()
             )
-            
-            # Organize data by participant
+
             participants_data = []
             for user_id in participant_ids:
                 profile = profiles_map.get(user_id, {})
@@ -195,7 +157,7 @@ class TimeProposalService:
                     "busy_slots": user_busy,
                     "preferred_slots": user_preferred
                 })
-            
+
             return {
                 "event": event,
                 "participants": participants_data,
@@ -203,59 +165,45 @@ class TimeProposalService:
                 "all_busy_slots": busy_slots_result.data,
                 "all_preferred_slots": preferred_slots_result.data
             }
-            
+
         except Exception as e:
             print(f"[ERROR] Failed to aggregate data: {str(e)}")
             return None
     
     def _calculate_free_windows(self, data: Dict[str, Any]) -> List[Tuple[datetime, datetime]]:
-        """
-        Calculate time windows when all participants are free.
-        
-        Returns list of (start_time, end_time) tuples.
-        """
+        """Calculate time windows when all participants are free."""
         event = data["event"]
-        participants = data["participants"]
         all_busy_slots = data["all_busy_slots"]
-        
-        # Parse event constraints from UTC timestamps
-        from datetime import timezone
 
-        # Get UTC datetime bounds from event
         if event.get("earliest_datetime_utc"):
             earliest_datetime = datetime.fromisoformat(event["earliest_datetime_utc"])
             if earliest_datetime.tzinfo is None:
-                earliest_datetime = earliest_datetime.replace(tzinfo=timezone.utc)
+                earliest_datetime = earliest_datetime.replace(tzinfo=tz.utc)
         else:
-            earliest_datetime = datetime.now(timezone.utc)
+            earliest_datetime = datetime.now(tz.utc)
 
         if event.get("latest_datetime_utc"):
             latest_datetime = datetime.fromisoformat(event["latest_datetime_utc"])
             if latest_datetime.tzinfo is None:
-                latest_datetime = latest_datetime.replace(tzinfo=timezone.utc)
+                latest_datetime = latest_datetime.replace(tzinfo=tz.utc)
         else:
             latest_datetime = earliest_datetime + timedelta(days=30)
 
-        # Extract date range for iteration
         earliest_date = earliest_datetime.replace(hour=0, minute=0, second=0, microsecond=0)
         latest_date = latest_datetime.replace(hour=23, minute=59, second=59, microsecond=999999)
 
-        # Extract time constraints from UTC timestamps
         earliest_hour_str = earliest_datetime.strftime("%H:%M:%S")
         latest_hour_str = latest_datetime.strftime("%H:%M:%S")
-        
-        # Duration in minutes
+
         duration_minutes = event.get("duration_minutes", 60)
-        
-        # Generate candidate time slots (every 30 minutes within constraints)
+
         free_windows = []
         current_date = earliest_date
-        
+
         while current_date <= latest_date:
-            # Parse time constraints for this day
             earliest_hour_parts = earliest_hour_str.split(":")
             latest_hour_parts = latest_hour_str.split(":")
-            
+
             start_of_day = current_date.replace(
                 hour=int(earliest_hour_parts[0]),
                 minute=int(earliest_hour_parts[1]),
@@ -268,121 +216,94 @@ class TimeProposalService:
                 second=0,
                 microsecond=0
             )
-            
-            # Check 30-minute intervals
+
             current_time = start_of_day
             while current_time + timedelta(minutes=duration_minutes) <= end_of_day:
                 slot_end = current_time + timedelta(minutes=duration_minutes)
-                
-                # Check if this slot conflicts with any participant's busy time
+
                 is_free = True
                 for busy_slot in all_busy_slots:
                     busy_start = datetime.fromisoformat(busy_slot["start_time_utc"].replace("Z", "+00:00"))
                     busy_end = datetime.fromisoformat(busy_slot["end_time_utc"].replace("Z", "+00:00"))
-                    
-                    # Check for overlap
+
                     if current_time < busy_end and slot_end > busy_start:
                         is_free = False
                         break
-                
+
                 if is_free:
                     free_windows.append((current_time, slot_end))
-                
-                # Move to next 30-minute slot
+
                 current_time += timedelta(minutes=30)
-            
-            # Move to next day
+
             current_date += timedelta(days=1)
-        
+
         return free_windows
     
     def _segment_busy_slots_by_participant_count(self, data: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """
-        Segment busy slots by the number of participants who are busy during each time period.
-        
-        Returns list of segments with: {start_time, end_time, participant_count}
-        """
+        """Segment busy slots by the number of participants busy during each time period."""
         all_busy_slots = data["all_busy_slots"]
-        
+
         if not all_busy_slots:
             return []
-        
-        # Collect all time boundaries
+
         time_points = set()
         for slot in all_busy_slots:
             start = datetime.fromisoformat(slot["start_time_utc"].replace("Z", "+00:00"))
             end = datetime.fromisoformat(slot["end_time_utc"].replace("Z", "+00:00"))
             time_points.add(start)
             time_points.add(end)
-        
-        # Sort time points
+
         sorted_times = sorted(time_points)
-        
-        # For each interval between consecutive time points, count how many participants are busy
+
         segments = []
         for i in range(len(sorted_times) - 1):
             interval_start = sorted_times[i]
             interval_end = sorted_times[i + 1]
-            
-            # Count unique participants busy during this interval (any overlap counts)
+
             busy_user_ids = set()
             for slot in all_busy_slots:
                 slot_start = datetime.fromisoformat(slot["start_time_utc"].replace("Z", "+00:00"))
                 slot_end = datetime.fromisoformat(slot["end_time_utc"].replace("Z", "+00:00"))
 
-                # Check if this slot overlaps with the interval
                 if slot_start < interval_end and slot_end > interval_start:
                     busy_user_ids.add(slot["user_id"])
 
-            busy_count = len(busy_user_ids)
-            
-            if busy_count > 0:
+            if busy_user_ids:
                 segments.append({
                     "start_time": interval_start,
                     "end_time": interval_end,
-                    "participant_count": busy_count
+                    "participant_count": len(busy_user_ids)
                 })
-        
+
         return segments
     
-    def _format_gemini_prompt(
-        self,
-        data: Dict[str, Any],
-        num_suggestions: int
-    ) -> str:
+    def _format_gemini_prompt(self, data: Dict[str, Any], num_suggestions: int) -> str:
         """Format a structured prompt for Gemini API."""
         event = data["event"]
         participants = data["participants"]
 
-        # Analyze participant timezones
         timezone_counts = {}
         for p in participants:
-            tz = p.get("timezone", "UTC")
-            timezone_counts[tz] = timezone_counts.get(tz, 0) + 1
+            participant_tz = p.get("timezone", "UTC")
+            timezone_counts[participant_tz] = timezone_counts.get(participant_tz, 0) + 1
 
-        # Determine primary timezone(s)
         if timezone_counts:
             primary_tz = max(timezone_counts.items(), key=lambda x: x[1])
             timezone_info = f"{primary_tz[0]} ({primary_tz[1]}/{len(participants)} participants)"
             if len(timezone_counts) > 1:
-                other_tzs = [f"{tz} ({count})" for tz, count in timezone_counts.items() if tz != primary_tz[0]]
+                other_tzs = [f"{t} ({count})" for t, count in timezone_counts.items() if t != primary_tz[0]]
                 timezone_info += f", Others: {', '.join(other_tzs)}"
         else:
             timezone_info = "UTC (default)"
 
-        # Get segmented busy slots
         busy_segments = self._segment_busy_slots_by_participant_count(data)
 
-        # Check if there are conflict-free slots
         has_conflict_free = data.get("has_conflict_free_slots", False)
         free_windows_count = len(data.get("free_windows", []))
 
-        # Format datetime ranges for prompt
         earliest_dt = event.get('earliest_datetime_utc', 'N/A')
         latest_dt = event.get('latest_datetime_utc', 'N/A')
 
-        # Get current time for the AI to know what's "future"
-        from datetime import timezone as tz
         current_time_utc = datetime.now(tz.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
         min_start_time = (datetime.now(tz.utc) + timedelta(minutes=self.MIN_BUFFER_MINUTES)).strftime('%Y-%m-%dT%H:%M:%SZ')
 
@@ -483,58 +404,52 @@ Return ONLY the JSON array, no other text or markdown formatting.
         for attempt in range(self.max_retries):
             try:
                 print(f"[TIME_PROPOSAL] Calling Gemini API (attempt {attempt + 1}/{self.max_retries})")
-                
+
                 response = self.model.generate_content(prompt)
-                
+
                 if not response or not response.text:
                     raise Exception("Empty response from Gemini API")
-                
+
                 return response.text
-                
+
             except Exception as e:
                 error_str = str(e).lower()
-                
-                # Rate limit - wait and retry
+
                 if "quota" in error_str or "rate limit" in error_str:
                     if attempt < self.max_retries - 1:
                         wait_time = 2 ** attempt
                         print(f"[TIME_PROPOSAL] Rate limited, waiting {wait_time}s...")
                         time.sleep(wait_time)
                         continue
-                    else:
-                        raise Exception("Gemini API rate limit exceeded. Please try again later.")
-                
-                # Other errors - retry with backoff
+                    raise Exception("Gemini API rate limit exceeded. Please try again later.")
+
                 if attempt < self.max_retries - 1:
                     time.sleep(2 ** attempt)
                     continue
-                else:
-                    raise Exception(f"Gemini API error: {str(e)}")
-        
+
+                raise Exception(f"Gemini API error: {str(e)}")
+
         raise Exception("Failed to get response from Gemini API after all retries")
-    
+
     def _parse_gemini_response(self, response_text: str) -> List[Dict[str, Any]]:
         """Parse Gemini response into structured proposals."""
         try:
-            # Remove markdown code blocks if present
             cleaned_text = response_text.strip()
             if cleaned_text.startswith("```"):
-                # Remove first line with ```json or ```
                 lines = cleaned_text.split("\n")
                 cleaned_text = "\n".join(lines[1:])
             if cleaned_text.endswith("```"):
                 cleaned_text = cleaned_text[:-3]
-            
+
             cleaned_text = cleaned_text.strip()
-            
-            # Parse JSON
+
             proposals = json.loads(cleaned_text)
-            
+
             if not isinstance(proposals, list):
                 raise ValueError("Response is not a list")
-            
+
             return proposals
-            
+
         except json.JSONDecodeError as e:
             print(f"[ERROR] Failed to parse Gemini response: {str(e)}")
             print(f"[ERROR] Response text: {response_text[:500]}")
@@ -551,60 +466,51 @@ Return ONLY the JSON array, no other text or markdown formatting.
     ) -> int:
         """Calculate how many participants have conflicts for a given time slot."""
         conflicting_users = set()
-        
+
         for busy_slot in all_busy_slots:
             busy_start = datetime.fromisoformat(busy_slot["start_time_utc"].replace("Z", "+00:00"))
             busy_end = datetime.fromisoformat(busy_slot["end_time_utc"].replace("Z", "+00:00"))
-            
-            # Check for overlap
+
             if start_time < busy_end and end_time > busy_start:
                 conflicting_users.add(busy_slot["user_id"])
-        
+
         return len(conflicting_users)
-    
+
     def _validate_proposed_times(
         self,
         proposals: List[Dict[str, Any]],
         data: Dict[str, Any]
     ) -> List[Dict[str, Any]]:
         """Validate proposed times against event constraints and busy slots."""
-        from datetime import timezone
-
         event = data["event"]
-        all_busy_slots = data["all_busy_slots"]
         validated = []
 
-        # Calculate minimum allowed start time (current time + buffer)
-        now_utc = datetime.now(timezone.utc)
+        now_utc = datetime.now(tz.utc)
         min_start_time = now_utc + timedelta(minutes=self.MIN_BUFFER_MINUTES)
+
+        required_fields = ["start_time_utc", "end_time_utc", "reasoning", "conflicts"]
 
         for proposal in proposals:
             try:
-                # Validate required fields (score removed)
-                if not all(k in proposal for k in ["start_time_utc", "end_time_utc", "reasoning", "conflicts"]):
+                if not all(k in proposal for k in required_fields):
                     print(f"[WARNING] Skipping proposal with missing fields: {proposal}")
                     continue
 
-                # Parse times
                 start_time = datetime.fromisoformat(proposal["start_time_utc"].replace("Z", "+00:00"))
                 end_time = datetime.fromisoformat(proposal["end_time_utc"].replace("Z", "+00:00"))
 
-                # Validate time order
                 if start_time >= end_time:
                     print(f"[WARNING] Invalid time order: {proposal}")
                     continue
 
-                # Validate proposal is not too soon (must be at least MIN_BUFFER_MINUTES from now)
                 if start_time < min_start_time:
-                    print(f"[WARNING] Skipping proposal too close to current time: {start_time.isoformat()} (min: {min_start_time.isoformat()})")
+                    print(f"[WARNING] Skipping proposal too close to current time: {start_time.isoformat()}")
                     continue
 
-                # Validate duration
                 duration = (end_time - start_time).total_seconds() / 60
                 expected_duration = event.get("duration_minutes", 60)
-                if abs(duration - expected_duration) > 5:  # Allow 5 minute tolerance
+                if abs(duration - expected_duration) > 5:
                     print(f"[WARNING] Duration mismatch: expected {expected_duration}, got {duration}")
-                    # Adjust end time to match expected duration
                     end_time = start_time + timedelta(minutes=expected_duration)
                     proposal["end_time_utc"] = end_time.isoformat().replace("+00:00", "Z")
 
@@ -612,7 +518,6 @@ Return ONLY the JSON array, no other text or markdown formatting.
 
             except Exception as e:
                 print(f"[WARNING] Failed to validate proposal: {str(e)}")
-                continue
 
         return validated
     

@@ -1,27 +1,21 @@
-"""
-Event participant model for managing event participants.
-"""
+"""Event participant model for managing event participants."""
 from datetime import datetime
-from typing import Optional, Literal
+from typing import Literal, Optional
+
 from pydantic import BaseModel, Field
+
 
 class EventParticipant(BaseModel):
     """Event participant model for Supabase."""
 
-    event_id: str = Field(...)  # UUID of the event
-    user_id: str = Field(...)   # UUID of the user
-    status: Optional[str] = Field(default=None)  # Invitation status: 'pending', 'accepted', 'declined'
-    rsvp_status: Optional[Literal['going', 'maybe', 'not_going']] = Field(
-        default=None,
-        description="Participant RSVP status for attendance intent"
-    )
-    can_invite: bool = Field(
-        default=False,
-        description="Whether this participant can invite other users to the event"
-    )
+    event_id: str = Field(...)
+    user_id: str = Field(...)
+    status: Optional[str] = Field(default=None)
+    rsvp_status: Optional[Literal['going', 'maybe', 'not_going']] = Field(default=None)
+    can_invite: bool = Field(default=False)
     joined_at: datetime = Field(default_factory=datetime.utcnow)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'<EventParticipant event_id={self.event_id} user_id={self.user_id}>'
 
     def to_dict(self) -> dict:

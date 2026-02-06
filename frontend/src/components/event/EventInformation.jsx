@@ -12,86 +12,70 @@ import {
 } from "@chakra-ui/react";
 import { CalendarIcon, TimeIcon, ExternalLinkIcon, CopyIcon } from "@chakra-ui/icons";
 
-const EventInformation = ({ 
-  eventName = "", 
+const PRIMARY_COLOR = "#2B2B2B";
+
+async function copyToClipboard(text) {
+  if (navigator.clipboard && window.isSecureContext) {
+    await navigator.clipboard.writeText(text);
+    return true;
+  }
+
+  const textArea = document.createElement("textarea");
+  textArea.value = text;
+  textArea.style.cssText = "position:fixed;left:-999999px;top:-999999px;opacity:0";
+  textArea.setAttribute("readonly", "");
+  document.body.appendChild(textArea);
+  textArea.focus();
+  textArea.select();
+  textArea.setSelectionRange(0, 99999);
+
+  const successful = document.execCommand("copy");
+  document.body.removeChild(textArea);
+  return successful;
+}
+
+const EventInformation = ({
+  eventName = "",
   dateRange = "Oct 6, 2025 - Oct 23, 2025",
   timeWindow = "09:00:00 - 17:00:00",
   duration = "60 minutes",
-  onShareEvent 
+  onShareEvent
 }) => {
   const [isCopied, setIsCopied] = useState(false);
   const toast = useToast();
 
-  const copyToClipboard = async (text) => {
-    try {
-      // Try modern clipboard API first
-      if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(text);
-        return true;
-      } else {
-        // Fallback for older browsers or non-HTTPS
-        const textArea = document.createElement("textarea");
-        textArea.value = text;
-        textArea.style.position = "fixed";
-        textArea.style.left = "-999999px";
-        textArea.style.top = "-999999px";
-        textArea.style.opacity = "0";
-        textArea.setAttribute("readonly", "");
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-        textArea.setSelectionRange(0, 99999); // For mobile devices
-        
-        const successful = document.execCommand("copy");
-        document.body.removeChild(textArea);
-        return successful;
-      }
-    } catch (err) {
-      console.error("Failed to copy text: ", err);
-      return false;
-    }
-  };
+  const cardBg = useColorModeValue("white", "gray.800");
+  const borderColor = useColorModeValue(PRIMARY_COLOR, "gray.600");
+  const textColor = useColorModeValue("gray.600", "gray.300");
 
   const handleShareEvent = async () => {
     if (onShareEvent) {
-      console.log("[DEBUG] Using custom onShareEvent handler");
       onShareEvent();
+      return;
+    }
+
+    const success = await copyToClipboard(window.location.href);
+
+    if (success) {
+      setIsCopied(true);
+      toast({
+        title: "Event link copied!",
+        description: "The event link has been copied to your clipboard.",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+      setTimeout(() => setIsCopied(false), 2000);
     } else {
-      const url = window.location.href;
-      console.log("[DEBUG] Copying URL to clipboard:", url);
-      const success = await copyToClipboard(url);
-      
-      if (success) {
-        console.log("[DEBUG] Successfully copied to clipboard");
-        setIsCopied(true);
-        toast({
-          title: "Event link copied!",
-          description: "The event link has been copied to your clipboard.",
-          status: "success",
-          duration: 3000,
-          isClosable: true,
-        });
-        
-        // Reset the copied state after 2 seconds
-        setTimeout(() => setIsCopied(false), 2000);
-      } else {
-        console.log("[DEBUG] Failed to copy to clipboard");
-        toast({
-          title: "Copy failed",
-          description: "Unable to copy the link. Please try selecting and copying manually.",
-          status: "error",
-          duration: 5000,
-          isClosable: true,
-        });
-      }
+      toast({
+        title: "Copy failed",
+        description: "Unable to copy the link. Please try selecting and copying manually.",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
     }
   };
-
-  // Use website's color scheme
-  const cardBg = useColorModeValue("white", "gray.800");
-  const borderColor = useColorModeValue("#2B2B2B", "gray.600");
-  const primaryColor = "#2B2B2B";
-  const textColor = useColorModeValue("gray.600", "gray.300");
 
   return (
     <Box
@@ -106,14 +90,8 @@ const EventInformation = ({
       display="flex"
       flexDirection="column"
     >
-      {/* Header Section */}
       <Flex justify="space-between" align="flex-start" mb={5}>
-        <Text
-          fontSize="24px"
-          fontWeight="700"
-          color={primaryColor}
-          lineHeight="1.2"
-        >
+        <Text fontSize="24px" fontWeight="700" color={PRIMARY_COLOR} lineHeight="1.2">
           {eventName}
         </Text>
         <Button
@@ -121,53 +99,42 @@ const EventInformation = ({
           size="sm"
           variant="outline"
           borderColor={isCopied ? "green.300" : "gray.300"}
-          color={isCopied ? "green.600" : primaryColor}
+          color={isCopied ? "green.600" : PRIMARY_COLOR}
           bg={isCopied ? "green.50" : "white"}
           _hover={{
             bg: isCopied ? "green.100" : "gray.50",
             borderColor: isCopied ? "green.400" : "gray.400"
           }}
           onClick={handleShareEvent}
-          isLoading={false}
         >
           {isCopied ? "Copied!" : "Share Event"}
         </Button>
       </Flex>
 
-      {/* Main Content Section */}
       <VStack spacing={4} align="stretch" flex="1">
-        {/* Date Range */}
         <HStack spacing={3} align="flex-start">
-          <Icon as={CalendarIcon} w={4} h={4} color={primaryColor} mt={0.5} />
+          <Icon as={CalendarIcon} w={4} h={4} color={PRIMARY_COLOR} mt={0.5} />
           <VStack spacing={1} align="flex-start" flex="1">
-            <Text fontSize="sm" fontWeight="600" color={primaryColor}>
+            <Text fontSize="sm" fontWeight="600" color={PRIMARY_COLOR}>
               Date Range
             </Text>
-            <Text fontSize="sm" color={textColor}>
-              {dateRange}
-            </Text>
+            <Text fontSize="sm" color={textColor}>{dateRange}</Text>
           </VStack>
         </HStack>
 
-        {/* Time Window */}
         <HStack spacing={3} align="flex-start">
-          <Icon as={TimeIcon} w={4} h={4} color={primaryColor} mt={0.5} />
+          <Icon as={TimeIcon} w={4} h={4} color={PRIMARY_COLOR} mt={0.5} />
           <VStack spacing={1} align="flex-start" flex="1">
-            <Text fontSize="sm" fontWeight="600" color={primaryColor}>
+            <Text fontSize="sm" fontWeight="600" color={PRIMARY_COLOR}>
               Time Window
             </Text>
-            <Text fontSize="sm" color={textColor}>
-              {timeWindow}
-            </Text>
+            <Text fontSize="sm" color={textColor}>{timeWindow}</Text>
           </VStack>
         </HStack>
 
-        {/* Duration */}
-        <Box>
-          <Text fontSize="sm" color={textColor}>
-            Duration: {duration}
-          </Text>
-        </Box>
+        <Text fontSize="sm" color={textColor}>
+          Duration: {duration}
+        </Text>
       </VStack>
     </Box>
   );

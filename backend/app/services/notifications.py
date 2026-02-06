@@ -1,29 +1,27 @@
-"""
-Notifications service for managing user notifications.
-"""
+"""Notifications service for managing user notifications."""
 
+import os
 from datetime import datetime, timezone
-from typing import Optional, List, Dict, Any
+from typing import Any, Dict, List, Optional
+
+from supabase import create_client
+
 from ..models.notification import Notification
 from ..utils.supabase_client import get_supabase
-from supabase import create_client
-import os
 
 
 class NotificationsService:
     """Service for managing notifications."""
-    
+
     def __init__(self, access_token: Optional[str] = None):
         self.supabase = get_supabase(access_token)
-        
-        # Create service role client for operations that bypass RLS (like creating notifications for other users)
+
         supabase_url = os.getenv('SUPABASE_URL')
         supabase_service_key = os.getenv('SUPABASE_SERVICE_ROLE_KEY')
-        
+
         if supabase_url and supabase_service_key:
             self.service_role_client = create_client(supabase_url, supabase_service_key)
         else:
-            # Fallback to regular client if service role key not available
             self.service_role_client = self.supabase
     
     def create_notification(
@@ -35,20 +33,7 @@ class NotificationsService:
         event_id: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None
     ) -> Optional[Dict[str, Any]]:
-        """
-        Create a new notification for a user.
-        
-        Args:
-            user_id: User ID (UUID)
-            notification_type: Type of notification
-            title: Notification title
-            message: Notification message
-            event_id: Optional event ID
-            metadata: Optional additional context
-            
-        Returns:
-            Created notification data
-        """
+        """Create a new notification for a user."""
         try:
             notification = Notification(
                 user_id=user_id,
@@ -58,62 +43,47 @@ class NotificationsService:
                 message=message,
                 metadata=metadata or {}
             )
-            
-            # Use service role client to bypass RLS (allows creating notifications for any user)
+
             result = (
                 self.service_role_client.table("notifications")
                 .insert(notification.to_dict())
                 .execute()
             )
-            
+
             return result.data[0] if result.data else None
-        
+
         except Exception as e:
             print(f"Error creating notification: {str(e)}")
             return None
-    
+
     def get_user_notifications(
         self,
         user_id: str,
         unread_only: bool = False,
         limit: int = 50
     ) -> List[Dict[str, Any]]:
-        """
-        Get notifications for a user.
-        
-        Args:
-            user_id: User ID
-            unread_only: Only return unread notifications
-            limit: Maximum number of notifications to return
-            
-        Returns:
-            List of notifications
-        """
+        """Get notifications for a user."""
         try:
-            # Use service role client to bypass RLS for querying notifications
             query = (
                 self.service_role_client.table("notifications")
                 .select("*")
                 .eq("user_id", user_id)
             )
-            
+
             if unread_only:
                 query = query.eq("is_read", False)
-            
-            query = query.order("created_at", desc=True).limit(limit)
-            
-            result = query.execute()
-            
-            return result.data if result.data else []
-        
+
+            result = query.order("created_at", desc=True).limit(limit).execute()
+
+            return result.data or []
+
         except Exception as e:
             print(f"Error getting notifications: {str(e)}")
             return []
-    
+
     def get_unread_count(self, user_id: str) -> int:
         """Get count of unread notifications for a user."""
         try:
-            # Use service role client to bypass RLS
             result = (
                 self.service_role_client.table("notifications")
                 .select("id")
@@ -121,9 +91,9 @@ class NotificationsService:
                 .eq("is_read", False)
                 .execute()
             )
-            
+
             return result.count if result.count is not None else 0
-        
+
         except Exception as e:
             print(f"Error getting unread count: {str(e)}")
             return 0
@@ -131,7 +101,6 @@ class NotificationsService:
     def mark_as_read(self, notification_id: str, user_id: str) -> bool:
         """Mark a notification as read."""
         try:
-            # Use service_role_client to bypass RLS
             result = (
                 self.service_role_client.table("notifications")
                 .update({
@@ -142,67 +111,54 @@ class NotificationsService:
                 .eq("user_id", user_id)
                 .execute()
             )
-            
+
             return bool(result.data)
-        
+
         except Exception as e:
             print(f"Error marking notification as read: {str(e)}")
             return False
-    
+
     def mark_all_as_read(self, user_id: str) -> bool:
         """Mark all unread notifications as read for a user."""
         try:
-            # Use service_role_client to bypass RLS
-            result = (
-                self.service_role_client.table("notifications")
-                .update({
-                    "is_read": True,
-                    "read_at": datetime.now(timezone.utc).isoformat()
-                })
-                .eq("user_id", user_id)
-                .eq("is_read", False)
-                .execute()
-            )
-            
+            self.service_role_client.table("notifications").update({
+                "is_read": True,
+                "read_at": datetime.now(timezone.utc).isoformat()
+            }).eq("user_id", user_id).eq("is_read", False).execute()
+
             return True
-        
+
         except Exception as e:
             print(f"Error marking all as read: {str(e)}")
             return False
-    
-    def record_action(
-        self,
-        notification_id: str,
-        user_id: str,
-        action_type: str
-    ) -> bool:
+
+    def record_action(self, notification_id: str, user_id: str, action_type: str) -> bool:
         """Record user action on a notification."""
         try:
-            # Use service_role_client to bypass RLS
+            now = datetime.now(timezone.utc).isoformat()
             result = (
                 self.service_role_client.table("notifications")
                 .update({
                     "action_taken": True,
                     "action_type": action_type,
-                    "action_at": datetime.now(timezone.utc).isoformat(),
+                    "action_at": now,
                     "is_read": True,
-                    "read_at": datetime.now(timezone.utc).isoformat()
+                    "read_at": now
                 })
                 .eq("id", notification_id)
                 .eq("user_id", user_id)
                 .execute()
             )
-            
+
             return bool(result.data)
-        
+
         except Exception as e:
             print(f"Error recording action: {str(e)}")
             return False
-    
+
     def delete_notification(self, notification_id: str, user_id: str) -> bool:
         """Delete a notification."""
         try:
-            # Use service_role_client to bypass RLS
             result = (
                 self.service_role_client.table("notifications")
                 .delete()
@@ -210,21 +166,16 @@ class NotificationsService:
                 .eq("user_id", user_id)
                 .execute()
             )
-            
+
             return bool(result.data)
-        
+
         except Exception as e:
             print(f"Error deleting notification: {str(e)}")
             return False
-    
-    def get_notification(
-        self,
-        notification_id: str,
-        user_id: str
-    ) -> Optional[Dict[str, Any]]:
+
+    def get_notification(self, notification_id: str, user_id: str) -> Optional[Dict[str, Any]]:
         """Get a single notification."""
         try:
-            # Use service_role_client to bypass RLS for notification retrieval
             result = (
                 self.service_role_client.table("notifications")
                 .select("*")
@@ -232,15 +183,13 @@ class NotificationsService:
                 .eq("user_id", user_id)
                 .execute()
             )
-            
+
             return result.data[0] if result.data else None
-        
+
         except Exception as e:
             print(f"Error getting notification: {str(e)}")
             return None
-    
-    # Helper methods for creating specific notification types
-    
+
     def create_event_invitation_notification(
         self,
         user_id: str,

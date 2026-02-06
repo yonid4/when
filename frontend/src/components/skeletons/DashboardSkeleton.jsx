@@ -1,19 +1,18 @@
-import React from "react";
 import {
   Box,
-  Grid,
-  HStack,
-  VStack,
   Card,
   CardBody,
+  Grid,
+  HStack,
   Skeleton,
-  SkeletonText,
-  SkeletonCircle
+  SkeletonCircle,
+  VStack,
 } from "@chakra-ui/react";
-import { colors, shadows, components } from "../../styles/designSystem";
 
-// Skeleton for event cards in the dashboard
-const EventCardSkeleton = () => (
+import { colors, components, shadows } from "../../styles/designSystem.js";
+
+function EventCardSkeleton() {
+  return (
   <Card
     borderRadius="xl"
     border="1px solid"
@@ -38,10 +37,11 @@ const EventCardSkeleton = () => (
       <Skeleton height="32px" width="100%" borderRadius="md" />
     </CardBody>
   </Card>
-);
+  );
+}
 
-// Skeleton for stat rows in sidebar
-const StatRowSkeleton = () => (
+function StatRowSkeleton() {
+  return (
   <HStack
     py={3}
     borderLeft="3px solid"
@@ -54,10 +54,11 @@ const StatRowSkeleton = () => (
     <Skeleton height="14px" width="60px" flex={1} />
     <Skeleton height="20px" width="24px" />
   </HStack>
-);
+  );
+}
 
-// Skeleton for invitation cards in sidebar
-const InvitationCardSkeleton = () => (
+function InvitationCardSkeleton() {
+  return (
   <Card
     size="sm"
     borderLeft="3px solid"
@@ -78,17 +79,21 @@ const InvitationCardSkeleton = () => (
       </HStack>
     </CardBody>
   </Card>
-);
+  );
+}
 
-// Section header skeleton
-const SectionHeaderSkeleton = () => (
-  <HStack mb={4} spacing={2}>
-    <Skeleton height="12px" width="100px" />
-    <Skeleton height="18px" width="24px" borderRadius="full" />
-  </HStack>
-);
+function SectionHeaderSkeleton() {
+  return (
+    <HStack mb={4} spacing={2}>
+      <Skeleton height="12px" width="100px" />
+      <Skeleton height="18px" width="24px" borderRadius="full" />
+    </HStack>
+  );
+}
 
-const DashboardSkeleton = () => {
+function DashboardSkeleton() {
+  const eventCardKeys = [1, 2, 3];
+
   return (
     <Box h="calc(100vh - 64px)" bg={colors.bgPage} overflow="hidden">
       <Grid
@@ -96,14 +101,7 @@ const DashboardSkeleton = () => {
         gap={0}
         h="100%"
       >
-        {/* Main Content Area */}
-        <Box
-          overflowY="auto"
-          py={6}
-          px={{ base: 4, md: 6 }}
-          h="100%"
-        >
-          {/* Welcome Section */}
+        <Box overflowY="auto" py={6} px={{ base: 4, md: 6 }} h="100%">
           <Box mb={6}>
             <HStack justify="space-between" align="baseline">
               <Skeleton height="32px" width="280px" />
@@ -111,42 +109,31 @@ const DashboardSkeleton = () => {
             </HStack>
           </Box>
 
-          {/* Upcoming Events Section */}
           <Box mb={6}>
             <SectionHeaderSkeleton />
             <Grid
-              templateColumns={{
-                base: "1fr",
-                md: "repeat(2, 1fr)",
-                xl: "repeat(3, 1fr)"
-              }}
+              templateColumns={{ base: "1fr", md: "repeat(2, 1fr)", xl: "repeat(3, 1fr)" }}
               gap={4}
             >
-              {[1, 2, 3].map((i) => (
+              {eventCardKeys.map((i) => (
                 <EventCardSkeleton key={i} />
               ))}
             </Grid>
           </Box>
 
-          {/* In Progress Section */}
           <Box mb={6}>
             <SectionHeaderSkeleton />
             <Grid
-              templateColumns={{
-                base: "1fr",
-                md: "repeat(2, 1fr)",
-                xl: "repeat(3, 1fr)"
-              }}
+              templateColumns={{ base: "1fr", md: "repeat(2, 1fr)", xl: "repeat(3, 1fr)" }}
               gap={4}
             >
-              {[1, 2, 3].map((i) => (
+              {eventCardKeys.map((i) => (
                 <EventCardSkeleton key={i} />
               ))}
             </Grid>
           </Box>
         </Box>
 
-        {/* Sidebar */}
         <Box
           borderLeft="1px"
           borderColor="gray.200"
@@ -158,7 +145,6 @@ const DashboardSkeleton = () => {
           display={{ base: "none", lg: "block" }}
           shadow={shadows.sidebar}
         >
-          {/* Quick Stats */}
           <VStack align="stretch" spacing={3} mb={6}>
             <Skeleton height="12px" width="80px" mb={1} />
             <StatRowSkeleton />
@@ -166,7 +152,6 @@ const DashboardSkeleton = () => {
             <StatRowSkeleton />
           </VStack>
 
-          {/* Pending Invitations */}
           <VStack align="stretch" spacing={3}>
             <HStack justify="space-between">
               <Skeleton height="12px" width="70px" />
@@ -181,6 +166,6 @@ const DashboardSkeleton = () => {
       </Grid>
     </Box>
   );
-};
+}
 
 export default DashboardSkeleton;

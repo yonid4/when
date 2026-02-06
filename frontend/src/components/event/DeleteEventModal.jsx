@@ -1,5 +1,3 @@
-import { eventsAPI } from "../../services/apiService";
-
 import React, { useState } from "react";
 import {
   Modal,
@@ -14,15 +12,12 @@ import {
   Text,
   VStack,
   Box,
-  Alert,
-  AlertIcon,
-  AlertTitle,
-  AlertDescription,
   HStack,
   useToast
 } from "@chakra-ui/react";
 import { WarningIcon } from "@chakra-ui/icons";
 import { useNavigate } from "react-router-dom";
+import { eventsAPI } from "../../services/apiService";
 
 /**
  * Modal for confirming event deletion
@@ -240,7 +235,3 @@ const DeleteEventModal = ({ isOpen, onClose, event }) => {
 };
 
 export default DeleteEventModal;
-
-
-
-

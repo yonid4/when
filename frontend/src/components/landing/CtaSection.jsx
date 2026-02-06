@@ -1,51 +1,60 @@
-import React, { useRef } from "react";
+import { useRef } from "react";
+
 import {
   Box,
   Button,
   Container,
-  Heading,
-  Text,
-  VStack,
   Divider,
+  Flex,
   Grid,
+  Heading,
   HStack,
-  Flex
+  Text,
+  VStack
 } from "@chakra-ui/react";
 import { motion, useInView } from "framer-motion";
 import { FiArrowRight } from "react-icons/fi";
+
 import { colors, gradients } from "../../styles/designSystem";
 
 const MotionBox = motion(Box);
 
-// Footer Link component
-const FooterLink = ({ children, onClick }) => (
-  <Text
-    as="a"
-    cursor="pointer"
-    fontSize="sm"
-    color="gray.400"
-    _hover={{ color: "white" }}
-    onClick={onClick}
-  >
-    {children}
-  </Text>
-);
+function getAnimateState(reducedMotion, isInView) {
+  if (reducedMotion) return {};
+  if (isInView) return { opacity: 1, y: 0 };
+  return { opacity: 0, y: 30 };
+}
+
+function FooterLink({ children, onClick }) {
+  return (
+    <Text
+      as="a"
+      cursor="pointer"
+      fontSize="sm"
+      color="gray.400"
+      _hover={{ color: "white" }}
+      onClick={onClick}
+    >
+      {children}
+    </Text>
+  );
+}
 
 /**
  * Final CTA section with gradient background and footer.
  * Simple fade-up animation on scroll.
  */
-const CtaSection = ({ onSignIn, reducedMotion }) => {
+function CtaSection({ onSignIn, reducedMotion }) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
 
-  const scrollToAbout = (e) => {
+  function scrollToAbout(e) {
     e.preventDefault();
     const target = document.querySelector("#converging-section");
     if (target) {
       target.scrollIntoView({ behavior: "smooth", block: "start" });
     }
-  };
+  }
 
   return (
     <>
@@ -55,13 +64,7 @@ const CtaSection = ({ onSignIn, reducedMotion }) => {
           <MotionBox
             ref={ref}
             initial={reducedMotion ? {} : { opacity: 0, y: 30 }}
-            animate={
-              reducedMotion
-                ? {}
-                : isInView
-                ? { opacity: 1, y: 0 }
-                : { opacity: 0, y: 30 }
-            }
+            animate={getAnimateState(reducedMotion, isInView)}
             transition={{ duration: 0.6 }}
           >
             <VStack spacing={8} textAlign="center">
@@ -152,6 +155,6 @@ const CtaSection = ({ onSignIn, reducedMotion }) => {
       </Box>
     </>
   );
-};
+}
 
 export default CtaSection;

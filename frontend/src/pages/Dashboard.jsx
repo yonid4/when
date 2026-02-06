@@ -1,9 +1,15 @@
+import { eventsAPI, notificationsAPI } from "../services/apiService";
+import { useApiCall } from "../hooks/useApiCall";
+import { useAuth } from "../hooks/useAuth";
+import { useEnsureProfile } from "../hooks/useEnsureProfile";
+import { colors, shadows, components } from "../styles/designSystem";
+import { DashboardSkeleton } from "../components/skeletons";
+
 import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Box,
   Button,
-  Flex,
   Grid,
   Heading,
   Text,
@@ -16,8 +22,7 @@ import {
   IconButton,
   Collapse,
   useDisclosure,
-  Skeleton,
-  SkeletonText
+  Skeleton
 } from "@chakra-ui/react";
 import { motion } from "framer-motion";
 import {
@@ -30,12 +35,6 @@ import {
   FiPlus,
   FiInbox
 } from "react-icons/fi";
-import { eventsAPI, notificationsAPI } from "../services/apiService";
-import { useApiCall } from "../hooks/useApiCall";
-import { useAuth } from "../hooks/useAuth";
-import { useEnsureProfile } from "../hooks/useEnsureProfile";
-import { colors, shadows, components } from "../styles/designSystem";
-import { DashboardSkeleton } from "../components/skeletons";
 
 const MotionBox = motion(Box);
 const MotionCard = motion(Card);
@@ -77,11 +76,13 @@ const StatRow = ({ icon, label, value, borderColor, textColor }) => (
 );
 
 // Simplified event card component
-const EventCard = ({ event, onClick, isUpcoming }) => {
+const EventCard = ({ event, onClick }) => {
   const getStatusColor = (status) => {
-    if (status === "finalized") return "green";
-    if (status === "planning") return "blue";
-    return "gray";
+    const colorMap = {
+      finalized: "green",
+      planning: "blue"
+    };
+    return colorMap[status] || "gray";
   };
 
   const formatEventDate = (event) => {
@@ -391,21 +392,20 @@ const Dashboard = () => {
     );
   };
 
-  // Compute stats from real data
+  // Categorize events by status and timing
   const now = new Date();
 
-  const completedUpcomingEvents = events.filter(e => {
-    if (e.status !== "finalized") return false;
-    if (!e.finalized_end_time_utc) return false;
-    return new Date(e.finalized_end_time_utc) >= now;
-  });
+  const upcomingFinalizedEvents = events.filter(e =>
+    e.status === "finalized" &&
+    e.finalized_end_time_utc &&
+    new Date(e.finalized_end_time_utc) >= now
+  );
 
-  const inProgressEvents = events.filter(e => {
-    if (e.status === "cancelled") return false;
-    if (e.status === "finalized") return false;
-    if (!e.latest_datetime_utc) return true;
-    return new Date(e.latest_datetime_utc) >= now;
-  });
+  const inProgressEvents = events.filter(e =>
+    e.status !== "cancelled" &&
+    e.status !== "finalized" &&
+    (!e.latest_datetime_utc || new Date(e.latest_datetime_utc) >= now)
+  );
 
   const pastEvents = events.filter(e => {
     if (e.status === "cancelled") return false;
@@ -419,9 +419,9 @@ const Dashboard = () => {
   });
 
   const stats = {
-    completedUpcoming: completedUpcomingEvents.length,
+    upcoming: upcomingFinalizedEvents.length,
     inProgress: inProgressEvents.length,
-    pastEvents: pastEvents.length,
+    past: pastEvents.length,
     pendingInvitations: invitations.length
   };
 
@@ -478,7 +478,7 @@ const Dashboard = () => {
           >
             <SectionHeader
               title="Upcoming Events"
-              count={loading ? undefined : completedUpcomingEvents.length}
+              count={loading ? undefined : upcomingFinalizedEvents.length}
               colorScheme="green"
             />
             {loading ? (
@@ -494,7 +494,7 @@ const Dashboard = () => {
                   <EventCardSkeleton key={i} />
                 ))}
               </Grid>
-            ) : completedUpcomingEvents.length > 0 ? (
+            ) : upcomingFinalizedEvents.length > 0 ? (
               <Grid
                 templateColumns={{
                   base: "1fr",
@@ -503,7 +503,7 @@ const Dashboard = () => {
                 }}
                 gap={4}
               >
-                {completedUpcomingEvents.map((event, index) => (
+                {upcomingFinalizedEvents.map((event, index) => (
                   <MotionBox
                     key={event.id}
                     initial={{ opacity: 0, y: 10 }}
@@ -513,7 +513,6 @@ const Dashboard = () => {
                     <EventCard
                       event={event}
                       onClick={() => handleViewEvent(event.uid)}
-                      isUpcoming
                     />
                   </MotionBox>
                 ))}
@@ -683,7 +682,7 @@ const Dashboard = () => {
                 <StatRow
                   icon={FiCheck}
                   label="Upcoming"
-                  value={stats.completedUpcoming}
+                  value={stats.upcoming}
                   borderColor="green.400"
                   textColor="green.600"
                 />
@@ -697,7 +696,7 @@ const Dashboard = () => {
                 <StatRow
                   icon={FiCalendar}
                   label="Past Events"
-                  value={stats.pastEvents}
+                  value={stats.past}
                   borderColor="gray.400"
                   textColor="gray.600"
                 />

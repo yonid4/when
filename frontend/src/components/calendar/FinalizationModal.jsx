@@ -1,44 +1,38 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  Button,
-  Text,
-  Box,
-  VStack,
-  HStack,
-  Checkbox,
-  Avatar,
-  Alert,
   AlertIcon,
-  AlertTitle,
-  AlertDescription,
+  Avatar,
+  Box,
+  Button,
+  Checkbox,
   Heading,
+  HStack,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
+  Text,
+  VStack,
 } from "@chakra-ui/react";
-import { format, differenceInMinutes } from "date-fns";
+import { differenceInMinutes, format } from "date-fns";
 
 /**
- * Modal for finalizing an event with participant selection
- * Coordinator selects which participants to invite and whether to include Google Meet
+ * Modal for finalizing an event with participant selection.
+ * Coordinator selects which participants to invite and whether to include Google Meet.
  */
-const FinalizationModal = ({
+function FinalizationModal({
   isOpen,
   onClose,
   event,
   selectedSlot,
   participants,
   onFinalize,
-  isLoading
-}) => {
-  console.log('🔴 Participants:', participants);
-  console.log('🔴 First participant keys:', Object.keys(participants[0]));
-
+  isLoading,
+}) {
   const [selectedParticipants, setSelectedParticipants] = useState(
-    participants.map(p => p.user_id || p.id) // All selected by default, prefer user_id
+    participants.map((p) => p.user_id || p.id)
   );
   const [includeGoogleMeet, setIncludeGoogleMeet] = useState(true);
   const [error, setError] = useState(null);
@@ -47,16 +41,20 @@ const FinalizationModal = ({
 
   const duration = differenceInMinutes(selectedSlot.end, selectedSlot.start);
 
-  const handleParticipantToggle = (participantId, checked) => {
+  function getParticipantId(participant) {
+    return participant.user_id || participant.id;
+  }
+
+  function handleParticipantToggle(participantId, checked) {
     if (checked) {
       setSelectedParticipants([...selectedParticipants, participantId]);
     } else {
-      setSelectedParticipants(selectedParticipants.filter(id => id !== participantId));
+      setSelectedParticipants(selectedParticipants.filter((id) => id !== participantId));
     }
     setError(null);
-  };
+  }
 
-  const handleCreate = () => {
+  function handleCreate() {
     if (selectedParticipants.length === 0) {
       setError("Please select at least one participant");
       return;
@@ -66,14 +64,14 @@ const FinalizationModal = ({
       start_time_utc: selectedSlot.start.toISOString(),
       end_time_utc: selectedSlot.end.toISOString(),
       participant_ids: selectedParticipants,
-      include_google_meet: includeGoogleMeet
+      include_google_meet: includeGoogleMeet,
     });
-  };
+  }
 
-  const handleClose = () => {
+  function handleClose() {
     setError(null);
     onClose();
-  };
+  }
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} size="lg" closeOnOverlayClick={!isLoading}>
@@ -168,7 +166,6 @@ const FinalizationModal = ({
             </VStack>
           </Box>
 
-          {/* Participant Selection */}
           <Box mb={5}>
             <Heading size="sm" mb={2} fontWeight="bold">
               Select Participants to Invite
@@ -178,50 +175,49 @@ const FinalizationModal = ({
             </Text>
 
             <VStack align="stretch" spacing={2} maxH="300px" overflowY="auto" pr={2}>
-              {participants.map(participant => (
-                <Box
-                  key={participant.user_id || participant.id}
-                  p={3}
-                  borderWidth="2px"
-                  borderRadius="lg"
-                  borderColor={selectedParticipants.includes(participant.user_id || participant.id) ? "green.300" : "gray.200"}
-                  bg={selectedParticipants.includes(participant.user_id || participant.id) ? "green.50" : "white"}
-                  transition="all 0.3s"
-                  cursor="pointer"
-                  _hover={{
-                    borderColor: "green.400",
-                    bg: "green.50",
-                    transform: "translateX(4px)",
-                    boxShadow: "md"
-                  }}
-                  onClick={() => handleParticipantToggle(participant.user_id || participant.id, !selectedParticipants.includes(participant.user_id || participant.id))}
-                >
-                  <Checkbox
-                    isChecked={selectedParticipants.includes(participant.user_id || participant.id)}
-                    onChange={(e) => {
-                      e.stopPropagation();
-                      handleParticipantToggle(participant.user_id || participant.id, e.target.checked);
+              {participants.map((participant) => {
+                const participantId = getParticipantId(participant);
+                const isSelected = selectedParticipants.includes(participantId);
+                return (
+                  <Box
+                    key={participantId}
+                    p={3}
+                    borderWidth="2px"
+                    borderRadius="lg"
+                    borderColor={isSelected ? "green.300" : "gray.200"}
+                    bg={isSelected ? "green.50" : "white"}
+                    transition="all 0.3s"
+                    cursor="pointer"
+                    _hover={{
+                      borderColor: "green.400",
+                      bg: "green.50",
+                      transform: "translateX(4px)",
+                      boxShadow: "md",
                     }}
-                    width="100%"
-                    colorScheme="green"
+                    onClick={() => handleParticipantToggle(participantId, !isSelected)}
                   >
-                    <HStack spacing={3}>
-                      <Avatar
-                        size="sm"
-                        name={participant.name || participant.email}
-                      />
-                      <Box>
-                        <Text fontWeight="semibold">
-                          {participant.name || "Unknown User"}
-                        </Text>
-                        <Text fontSize="xs" color="gray.600">
-                          {participant.email}
-                        </Text>
-                      </Box>
-                    </HStack>
-                  </Checkbox>
-                </Box>
-              ))}
+                    <Checkbox
+                      isChecked={isSelected}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        handleParticipantToggle(participantId, e.target.checked);
+                      }}
+                      width="100%"
+                      colorScheme="green"
+                    >
+                      <HStack spacing={3}>
+                        <Avatar size="sm" name={participant.name || participant.email} />
+                        <Box>
+                          <Text fontWeight="semibold">{participant.name || "Unknown User"}</Text>
+                          <Text fontSize="xs" color="gray.600">
+                            {participant.email}
+                          </Text>
+                        </Box>
+                      </HStack>
+                    </Checkbox>
+                  </Box>
+                );
+              })}
             </VStack>
 
             <Box
@@ -238,7 +234,6 @@ const FinalizationModal = ({
             </Box>
           </Box>
 
-          {/* Google Meet Option */}
           <Box mb={4} p={4} bg="blue.50" borderRadius="lg" borderLeft="4px" borderColor="blue.400">
             <Checkbox
               isChecked={includeGoogleMeet}
@@ -246,7 +241,6 @@ const FinalizationModal = ({
               colorScheme="blue"
             >
               <HStack spacing={3}>
-                <Text fontSize="xl">📹</Text>
                 <Box>
                   <Text fontWeight="semibold">Include Google Meet video link</Text>
                   <Text fontSize="xs" color="gray.600">
@@ -257,20 +251,9 @@ const FinalizationModal = ({
             </Checkbox>
           </Box>
 
-          {/* Warning */}
-          <Box
-            p={4}
-            bg="yellow.50"
-            borderRadius="lg"
-            borderLeft="4px"
-            borderColor="yellow.400"
-          >
+          <Box p={4} bg="yellow.50" borderRadius="lg" borderLeft="4px" borderColor="yellow.400">
             <HStack align="start" spacing={3}>
-              <Box
-                p={2}
-                bgGradient="linear(to-r, yellow.400, orange.400)"
-                borderRadius="lg"
-              >
+              <Box p={2} bgGradient="linear(to-r, yellow.400, orange.400)" borderRadius="lg">
                 <AlertIcon color="white" />
               </Box>
               <Box flex="1">
@@ -278,8 +261,8 @@ const FinalizationModal = ({
                   This action cannot be undone
                 </Text>
                 <Text fontSize="xs" color="yellow.800">
-                  The event will be finalized and calendar invitations will be sent immediately.
-                  No further changes can be made to preferred times.
+                  The event will be finalized and calendar invitations will be sent immediately. No
+                  further changes can be made to preferred times.
                 </Text>
               </Box>
             </HStack>
@@ -288,12 +271,7 @@ const FinalizationModal = ({
 
         <ModalFooter bg="gray.50" py={5}>
           <HStack spacing={3}>
-            <Button 
-              variant="ghost" 
-              onClick={handleClose} 
-              isDisabled={isLoading}
-              _hover={{ bg: "gray.100" }}
-            >
+            <Button variant="ghost" onClick={handleClose} isDisabled={isLoading} _hover={{ bg: "gray.100" }}>
               Cancel
             </Button>
             <Button
@@ -308,11 +286,11 @@ const FinalizationModal = ({
               _hover={{
                 bgGradient: "linear(to-r, green.600, teal.600)",
                 transform: "translateY(-2px)",
-                boxShadow: "xl"
+                boxShadow: "xl",
               }}
               _disabled={{
                 opacity: 0.6,
-                cursor: "not-allowed"
+                cursor: "not-allowed",
               }}
               transition="all 0.3s"
             >
@@ -323,7 +301,7 @@ const FinalizationModal = ({
       </ModalContent>
     </Modal>
   );
-};
+}
 
 export default FinalizationModal;
 

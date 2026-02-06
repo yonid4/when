@@ -1,18 +1,20 @@
-import React, { useRef, useState } from "react";
+import { useRef, useState } from "react";
+
 import {
+  Badge,
   Box,
+  Card,
+  CardBody,
   Container,
   Heading,
-  Text,
-  VStack,
   HStack,
   Icon,
-  Badge,
-  Card,
-  CardBody
+  Text,
+  VStack
 } from "@chakra-ui/react";
-import { motion, useScroll, useMotionValueEvent, AnimatePresence } from "framer-motion";
-import { FiZap, FiClock, FiCalendar, FiCheck } from "react-icons/fi";
+import { AnimatePresence, motion, useMotionValueEvent, useScroll } from "framer-motion";
+import { FiCalendar, FiCheck, FiClock, FiZap } from "react-icons/fi";
+
 import { colors, gradients, shadows } from "../../styles/designSystem";
 
 const MotionBox = motion(Box);
@@ -90,8 +92,8 @@ const slides = [
   }
 ];
 
-// Visual component for proposals
-const ProposalsVisual = ({ items }) => (
+function ProposalsVisual({ items }) {
+  return (
   <VStack spacing={3} w="full">
     {items.map((item, index) => (
       <Card key={index} w="full" shadow={shadows.card}>
@@ -133,10 +135,11 @@ const ProposalsVisual = ({ items }) => (
       </Card>
     ))}
   </VStack>
-);
+  );
+}
 
-// Visual component for calendar
-const CalendarVisual = ({ items }) => (
+function CalendarVisual({ items }) {
+  return (
   <HStack spacing={2} justify="center">
     {items.map((day, dayIndex) => (
       <VStack key={dayIndex} spacing={1}>
@@ -164,41 +167,42 @@ const CalendarVisual = ({ items }) => (
       </VStack>
     ))}
   </HStack>
-);
+  );
+}
 
-// Visual component for confirmation
-const ConfirmVisual = ({ event }) => (
-  <Card shadow={shadows.cardHover} borderRadius="xl" overflow="hidden">
-    <Box h={2} bgGradient={gradients.forest} />
-    <CardBody p={5}>
-      <VStack spacing={3} align="start">
-        <HStack>
-          <Icon as={FiCheck} color={colors.secondary} boxSize={5} />
-          <Text fontWeight="bold" color={colors.secondary}>
-            Event Confirmed!
-          </Text>
-        </HStack>
-        <Heading size="md">{event.name}</Heading>
-        <HStack spacing={4} fontSize="sm" color="gray.600">
+function ConfirmVisual({ event }) {
+  return (
+    <Card shadow={shadows.cardHover} borderRadius="xl" overflow="hidden">
+      <Box h={2} bgGradient={gradients.forest} />
+      <CardBody p={5}>
+        <VStack spacing={3} align="start">
           <HStack>
-            <Icon as={FiCalendar} />
-            <Text>{event.time}</Text>
+            <Icon as={FiCheck} color={colors.secondary} boxSize={5} />
+            <Text fontWeight="bold" color={colors.secondary}>
+              Event Confirmed!
+            </Text>
           </HStack>
-        </HStack>
-        <HStack spacing={4} fontSize="sm" color="gray.600">
-          <HStack>
-            <Icon as={FiClock} />
-            <Text>{event.duration}</Text>
+          <Heading size="md">{event.name}</Heading>
+          <HStack spacing={4} fontSize="sm" color="gray.600">
+            <HStack>
+              <Icon as={FiCalendar} />
+              <Text>{event.time}</Text>
+            </HStack>
           </HStack>
-          <Text>{event.attendees} attendees</Text>
-        </HStack>
-      </VStack>
-    </CardBody>
-  </Card>
-);
+          <HStack spacing={4} fontSize="sm" color="gray.600">
+            <HStack>
+              <Icon as={FiClock} />
+              <Text>{event.duration}</Text>
+            </HStack>
+            <Text>{event.attendees} attendees</Text>
+          </HStack>
+        </VStack>
+      </CardBody>
+    </Card>
+  );
+}
 
-// Render the appropriate visual based on slide type
-const SlideVisual = ({ visual }) => {
+function SlideVisual({ visual }) {
   switch (visual.type) {
     case "proposals":
       return <ProposalsVisual items={visual.items} />;
@@ -209,14 +213,14 @@ const SlideVisual = ({ visual }) => {
     default:
       return null;
   }
-};
+}
 
 /**
  * Pinned feature section with sticky container and content crossfade.
  * Three slides that switch based on scroll progress.
  * Falls back to stacked cards on mobile or with reduced motion.
  */
-const PinnedFeatureSection = ({ reducedMotion, isMobile }) => {
+function PinnedFeatureSection({ reducedMotion, isMobile }) {
   const sectionRef = useRef(null);
   const [activeSlide, setActiveSlide] = useState(0);
 
@@ -373,6 +377,6 @@ const PinnedFeatureSection = ({ reducedMotion, isMobile }) => {
       </Box>
     </Box>
   );
-};
+}
 
 export default PinnedFeatureSection;

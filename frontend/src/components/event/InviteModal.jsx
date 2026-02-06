@@ -46,11 +46,7 @@ const InviteModal = ({ isOpen, onClose, eventUid, onSuccess }) => {
     setIsSending(true);
 
     try {
-      console.log(`[INVITE] Sending invitations to event ${eventUid}:`, emailList);
-
       const result = await eventsAPI.sendInvitations(eventUid, emailList);
-
-      console.log("[INVITE] Result:", result);
 
       if (result.summary.success > 0) {
         toast({
@@ -72,26 +68,10 @@ const InviteModal = ({ isOpen, onClose, eventUid, onSuccess }) => {
         });
       }
 
-      // Show detailed results in console for debugging
-      result.results.forEach(r => {
-        if (r.status === "error") {
-          console.error(`[INVITE] Failed to invite ${r.email}: ${r.message}`);
-        } else {
-          console.log(`[INVITE] Successfully invited ${r.email}`);
-        }
-      });
-
       setEmails("");
       onClose();
-
-      if (onSuccess) {
-        onSuccess();
-      }
-
+      onSuccess?.();
     } catch (error) {
-      console.error("[INVITE] Error sending invitations:", error);
-
-      // Extract more detailed error information
       const errorMessage = error.response?.data?.error
         || error.response?.data?.message
         || error.message

@@ -1,17 +1,14 @@
-import { useToast } from "@chakra-ui/react";
 import { useCallback } from "react";
 
-/**
- * Custom hook for standardized toast notifications
- * Provides consistent toast patterns across the application
- *
- * @example
- * const { showSuccess, showError, showWarning, showInfo } = useToastNotifications();
- *
- * showSuccess("Event created!", "Your event has been saved");
- * showError("Failed to save", error.message);
- */
-export const useToastNotifications = () => {
+import { useToast } from "@chakra-ui/react";
+
+const RSVP_STATUS_MESSAGES = {
+  going: "confirmed your attendance",
+  maybe: "marked yourself as tentative",
+  not_going: "declined",
+};
+
+export function useToastNotifications() {
   const toast = useToast();
 
   const showSuccess = useCallback(
@@ -23,7 +20,7 @@ export const useToastNotifications = () => {
         duration: 3000,
         isClosable: true,
         position: "top",
-        ...options
+        ...options,
       });
     },
     [toast]
@@ -38,7 +35,7 @@ export const useToastNotifications = () => {
         duration: 5000,
         isClosable: true,
         position: "top",
-        ...options
+        ...options,
       });
     },
     [toast]
@@ -53,7 +50,7 @@ export const useToastNotifications = () => {
         duration: 4000,
         isClosable: true,
         position: "top",
-        ...options
+        ...options,
       });
     },
     [toast]
@@ -68,56 +65,34 @@ export const useToastNotifications = () => {
         duration: 3000,
         isClosable: true,
         position: "top",
-        ...options
+        ...options,
       });
     },
     [toast]
   );
 
-  /**
-   * Show a toast for RSVP status changes
-   */
   const showRsvpUpdate = useCallback(
     (status, isDemo = false) => {
-      const statusMessages = {
-        going: "confirmed your attendance",
-        maybe: "marked yourself as tentative",
-        not_going: "declined"
-      };
-
       showSuccess(
         isDemo ? "RSVP Updated (Demo)" : "RSVP Updated",
-        `You have ${statusMessages[status]} for this event.`
+        `You have ${RSVP_STATUS_MESSAGES[status]} for this event.`
       );
     },
     [showSuccess]
   );
 
-  /**
-   * Show a toast for invitation results
-   */
   const showInvitationResult = useCallback(
     (successCount, failedCount) => {
       if (successCount > 0) {
-        showSuccess(
-          "Invitations sent!",
-          `Successfully sent ${successCount} invitation(s)`
-        );
+        showSuccess("Invitations sent!", `Successfully sent ${successCount} invitation(s)`);
       }
-
       if (failedCount > 0) {
-        showWarning(
-          "Some invitations failed",
-          `${failedCount} invitation(s) could not be sent`
-        );
+        showWarning("Some invitations failed", `${failedCount} invitation(s) could not be sent`);
       }
     },
     [showSuccess, showWarning]
   );
 
-  /**
-   * Show a toast for clipboard operations
-   */
   const showCopied = useCallback(
     (itemName = "Link") => {
       showSuccess(`${itemName} copied!`, undefined, { duration: 2000 });
@@ -125,32 +100,20 @@ export const useToastNotifications = () => {
     [showSuccess]
   );
 
-  /**
-   * Show a toast for loading states
-   */
   const showLoading = useCallback(
-    (title, description) => {
-      return toast({
+    (title, description) =>
+      toast({
         title,
         description,
         status: "loading",
         duration: null,
         isClosable: false,
-        position: "top"
-      });
-    },
+        position: "top",
+      }),
     [toast]
   );
 
-  /**
-   * Close a specific toast by ID
-   */
-  const closeToast = useCallback(
-    (toastId) => {
-      toast.close(toastId);
-    },
-    [toast]
-  );
+  const closeToast = useCallback((toastId) => toast.close(toastId), [toast]);
 
   return {
     toast,
@@ -162,8 +125,8 @@ export const useToastNotifications = () => {
     showInvitationResult,
     showCopied,
     showLoading,
-    closeToast
+    closeToast,
   };
-};
+}
 
 export default useToastNotifications;

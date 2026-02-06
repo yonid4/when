@@ -1,26 +1,24 @@
-import React from "react";
 import {
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  Button,
-  Text,
   Box,
+  Button,
   HStack,
   Link,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
+  Text,
   VStack,
-  Icon,
 } from "@chakra-ui/react";
 import { CheckCircleIcon, ExternalLinkIcon } from "@chakra-ui/icons";
 
 /**
- * Success modal shown after event finalization
- * Displays confirmation, Google Calendar link, and Google Meet link (if applicable)
+ * Success modal shown after event finalization.
+ * Displays confirmation, Google Calendar link, and Google Meet link (if applicable).
  */
-const SuccessModal = ({ isOpen, onClose, result, event }) => {
+function SuccessModal({ isOpen, onClose, result }) {
   if (!result) return null;
 
   return (
@@ -30,11 +28,9 @@ const SuccessModal = ({ isOpen, onClose, result, event }) => {
         <ModalHeader>
           <HStack spacing={3}>
             <CheckCircleIcon color="green.500" boxSize={8} />
-            <Box>
-              <Text fontSize="xl" fontWeight="bold">
-                Event Finalized Successfully!
-              </Text>
-            </Box>
+            <Text fontSize="xl" fontWeight="bold">
+              Event Finalized Successfully!
+            </Text>
           </HStack>
         </ModalHeader>
 
@@ -44,15 +40,14 @@ const SuccessModal = ({ isOpen, onClose, result, event }) => {
               Calendar invitations have been sent to all selected participants via email.
             </Text>
 
-            {/* Google Meet Link */}
             {result.meet_link && (
               <Box p={4} bg="blue.50" borderRadius="md" borderWidth="1px" borderColor="blue.200">
                 <Text fontWeight="semibold" mb={2} color="blue.800">
-                  📹 Google Meet Link:
+                  Google Meet Link:
                 </Text>
-                <Link 
-                  href={result.meet_link} 
-                  isExternal 
+                <Link
+                  href={result.meet_link}
+                  isExternal
                   color="blue.600"
                   fontSize="sm"
                   wordBreak="break-all"
@@ -63,7 +58,6 @@ const SuccessModal = ({ isOpen, onClose, result, event }) => {
               </Box>
             )}
 
-            {/* Google Calendar Link */}
             {result.html_link && (
               <Button
                 as="a"
@@ -79,16 +73,18 @@ const SuccessModal = ({ isOpen, onClose, result, event }) => {
               </Button>
             )}
 
-            {/* Info Box */}
             <Box p={3} bg="gray.50" borderRadius="md">
-              <Text fontSize="sm" color="gray.700">
-                <strong>Next Steps:</strong>
+              <Text fontSize="sm" color="gray.700" fontWeight="bold">
+                Next Steps:
               </Text>
               <Text fontSize="sm" color="gray.600" mt={1}>
-                • Participants will receive email invitations<br />
-                • They can accept/decline from their email<br />
-                • The event will appear on their calendars<br />
-                • You can manage the event from Google Calendar
+                {"\u2022"} Participants will receive email invitations
+                <br />
+                {"\u2022"} They can accept/decline from their email
+                <br />
+                {"\u2022"} The event will appear on their calendars
+                <br />
+                {"\u2022"} You can manage the event from Google Calendar
               </Text>
             </Box>
           </VStack>
@@ -102,7 +98,7 @@ const SuccessModal = ({ isOpen, onClose, result, event }) => {
       </ModalContent>
     </Modal>
   );
-};
+}
 
 export default SuccessModal;
 

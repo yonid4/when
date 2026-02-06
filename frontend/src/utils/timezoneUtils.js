@@ -1,73 +1,55 @@
 /**
  * Timezone utility functions for converting between UTC and local time
- * Following .aimrules guidelines: store in UTC, display in local timezone
+ * Store in UTC, display in local timezone
  */
 
 /**
  * Get user's current timezone (IANA format)
- * @returns {string} - IANA timezone identifier (e.g., "America/New_York")
  */
-export const getUserTimezone = () => {
+export function getUserTimezone() {
   return Intl.DateTimeFormat().resolvedOptions().timeZone;
-};
+}
 
 /**
  * Convert UTC datetime string to local datetime-local input format
- * @param {string} utcDatetimeStr - ISO datetime string in UTC (e.g., "2025-12-24T14:00:00Z")
- * @returns {string} - Local datetime in format "YYYY-MM-DDTHH:mm" for datetime-local input
  */
-export const utcToLocalDatetimeInput = (utcDatetimeStr) => {
+export function utcToLocalDatetimeInput(utcDatetimeStr) {
   if (!utcDatetimeStr) return "";
 
   const date = new Date(utcDatetimeStr);
-  // Get local datetime in ISO format and remove seconds/milliseconds
-  const localIso = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60000)
     .toISOString()
     .slice(0, 16);
-  return localIso;
-};
+}
 
 /**
  * Convert local datetime-local input to UTC ISO string
- * @param {string} localDatetimeStr - Local datetime from input (e.g., "2025-12-24T14:00")
- * @returns {string} - UTC ISO string (e.g., "2025-12-24T19:00:00Z")
  */
-export const localDatetimeInputToUtc = (localDatetimeStr) => {
+export function localDatetimeInputToUtc(localDatetimeStr) {
   if (!localDatetimeStr) return null;
-
-  const date = new Date(localDatetimeStr);
-  return date.toISOString();
-};
+  return new Date(localDatetimeStr).toISOString();
+}
 
 /**
- * Convert separate date/time to UTC (for old format support)
- * @param {string} dateStr - Date string (e.g., "2025-12-24")
- * @param {string} timeStr - Time string (e.g., "14:00" or "14:00:00")
- * @returns {string} - UTC ISO string
+ * Convert separate date/time to UTC (for legacy format support)
  */
-export const dateTimeToUtc = (dateStr, timeStr) => {
+export function dateTimeToUtc(dateStr, timeStr) {
   if (!dateStr || !timeStr) return null;
-
-  const localDatetime = `${dateStr}T${timeStr}`;
-  return localDatetimeInputToUtc(localDatetime);
-};
+  return localDatetimeInputToUtc(`${dateStr}T${timeStr}`);
+}
 
 /**
- * Format timezone for display
- * @param {string} timezone - IANA timezone identifier
- * @returns {string} - Formatted timezone (e.g., "EST", "PST")
+ * Format timezone for display (e.g., "EST", "PST")
  */
-export const formatTimezone = (timezone) => {
+export function formatTimezone(timezone) {
   try {
-    const now = new Date();
     const formatter = new Intl.DateTimeFormat("en-US", {
       timeZone: timezone,
       timeZoneName: "short"
     });
-    const parts = formatter.formatToParts(now);
-    const tz = parts.find(p => p.type === "timeZoneName")?.value;
-    return tz || timezone;
+    const parts = formatter.formatToParts(new Date());
+    return parts.find(p => p.type === "timeZoneName")?.value || timezone;
   } catch {
     return timezone;
   }
-};
+}

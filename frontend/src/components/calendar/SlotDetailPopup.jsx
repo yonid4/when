@@ -1,46 +1,51 @@
-import React, { useState } from "react";
+import { useRef, useState } from "react";
 import {
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  Button,
-  Text,
-  VStack,
   AlertDialog,
   AlertDialogBody,
+  AlertDialogContent,
   AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogContent,
   AlertDialogOverlay,
+  Button,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
+  Text,
+  VStack,
 } from "@chakra-ui/react";
 import { format } from "date-fns";
 
 /**
- * Popup shown when clicking on a preferred slot density block
- * Shows all users who selected that time and allows current user to remove their selection
+ * Popup shown when clicking on a preferred slot density block.
+ * Shows all users who selected that time and allows current user to remove their selection.
  */
-const SlotDetailPopup = ({ isOpen, onClose, event, onDeleteInRange, currentUserId }) => {
+function SlotDetailPopup({ isOpen, onClose, event, onDeleteInRange, currentUserId }) {
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
-  const cancelRef = React.useRef();
+  const cancelRef = useRef();
 
   if (!event) return null;
 
   const userNames = event.resource?.userNames || [];
   const userIds = event.resource?.userIds || [];
   const currentUserSelected = currentUserId && userIds.includes(currentUserId);
+  const personLabel = userNames.length === 1 ? "person" : "people";
 
-  const handleDeleteClick = () => {
+  function handleDeleteClick() {
     setShowConfirmDelete(true);
-  };
+  }
 
-  const handleConfirmDelete = async () => {
+  function closeConfirmDialog() {
+    setShowConfirmDelete(false);
+  }
+
+  async function handleConfirmDelete() {
     setShowConfirmDelete(false);
     await onDeleteInRange(event.start, event.end);
     onClose();
-  };
+  }
 
   return (
     <>
@@ -57,13 +62,13 @@ const SlotDetailPopup = ({ isOpen, onClose, event, onDeleteInRange, currentUserI
             </Text>
 
             <Text fontSize="sm" color="gray.600" mb={2}>
-              Selected by {userNames.length} {userNames.length === 1 ? "person" : "people"}:
+              Selected by {userNames.length} {personLabel}:
             </Text>
 
             <VStack align="stretch" spacing={1}>
               {userNames.map((name, index) => (
                 <Text key={index} fontSize="sm" color="gray.700">
-                  • {name}
+                  {"\u2022"} {name}
                 </Text>
               ))}
             </VStack>
@@ -81,11 +86,10 @@ const SlotDetailPopup = ({ isOpen, onClose, event, onDeleteInRange, currentUserI
         </ModalContent>
       </Modal>
 
-      {/* Delete Confirmation Dialog */}
       <AlertDialog
         isOpen={showConfirmDelete}
         leastDestructiveRef={cancelRef}
-        onClose={() => setShowConfirmDelete(false)}
+        onClose={closeConfirmDialog}
         isCentered
       >
         <AlertDialogOverlay>
@@ -100,7 +104,7 @@ const SlotDetailPopup = ({ isOpen, onClose, event, onDeleteInRange, currentUserI
             </AlertDialogBody>
 
             <AlertDialogFooter>
-              <Button ref={cancelRef} onClick={() => setShowConfirmDelete(false)}>
+              <Button ref={cancelRef} onClick={closeConfirmDialog}>
                 Cancel
               </Button>
               <Button colorScheme="red" onClick={handleConfirmDelete} ml={3}>
@@ -112,7 +116,7 @@ const SlotDetailPopup = ({ isOpen, onClose, event, onDeleteInRange, currentUserI
       </AlertDialog>
     </>
   );
-};
+}
 
 export default SlotDetailPopup;
 

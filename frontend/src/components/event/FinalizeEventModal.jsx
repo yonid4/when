@@ -14,7 +14,6 @@ import {
   Input,
   Box,
   Avatar,
-  IconButton,
   Divider,
   useToast,
   Badge,
@@ -22,7 +21,6 @@ import {
   useColorModeValue
 } from "@chakra-ui/react";
 import { FiCheck, FiX, FiCalendar, FiVideo } from "react-icons/fi";
-import { colors } from "../../styles/designSystem";
 
 /**
  * Modal for finalizing an event with a selected time
@@ -41,7 +39,6 @@ const FinalizeEventModal = ({
   const [isLoading, setIsLoading] = useState(false);
   const toast = useToast();
 
-  const cardBg = useColorModeValue("white", "gray.800");
   const borderColor = useColorModeValue("gray.200", "gray.700");
   const hoverBg = useColorModeValue("gray.50", "gray.700");
   const selectedBg = useColorModeValue("purple.50", "purple.900");
@@ -81,13 +78,11 @@ const FinalizeEventModal = ({
   };
 
   const toggleParticipant = (participantId) => {
-    setSelectedParticipants(prev => {
-      if (prev.includes(participantId)) {
-        return prev.filter(id => id !== participantId);
-      } else {
-        return [...prev, participantId];
-      }
-    });
+    setSelectedParticipants(prev =>
+      prev.includes(participantId)
+        ? prev.filter(id => id !== participantId)
+        : [...prev, participantId]
+    );
   };
 
   const handleFinalize = async () => {

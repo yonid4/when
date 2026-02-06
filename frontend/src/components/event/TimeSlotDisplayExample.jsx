@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Box, Button, HStack, VStack, Text } from '@chakra-ui/react';
 import TimeSlotDisplay from './TimeSlotDisplay';
 import CalendarView from '../calendar/CalendarView';

@@ -1,17 +1,10 @@
-import React from "react";
 import { Card, CardBody, CardHeader, Heading, Text, VStack } from "@chakra-ui/react";
 
-/**
- * FormCard - Styled card container for form sections
- *
- * @param {Object} props
- * @param {string} props.title - Card title
- * @param {string} props.subtitle - Optional subtitle/description
- * @param {React.ReactNode} props.children - Card content
- * @param {string} props.bg - Background color
- * @param {Object} props.cardProps - Additional props for Card component
- */
-const FormCard = ({ title, subtitle, children, bg = "white", ...cardProps }) => {
+function FormCard({ title, subtitle, children, bg = "white", ...cardProps }) {
+  const hasHeader = title || subtitle;
+  const headerPaddingBottom = subtitle ? 2 : 4;
+  const bodyPaddingTop = hasHeader ? 0 : 4;
+
   return (
     <Card
       bg={bg}
@@ -21,8 +14,8 @@ const FormCard = ({ title, subtitle, children, bg = "white", ...cardProps }) => 
       shadow="sm"
       {...cardProps}
     >
-      {(title || subtitle) && (
-        <CardHeader pb={subtitle ? 2 : 4}>
+      {hasHeader && (
+        <CardHeader pb={headerPaddingBottom}>
           <VStack align="start" spacing={1}>
             {title && (
               <Heading size="md" color="gray.800">
@@ -37,9 +30,9 @@ const FormCard = ({ title, subtitle, children, bg = "white", ...cardProps }) => 
           </VStack>
         </CardHeader>
       )}
-      <CardBody pt={title || subtitle ? 0 : 4}>{children}</CardBody>
+      <CardBody pt={bodyPaddingTop}>{children}</CardBody>
     </Card>
   );
-};
+}
 
 export default FormCard;
