@@ -47,13 +47,14 @@ def time_proposal_service(mock_supabase, mock_genai):
     """Create TimeProposalService with mocked dependencies."""
     mock_gen, mock_model = mock_genai
 
-    # Mock the get_supabase function and genai module
+    # Mock the get_supabase function, genai module, and Config settings
     with patch("app.services.time_proposal.get_supabase", return_value=mock_supabase), \
          patch("app.services.time_proposal.GENAI_AVAILABLE", True), \
-         patch.dict("os.environ", {
-             "GEMINI_API_KEY": "test-gemini-key",
-             "GEMINI_MODEL": "gemini-pro"
-         }):
+         patch("app.services.time_proposal.Config") as mock_config:
+        mock_config.GEMINI_API_KEY = "test-gemini-key"
+        mock_config.GEMINI_MODEL = "gemini-pro"
+        mock_config.GEMINI_MAX_RETRIES = 3
+
         # Import genai mock after patching GENAI_AVAILABLE
         import app.services.time_proposal as tp_module
         tp_module.genai = mock_gen

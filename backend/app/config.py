@@ -24,9 +24,17 @@ class Config:
     GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
     GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "https://www.when-now.com/api/auth/google/callback")
     FRONTEND_URL = os.getenv("FRONTEND_URL", "https://www.when-now.com")
-    
-    # # Goole API KEY
-    # GOOGLE_API_KEY = 
+
+    # Gemini API Settings
+    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+    GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+    GEMINI_MAX_RETRIES = os.getenv("GEMINI_MAX_RETRIES", 3)
+
+    # Microsoft/Outlook Calendar API settings
+    MICROSOFT_CLIENT_ID = os.getenv("MICROSOFT_CLIENT_ID")
+    MICROSOFT_CLIENT_SECRET = os.getenv("MICROSOFT_CLIENT_SECRET")
+    MICROSOFT_TENANT_ID = os.getenv("MICROSOFT_TENANT_ID", "common")
+    MICROSOFT_REDIRECT_URI = os.getenv("MICROSOFT_REDIRECT_URI")
 
     # Supabase settings
     SUPABASE_URL = os.getenv("SUPABASE_URL")
