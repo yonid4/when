@@ -3,21 +3,36 @@ Microsoft/Outlook Calendar service for handling OAuth and calendar operations.
 
 Notes:
 - Uses MSAL (Microsoft Authentication Library) for OAuth2 flows.
-- Credentials are stored on the `profiles` table under `microsoft_auth_token`.
-- Also stored in `calendar_accounts` with provider="microsoft".
+- Credentials are stored on the ``profiles`` table under ``microsoft_auth_token``
+  and in ``calendar_accounts`` with provider="microsoft".
 - Uses requests to call Microsoft Graph API directly.
 """
 
 import logging
+import os
 import time
+from datetime import datetime
 from typing import Optional
 
 import requests
 from flask import current_app
 from msal import ConfidentialClientApplication
+from supabase import create_client
+
+from ..utils.supabase_client import get_supabase
 
 SCOPES = ["Calendars.ReadWrite", "User.Read", "offline_access"]
 GRAPH_API_BASE = "https://graph.microsoft.com/v1.0"
+
+
+def _get_service_role_client():
+    """Get a Supabase client with service-role privileges, falling back to anon."""
+    supabase_url = os.getenv("SUPABASE_URL")
+    service_role_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+
+    if supabase_url and service_role_key:
+        return create_client(supabase_url, service_role_key)
+    return get_supabase()
 
 
 def create_flow() -> ConfidentialClientApplication:
@@ -38,16 +53,15 @@ def create_flow() -> ConfidentialClientApplication:
     )
 
 
-def get_auth_url() -> str:
+def get_auth_url(state: str | None = None) -> str:
     """Generate the Microsoft OAuth2 authorization URL."""
     try:
         msal_app = create_flow()
         redirect_uri = current_app.config.get("MICROSOFT_REDIRECT_URI")
-        auth_url = msal_app.get_authorization_request_url(
-            scopes=SCOPES,
-            redirect_uri=redirect_uri,
-        )
-        return auth_url
+        kwargs = {"scopes": SCOPES, "redirect_uri": redirect_uri}
+        if state:
+            kwargs["state"] = state
+        return msal_app.get_authorization_request_url(**kwargs)
     except Exception as e:
         raise ValueError(f"Failed to generate auth URL: {str(e)}")
 
@@ -75,34 +89,13 @@ def get_credentials_from_code(code: str) -> dict:
             "scope": result.get("scope", ""),
             "token_type": result.get("token_type", "Bearer"),
         }
-    except ValueError:
-        raise
     except Exception as e:
-        raise ValueError(f"Failed to get credentials: {str(e)}")
+        raise ValueError(f"Failed to get credentials: {e}") from e
 
 
 def store_credentials(user_id: str, credentials: dict, provider_email: str = None) -> None:
-    """
-    Store user's Microsoft credentials securely.
-
-    Stores in both calendar_accounts (new) and profiles.microsoft_auth_token (legacy)
-    for backwards compatibility during migration.
-    """
-    import os
-    from datetime import datetime
-
-    from supabase import create_client
-
-    from ..utils.supabase_client import get_supabase
-
-    supabase_url = os.getenv("SUPABASE_URL")
-    supabase_service_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-
-    if supabase_url and supabase_service_key:
-        supabase = create_client(supabase_url, supabase_service_key)
-    else:
-        supabase = get_supabase()
-
+    """Store Microsoft credentials in both profiles (legacy) and calendar_accounts."""
+    supabase = _get_service_role_client()
     creds_dict = credentials if isinstance(credentials, dict) else {}
 
     check_response = (
@@ -113,7 +106,7 @@ def store_credentials(user_id: str, credentials: dict, provider_email: str = Non
     )
 
     if not check_response.data:
-        logging.error(f"[ERROR] No profile found for user {user_id}")
+        logging.error(f"No profile found for user {user_id}")
         return
 
     profile = check_response.data[0]
@@ -123,7 +116,7 @@ def store_credentials(user_id: str, credentials: dict, provider_email: str = Non
             "microsoft_auth_token": creds_dict
         }).eq("id", user_id).execute()
     except Exception as e:
-        logging.error(f"[ERROR] Failed to store credentials in profiles: {e}")
+        logging.error(f"Failed to store credentials in profiles: {e}")
 
     try:
         email = provider_email or profile.get("email")
@@ -152,30 +145,12 @@ def store_credentials(user_id: str, credentials: dict, provider_email: str = Non
                     "connected_at": datetime.utcnow().isoformat(),
                 }).execute()
     except Exception as e:
-        logging.debug(f"[DEBUG] calendar_accounts storage failed (may not exist yet): {e}")
+        logging.debug(f"calendar_accounts storage failed (may not exist yet): {e}")
 
 
 def get_stored_credentials(user_id: str) -> Optional[dict]:
-    """
-    Retrieve stored Microsoft credentials for a user.
-
-    First checks calendar_accounts table (new multi-calendar system),
-    then falls back to profiles.microsoft_auth_token (legacy).
-    """
-    import os
-
-    from supabase import create_client
-
-    from ..utils.supabase_client import get_supabase
-
-    supabase_url = os.getenv("SUPABASE_URL")
-    supabase_service_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-
-    if supabase_url and supabase_service_key:
-        supabase = create_client(supabase_url, supabase_service_key)
-    else:
-        supabase = get_supabase()
-
+    """Retrieve stored Microsoft credentials, checking calendar_accounts first, then profiles."""
+    supabase = _get_service_role_client()
     creds_dict = None
 
     try:
@@ -210,22 +185,17 @@ def get_stored_credentials(user_id: str) -> Optional[dict]:
 
 
 def refresh_credentials_if_needed(credentials: dict) -> dict:
-    """Refresh credentials if they are expired and have a refresh token."""
-    if not credentials:
+    """Refresh credentials if expired. Returns credentials unchanged if still valid."""
+    if not credentials or not credentials.get("refresh_token"):
         return credentials
 
-    expires_at = credentials.get("expires_at", 0)
-    if time.time() < expires_at:
-        return credentials
-
-    refresh_token = credentials.get("refresh_token")
-    if not refresh_token:
+    if time.time() < credentials.get("expires_at", 0):
         return credentials
 
     try:
         msal_app = create_flow()
         result = msal_app.acquire_token_by_refresh_token(
-            refresh_token,
+            credentials["refresh_token"],
             scopes=SCOPES,
         )
 
@@ -241,7 +211,7 @@ def refresh_credentials_if_needed(credentials: dict) -> dict:
 
         return credentials
     except Exception as e:
-        raise ValueError(f"Failed to refresh credentials: {str(e)}")
+        raise ValueError(f"Failed to refresh credentials: {e}") from e
 
 
 def validate_credentials(credentials: dict) -> bool:
@@ -268,17 +238,11 @@ def validate_credentials(credentials: dict) -> bool:
 
 
 def get_calendar_service(credentials: dict, user_id: str) -> dict:
-    """
-    Prepare Microsoft calendar credentials for Graph API calls.
-
-    Refreshes if needed, stores updated creds, and returns
-    a dict with access_token and a helper function for API calls.
-    """
+    """Refresh credentials, persist them, and return a Graph API request helper."""
     credentials = refresh_credentials_if_needed(credentials)
     store_credentials(user_id, credentials)
 
     def graph_request(method: str, endpoint: str, **kwargs) -> requests.Response:
-        """Make an authenticated request to Microsoft Graph API."""
         headers = kwargs.pop("headers", {})
         headers["Authorization"] = f"Bearer {credentials['access_token']}"
         headers.setdefault("Content-Type", "application/json")
@@ -292,15 +256,8 @@ def get_calendar_service(credentials: dict, user_id: str) -> dict:
 
 
 def revoke_credentials(user_id: str) -> None:
-    """
-    Remove the user's stored Microsoft OAuth credentials.
-
-    Microsoft doesn't have a simple token revoke endpoint,
-    so we just clear the stored tokens.
-    """
-    from ..utils.supabase_client import get_supabase
-
-    supabase = get_supabase()
+    """Remove stored Microsoft OAuth credentials (no remote revocation endpoint)."""
+    supabase = _get_service_role_client()
 
     supabase.table("profiles").update({
         "microsoft_auth_token": None
@@ -363,6 +320,3 @@ def get_user_calendars_list(credentials: dict) -> list:
     ]
 
 
-def get_credentials_from_dict(creds_dict: dict) -> dict:
-    """Return credentials dict as-is (Microsoft creds are plain dicts)."""
-    return creds_dict

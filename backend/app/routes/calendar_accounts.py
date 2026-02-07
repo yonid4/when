@@ -1,12 +1,10 @@
-"""
-Calendar Accounts routes for managing multi-calendar support.
-"""
+"""Calendar accounts routes for managing multi-calendar support."""
 
 import logging
 
 from flask import Blueprint, request, jsonify
 
-from ..services import google_calendar
+from ..services import google_calendar, microsoft_calendar
 from ..services.calendar_accounts import CalendarAccountsService
 from ..utils.decorators import require_auth
 
@@ -101,18 +99,21 @@ def get_account_calendars(user_id, account_id):
         if error:
             return jsonify(error), status
 
-        if account["provider"] != "google":
-            return jsonify({
-                "error": "Unsupported provider",
-                "message": f"Provider {account['provider']} is not supported"
-            }), 400
-
         creds_dict = account.get("credentials")
         if not creds_dict:
             return jsonify({"error": "No credentials", "message": "Account has no stored credentials"}), 400
 
-        credentials = google_calendar.get_credentials_from_dict(creds_dict)
-        calendars = google_calendar.get_user_calendars_list(credentials)
+        provider = account["provider"]
+        if provider == "google":
+            credentials = google_calendar.get_credentials_from_dict(creds_dict)
+            calendars = google_calendar.get_user_calendars_list(credentials)
+        elif provider == "microsoft":
+            calendars = microsoft_calendar.get_user_calendars_list(creds_dict)
+        else:
+            return jsonify({
+                "error": "Unsupported provider",
+                "message": f"Provider {provider} is not supported"
+            }), 400
 
         return jsonify({"calendars": calendars, "count": len(calendars)}), 200
 

@@ -1,9 +1,4 @@
-"""
-Calendar Accounts service for managing multi-calendar support.
-
-Handles multiple calendar provider accounts per user, individual calendar
-sources within each account, and credential management with backwards compatibility.
-"""
+"""Calendar accounts service for managing multi-calendar support."""
 
 import logging
 import os
@@ -251,67 +246,89 @@ class CalendarAccountsService:
     def sync_calendars_from_provider(self, account_id: str) -> List[Dict[str, Any]]:
         """Fetch calendar list from provider and upsert to calendar_sources."""
         try:
-            from google.oauth2.credentials import Credentials
-            from googleapiclient.discovery import build
-
-            from . import google_calendar
-
             account = self.get_account(account_id)
             if not account:
                 logging.error(f"Account {account_id} not found")
                 return []
 
-            if account["provider"] != "google":
-                logging.warning(f"Provider {account['provider']} not supported for sync")
+            provider = account["provider"]
+
+            if provider == "google":
+                return self._sync_google_calendars(account_id, account)
+            elif provider == "microsoft":
+                return self._sync_microsoft_calendars(account_id, account)
+            else:
+                logging.warning(f"Provider {provider} not supported for sync")
                 return []
-
-            creds_dict = account["credentials"]
-            credentials = Credentials(
-                token=creds_dict["token"],
-                refresh_token=creds_dict.get("refresh_token"),
-                token_uri=creds_dict.get("token_uri", "https://oauth2.googleapis.com/token"),
-                client_id=creds_dict.get("client_id"),
-                client_secret=creds_dict.get("client_secret"),
-                scopes=creds_dict.get("scopes", []),
-            )
-
-            credentials = google_calendar.refresh_credentials_if_needed(credentials)
-
-            service = build("calendar", "v3", credentials=credentials)
-
-            calendars = []
-            page_token = None
-            while True:
-                calendar_list = service.calendarList().list(pageToken=page_token).execute()
-                calendars.extend(calendar_list.get("items", []))
-                page_token = calendar_list.get("nextPageToken")
-                if not page_token:
-                    break
-
-            synced_sources = []
-            for cal in calendars:
-                source = self._upsert_calendar_source(account_id, cal)
-                if source:
-                    synced_sources.append(source)
-
-            self.service_role_client.table("calendar_accounts").update({
-                "last_synced_at": datetime.utcnow().isoformat()
-            }).eq("id", account_id).execute()
-
-            self.update_account_credentials(account_id, {
-                "token": credentials.token,
-                "refresh_token": credentials.refresh_token,
-                "token_uri": credentials.token_uri,
-                "client_id": credentials.client_id,
-                "client_secret": credentials.client_secret,
-                "scopes": list(credentials.scopes) if credentials.scopes else [],
-            })
-
-            return synced_sources
 
         except Exception as e:
             logging.error(f"Error syncing calendars from provider for account {account_id}: {e}")
             return []
+
+    def _sync_google_calendars(self, account_id: str, account: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Sync calendars from Google Calendar API."""
+        from googleapiclient.discovery import build
+
+        from . import google_calendar
+
+        creds_dict = account["credentials"]
+        credentials = google_calendar.get_credentials_from_dict(creds_dict)
+        credentials = google_calendar.refresh_credentials_if_needed(credentials)
+
+        service = build("calendar", "v3", credentials=credentials)
+
+        calendars = []
+        page_token = None
+        while True:
+            calendar_list = service.calendarList().list(pageToken=page_token).execute()
+            calendars.extend(calendar_list.get("items", []))
+            page_token = calendar_list.get("nextPageToken")
+            if not page_token:
+                break
+
+        synced_sources = []
+        for cal in calendars:
+            source = self._upsert_calendar_source(account_id, cal)
+            if source:
+                synced_sources.append(source)
+
+        self.service_role_client.table("calendar_accounts").update({
+            "last_synced_at": datetime.utcnow().isoformat()
+        }).eq("id", account_id).execute()
+
+        self.update_account_credentials(account_id, {
+            "token": credentials.token,
+            "refresh_token": credentials.refresh_token,
+            "token_uri": credentials.token_uri,
+            "client_id": credentials.client_id,
+            "client_secret": credentials.client_secret,
+            "scopes": list(credentials.scopes) if credentials.scopes else [],
+        })
+
+        return synced_sources
+
+    def _sync_microsoft_calendars(self, account_id: str, account: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Sync calendars from Microsoft Graph API."""
+        from . import microsoft_calendar
+
+        creds_dict = account["credentials"]
+        credentials = microsoft_calendar.refresh_credentials_if_needed(creds_dict)
+
+        calendars = microsoft_calendar.get_user_calendars_list(credentials)
+
+        synced_sources = []
+        for cal in calendars:
+            source = self._upsert_calendar_source(account_id, cal)
+            if source:
+                synced_sources.append(source)
+
+        self.service_role_client.table("calendar_accounts").update({
+            "last_synced_at": datetime.utcnow().isoformat()
+        }).eq("id", account_id).execute()
+
+        self.update_account_credentials(account_id, credentials)
+
+        return synced_sources
 
     def _upsert_calendar_source(self, account_id: str, cal: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Upsert a single calendar source from provider data."""
