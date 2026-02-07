@@ -5,6 +5,9 @@ Aggregates participant availability data and uses Google's Gemini AI
 to suggest optimal meeting times.
 """
 
+from ..config import Config
+from ..utils.supabase_client import get_supabase
+
 import json
 import os
 import time
@@ -12,8 +15,6 @@ from datetime import datetime, timedelta, timezone as tz
 from typing import Any, Dict, List, Optional, Tuple
 
 from supabase import create_client
-
-from ..utils.supabase_client import get_supabase
 
 try:
     import google.generativeai as genai
@@ -39,9 +40,9 @@ class TimeProposalService:
         else:
             self.service_role_client = self.supabase
 
-        self.gemini_api_key = os.getenv("GEMINI_API_KEY")
-        self.gemini_model = os.getenv("GEMINI_MODEL", "gemini-pro")
-        self.max_retries = int(os.getenv("GEMINI_MAX_RETRIES", "3"))
+        self.gemini_api_key = Config.GEMINI_API_KEY
+        self.gemini_model = Config.GEMINI_MODEL
+        self.max_retries = Config.GEMINI_MAX_RETRIES
 
         if GENAI_AVAILABLE and self.gemini_api_key:
             genai.configure(api_key=self.gemini_api_key)
