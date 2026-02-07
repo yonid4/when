@@ -1,4 +1,4 @@
-"""Busy slot model for managing user busy times from Google Calendar."""
+"""Busy slot model for managing user busy times from calendar providers."""
 import uuid
 from datetime import datetime
 from typing import Optional
@@ -7,7 +7,11 @@ from pydantic import BaseModel, Field, validator
 
 
 class BusySlot(BaseModel):
-    """Busy slot model for Supabase representing Google Calendar events."""
+    """Represents a calendar event as a busy time slot in Supabase.
+
+    Note: ``google_event_id`` and ``google_calendar_id`` are used for both
+    Google and Microsoft events due to the existing database schema.
+    """
 
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     user_id: str = Field(...)
@@ -22,21 +26,18 @@ class BusySlot(BaseModel):
     last_synced_at: datetime = Field(default_factory=datetime.utcnow)
 
     class Config:
-        """Pydantic configuration."""
         json_encoders = {
             datetime: lambda v: v.isoformat()
         }
 
     @validator('end_time_utc')
     def end_time_must_be_after_start_time(cls, v, values):
-        """Ensure end time is after start time."""
         if 'start_time_utc' in values and v <= values['start_time_utc']:
             raise ValueError('end_time_utc must be after start_time_utc')
         return v
 
     @validator('event_title')
     def validate_event_title(cls, v):
-        """Truncate event title if too long."""
         if v is not None and len(v) > 500:
             return v[:500]
         return v
@@ -45,12 +46,10 @@ class BusySlot(BaseModel):
         return f'<BusySlot user_id={self.user_id} {self.start_time_utc} - {self.end_time_utc}>'
 
     def overlaps_with(self, other: 'BusySlot') -> bool:
-        """Check if this busy slot overlaps with another busy slot."""
         return (self.start_time_utc < other.end_time_utc and
                 self.end_time_utc > other.start_time_utc)
 
     def duration_minutes(self) -> int:
-        """Get duration of this busy slot in minutes."""
         return int((self.end_time_utc - self.start_time_utc).total_seconds() / 60)
 
     def to_dict(self) -> dict:
@@ -94,4 +93,31 @@ class BusySlot(BaseModel):
             google_calendar_id=google_calendar_id,
             event_title=google_event.get('summary', 'Untitled Event'),
             event_description=google_event.get('description'),
+        )
+
+    @classmethod
+    def from_microsoft_event(
+        cls,
+        user_id: str,
+        event: dict,
+        calendar_id: str = "primary",
+    ) -> 'BusySlot':
+        """Create a BusySlot from a Microsoft Graph calendar event."""
+        start_str = event.get('start', {}).get('dateTime')
+        end_str = event.get('end', {}).get('dateTime')
+
+        if not start_str or not end_str or 'T' not in start_str:
+            raise ValueError("All-day events are not supported for busy slots")
+
+        start_dt = datetime.fromisoformat(start_str.replace('Z', '+00:00'))
+        end_dt = datetime.fromisoformat(end_str.replace('Z', '+00:00'))
+
+        return cls(
+            user_id=user_id,
+            start_time_utc=start_dt,
+            end_time_utc=end_dt,
+            google_event_id=event.get('id'),
+            google_calendar_id=calendar_id,
+            event_title=event.get('subject', 'Untitled Event'),
+            event_description=event.get('bodyPreview'),
         )

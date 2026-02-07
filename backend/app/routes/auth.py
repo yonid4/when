@@ -1,15 +1,14 @@
-"""
-Authentication routes for user login, logout, and session management.
-"""
+"""Authentication routes for user login, logout, and session management."""
 
 import base64
 import json
 import logging
+import time as _time
 from datetime import datetime, timezone
 
 from flask import Blueprint, request, jsonify, redirect, current_app
 
-from ..services import google_calendar
+from ..services import google_calendar, microsoft_calendar
 from ..services.auth import AuthService
 from ..services.users import UsersService
 from ..utils.decorators import require_auth
@@ -116,15 +115,25 @@ def _schedule_calendar_sync(user_id: str) -> None:
         logging.error(f"[AUTH] Failed to schedule calendar sync: {e}")
 
 
-def _build_success_html() -> str:
+def _encode_oauth_state(user_token: str | None, return_url: str = "/") -> str:
+    """Encode OAuth state as base64 JSON."""
+    state_data = {
+        "user_token": user_token,
+        "return_url": return_url,
+        "timestamp": _time.time(),
+    }
+    return base64.urlsafe_b64encode(json.dumps(state_data).encode()).decode()
+
+
+def _build_success_html(provider: str = "Google Calendar") -> str:
     """Build HTML response for successful OAuth callback."""
-    return """
+    return f"""
     <!DOCTYPE html>
     <html>
     <head>
-        <title>Google Calendar Connected</title>
+        <title>{provider} Connected</title>
         <style>
-            body {
+            body {{
                 font-family: system-ui, -apple-system, sans-serif;
                 display: flex;
                 align-items: center;
@@ -133,35 +142,35 @@ def _build_success_html() -> str:
                 margin: 0;
                 background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                 color: white;
-            }
-            .container {
+            }}
+            .container {{
                 text-align: center;
                 padding: 2rem;
-            }
-            .checkmark {
+            }}
+            .checkmark {{
                 font-size: 4rem;
                 margin-bottom: 1rem;
-            }
-            h1 {
+            }}
+            h1 {{
                 margin: 0 0 0.5rem 0;
                 font-size: 1.5rem;
-            }
-            p {
+            }}
+            p {{
                 margin: 0;
                 opacity: 0.9;
-            }
+            }}
         </style>
     </head>
     <body>
         <div class="container">
             <div class="checkmark">&#10003;</div>
-            <h1>Google Calendar Connected</h1>
+            <h1>{provider} Connected</h1>
             <p>This window will close automatically...</p>
         </div>
         <script>
-            setTimeout(function() {
+            setTimeout(function() {{
                 window.close();
-            }, 1500);
+            }}, 1500);
         </script>
     </body>
     </html>
@@ -244,7 +253,7 @@ def google_auth(user_id):
 
 @auth_bp.route("/google/callback", methods=["GET"])
 def google_callback():
-    """Handle Google OAuth callback. Exchanges authorization code for credentials and stores them."""
+    """Handle Google OAuth callback."""
     code = request.args.get("code")
     state = request.args.get("state")
 
@@ -264,7 +273,6 @@ def google_callback():
         user_id = user.id
         auth_service.store_google_credentials(user_id, credentials)
 
-        # Enrich profile with Google data
         try:
             user_metadata = user.user_metadata or {}
             google_calendar_id, user_timezone = _get_google_calendar_info(user_id)
@@ -281,11 +289,8 @@ def google_callback():
             if updated_profile:
                 logging.info(f"[AUTH] Enriched profile for user {user_id} with Google data")
 
-            # Sync calendar sources from provider
             google_email = google_calendar_id or user_metadata.get("email")
             _sync_calendar_sources(user_id, credentials, google_email)
-
-            # Schedule background calendar sync
             _schedule_calendar_sync(user_id)
 
         except Exception as e:
@@ -308,6 +313,61 @@ def connect_google_calendar(user_id):
     users_service = UsersService(_get_access_token())
     profile = users_service.get_profile(user_id)
     return jsonify({"message": "Google Calendar connected", "profile": profile}), 200
+
+
+@auth_bp.route("/microsoft", methods=["GET"])
+@require_auth
+def microsoft_auth(user_id):
+    """Initiate Microsoft OAuth flow."""
+    try:
+        user_token = _get_access_token()
+        return_url = request.args.get("return_url", "/")
+        state = _encode_oauth_state(user_token, return_url)
+        auth_url = microsoft_calendar.get_auth_url(state=state)
+
+        return jsonify({"auth_url": auth_url}), 200
+
+    except Exception as e:
+        logging.error(f"[AUTH] Exception in /api/auth/microsoft: {e}")
+        return jsonify({"error": "Server error", "message": str(e)}), 500
+
+
+@auth_bp.route("/microsoft/callback", methods=["GET"])
+def microsoft_callback():
+    """Handle Microsoft OAuth callback."""
+    code = request.args.get("code")
+    state = request.args.get("state")
+
+    if not code:
+        return jsonify({"error": "Missing authorization code", "message": "No authorization code provided"}), 400
+
+    try:
+        state_data = _decode_oauth_state(state)
+        user_token = state_data.get("user_token")
+
+        credentials = microsoft_calendar.get_credentials_from_code(code)
+
+        user = auth_service.get_user_from_token(user_token)
+        if not user:
+            return jsonify({"error": "Invalid user token", "message": "Invalid user token"}), 401
+
+        user_id = user.id
+        user_metadata = user.user_metadata or {}
+        provider_email = user_metadata.get("email")
+
+        microsoft_calendar.store_credentials(user_id, credentials, provider_email)
+        logging.info(f"[AUTH] Stored Microsoft credentials for user {user_id}")
+
+        _schedule_calendar_sync(user_id)
+
+        return _build_success_html("Microsoft Calendar"), 200
+
+    except ValueError as e:
+        logging.error(f"[AUTH] ValueError in microsoft/callback: {e}")
+        return jsonify({"error": "Authentication failed", "message": str(e)}), 400
+    except Exception as e:
+        logging.error(f"[AUTH] Exception in microsoft/callback: {e}")
+        return jsonify({"error": "Server error", "message": str(e)}), 500
 
 
 @auth_bp.route("/enrich-profile", methods=["POST"])

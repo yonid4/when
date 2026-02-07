@@ -3,10 +3,12 @@ Busy slots service.
 
 Key behaviors:
 - All times are treated as UTC ISO strings when stored/fetched from Supabase.
-- Google Calendar sync skips all-day events and upserts by (user_id, google_event_id).
+- Calendar sync (Google and Microsoft) skips all-day events and upserts by
+  (user_id, google_event_id).
 - Merged-busy computation prefers a Supabase RPC; falls back to Python if RPC fails.
 """
 
+import logging
 import os
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
@@ -29,7 +31,7 @@ class BusySlotService:
         if supabase_url and service_role_key:
             self.service_role_client = create_client(supabase_url, service_role_key)
         else:
-            print("[WARNING] SUPABASE_SERVICE_ROLE_KEY not found, falling back to anon client")
+            logging.warning("SUPABASE_SERVICE_ROLE_KEY not found, falling back to anon client")
             self.service_role_client = self.supabase
 
     def get_user_busy_slots(self, user_id: str, start_date: datetime, end_date: datetime) -> List[dict]:
@@ -46,7 +48,7 @@ class BusySlotService:
             )
             return result.data or []
         except Exception as e:
-            print(f"Error getting busy slots for user {user_id}: {str(e)}")
+            logging.error(f"Error getting busy slots for user {user_id}: {e}")
             return []
 
     def get_busy_slots(self, start_date: datetime, end_date: datetime) -> List[dict]:
@@ -62,7 +64,7 @@ class BusySlotService:
             )
             return result.data or []
         except Exception as e:
-            print(f"Error getting busy slots: {str(e)}")
+            logging.error(f"Error getting busy slots: {e}")
             return []
 
     def store_busy_slot(self, busy_slot: BusySlot) -> Optional[dict]:
@@ -75,7 +77,7 @@ class BusySlotService:
             )
             return result.data[0] if result.data else None
         except Exception as e:
-            print(f"Error storing busy slot: {str(e)}")
+            logging.error(f"Error storing busy slot: {e}")
             return None
 
     def upsert_busy_slot(self, busy_slot: BusySlot) -> Optional[dict]:
@@ -103,7 +105,7 @@ class BusySlotService:
             return self.store_busy_slot(busy_slot)
 
         except Exception as e:
-            print(f"Error upserting busy slot: {str(e)}")
+            logging.error(f"Error upserting busy slot: {e}")
             return None
 
     def delete_user_busy_slots_in_range(self, user_id: str, start_date: datetime, end_date: datetime) -> bool:
@@ -117,7 +119,7 @@ class BusySlotService:
 
             return True
         except Exception as e:
-            print(f"Error deleting busy slots for user {user_id}: {str(e)}")
+            logging.error(f"Error deleting busy slots for user {user_id}: {e}")
             return False
 
     def delete_busy_slot(self, busy_slot: BusySlot) -> bool:
@@ -128,7 +130,7 @@ class BusySlotService:
             ).execute()
             return True
         except Exception as e:
-            print(f"Error deleting busy slot for slot id {busy_slot.id}")
+            logging.error(f"Error deleting busy slot for slot id {busy_slot.id}: {e}")
             return False
 
     def get_participants_busy_slots(
@@ -147,7 +149,7 @@ class BusySlotService:
             )
             return result.data or []
         except Exception as e:
-            print(f"Error getting busy slots for participants: {str(e)}")
+            logging.error(f"Error getting busy slots for participants: {e}")
             return []
 
     def get_event_participants_busy_slots(
@@ -170,7 +172,7 @@ class BusySlotService:
             return self.get_participants_busy_slots(participant_ids, start_date, end_date)
 
         except Exception as e:
-            print(f"Error getting busy slots for event participants: {str(e)}")
+            logging.error(f"Error getting busy slots for event participants: {e}")
             return []
 
     def bulk_store_busy_slots(self, busy_slots: List[BusySlot]) -> List[dict]:
@@ -180,16 +182,11 @@ class BusySlotService:
             result = self.service_role_client.table("busy_slots").insert(slots_data).execute()
             return result.data or []
         except Exception as e:
-            print(f"Error bulk storing busy slots: {str(e)}")
+            logging.error(f"Error bulk storing busy slots: {e}")
             return []
 
     def sync_user_google_calendar(self, user_id: str, start_date: datetime, end_date: datetime) -> bool:
-        """
-        Sync busy slots from user's Google Calendar using differential logic.
-
-        Supports multi-calendar: syncs from all enabled calendar sources.
-        Falls back to legacy behavior (primary calendar only) if no sources found.
-        """
+        """Sync Google Calendar busy slots. Uses multi-calendar sources if available, else legacy."""
         try:
             from .calendar_accounts import CalendarAccountsService
 
@@ -199,7 +196,7 @@ class BusySlotService:
             try:
                 enabled_sources = calendar_accounts_service.get_enabled_sources(user_id)
             except Exception as e:
-                print(f"[SYNC] Could not get enabled sources (may not be migrated): {e}")
+                logging.warning(f"[SYNC] Could not get enabled sources (may not be migrated): {e}")
 
             if enabled_sources:
                 return self._sync_multi_calendar(user_id, start_date, end_date, enabled_sources)
@@ -207,7 +204,7 @@ class BusySlotService:
             return self._sync_legacy_primary_calendar(user_id, start_date, end_date)
 
         except Exception as e:
-            print(f"Error syncing Google Calendar for user {user_id}: {str(e)}")
+            logging.error(f"Error syncing Google Calendar for user {user_id}: {e}")
             return False
 
     def _sync_legacy_primary_calendar(self, user_id: str, start_date: datetime, end_date: datetime) -> bool:
@@ -216,7 +213,7 @@ class BusySlotService:
 
         credentials = google_calendar.get_stored_credentials(user_id)
         if not credentials:
-            print(f"No Google credentials found for user {user_id}")
+            logging.warning(f"No Google credentials found for user {user_id}")
             return False
 
         service = google_calendar.get_calendar_service(credentials=credentials, user_id=user_id)
@@ -253,7 +250,7 @@ class BusySlotService:
         ids_to_add = google_ids - db_event_ids
         ids_to_delete = db_event_ids - google_ids
 
-        print(f"[SYNC] User {user_id} (legacy): Adding {len(ids_to_add)}, Deleting {len(ids_to_delete)}")
+        logging.info(f"[SYNC] User {user_id} (legacy): Adding {len(ids_to_add)}, Deleting {len(ids_to_delete)}")
 
         if ids_to_delete:
             self.service_role_client.table("busy_slots").delete().eq(
@@ -278,24 +275,26 @@ class BusySlotService:
         self, user_id: str, start_date: datetime, end_date: datetime, enabled_sources: List[dict]
     ) -> bool:
         """Multi-calendar sync: sync from all enabled calendar sources."""
-        from googleapiclient.discovery import build
-
-        from . import google_calendar
-
         total_added = 0
         total_deleted = 0
 
         for source in enabled_sources:
             try:
-                added, deleted = self._sync_single_source(
-                    user_id, start_date, end_date, source
-                )
+                provider = source.get("account", {}).get("provider", "google")
+                if provider == "microsoft":
+                    added, deleted = self._sync_single_microsoft_source(
+                        user_id, start_date, end_date, source
+                    )
+                else:
+                    added, deleted = self._sync_single_source(
+                        user_id, start_date, end_date, source
+                    )
                 total_added += added
                 total_deleted += deleted
             except Exception as e:
-                print(f"[SYNC] Error syncing source {source.get('id')}: {e}")
+                logging.error(f"[SYNC] Error syncing source {source.get('id')}: {e}")
 
-        print(f"[SYNC] User {user_id} multi-calendar total: Added {total_added}, Deleted {total_deleted}")
+        logging.info(f"[SYNC] User {user_id} multi-calendar total: Added {total_added}, Deleted {total_deleted}")
         return True
 
     def _sync_single_source(
@@ -312,7 +311,7 @@ class BusySlotService:
         creds_dict = account.get("credentials")
 
         if not creds_dict:
-            print(f"[SYNC] No credentials for source {source_id}")
+            logging.warning(f"[SYNC] No credentials for source {source_id}")
             return 0, 0
 
         credentials = google_calendar.get_credentials_from_dict(creds_dict)
@@ -356,7 +355,7 @@ class BusySlotService:
         keys_to_add = google_keys - db_event_keys
         keys_to_delete = db_event_keys - google_keys
 
-        print(f"[SYNC] User {user_id}, Calendar {calendar_id}: Adding {len(keys_to_add)}, Deleting {len(keys_to_delete)}")
+        logging.info(f"[SYNC] User {user_id}, Calendar {calendar_id}: Adding {len(keys_to_add)}, Deleting {len(keys_to_delete)}")
 
         deleted_count = 0
         if keys_to_delete:
@@ -401,6 +400,191 @@ class BusySlotService:
 
         return added_count, deleted_count
 
+    def _sync_single_microsoft_source(
+        self, user_id: str, start_date: datetime, end_date: datetime, source: dict
+    ) -> Tuple[int, int]:
+        """Sync a single Microsoft calendar source. Returns (added_count, deleted_count)."""
+        from . import microsoft_calendar
+
+        source_id = source["id"]
+        calendar_id = source["calendar_id"]
+        account = source.get("account", {})
+        creds_dict = account.get("credentials")
+
+        if not creds_dict:
+            logging.warning(f"[SYNC] No credentials for Microsoft source {source_id}")
+            return 0, 0
+
+        credentials = microsoft_calendar.refresh_credentials_if_needed(creds_dict)
+        service = microsoft_calendar.get_calendar_service(credentials, user_id)
+        graph_request = service["graph_request"]
+
+        response = graph_request(
+            "GET",
+            f"/me/calendars/{calendar_id}/calendarView",
+            params={
+                "startDateTime": start_date.isoformat(),
+                "endDateTime": end_date.isoformat(),
+                "$top": 500,
+            },
+        )
+        response.raise_for_status()
+        ms_events = response.json().get("value", [])
+
+        ms_event_map = {
+            f"{calendar_id}:{event.get('id')}": event
+            for event in ms_events
+            if event.get("id")
+        }
+
+        db_slots_result = (
+            self.service_role_client.table("busy_slots")
+            .select("id, google_event_id, google_calendar_id")
+            .eq("user_id", user_id)
+            .eq("google_calendar_id", calendar_id)
+            .gte("start_time_utc", start_date.isoformat())
+            .lte("end_time_utc", end_date.isoformat())
+            .not_.is_("google_event_id", "null")
+            .execute()
+        )
+        db_slots = db_slots_result.data or []
+        db_event_keys = {
+            f"{slot['google_calendar_id']}:{slot['google_event_id']}"
+            for slot in db_slots
+        }
+
+        ms_keys = set(ms_event_map.keys())
+        keys_to_add = ms_keys - db_event_keys
+        keys_to_delete = db_event_keys - ms_keys
+
+        logging.info(f"[SYNC] User {user_id}, Microsoft Calendar {calendar_id}: Adding {len(keys_to_add)}, Deleting {len(keys_to_delete)}")
+
+        deleted_count = 0
+        if keys_to_delete:
+            event_ids_to_delete = [k.split(":", 1)[1] for k in keys_to_delete]
+            self.service_role_client.table("busy_slots").delete().eq(
+                "user_id", user_id
+            ).eq("google_calendar_id", calendar_id).in_(
+                "google_event_id", event_ids_to_delete
+            ).execute()
+            deleted_count = len(keys_to_delete)
+
+        slots_to_add = []
+        for composite_key in keys_to_add:
+            event = ms_event_map[composite_key]
+            try:
+                busy_slot = BusySlot.from_microsoft_event(user_id, event, calendar_id=calendar_id)
+                slot_dict = busy_slot.to_dict()
+                slot_dict["calendar_source_id"] = source_id
+                slots_to_add.append(slot_dict)
+            except ValueError:
+                continue
+
+        added_count = 0
+        if slots_to_add:
+            self.service_role_client.table("busy_slots").insert(slots_to_add).execute()
+            added_count = len(slots_to_add)
+
+        if credentials.get("access_token") != creds_dict.get("access_token"):
+            from .calendar_accounts import CalendarAccountsService
+            calendar_accounts_service = CalendarAccountsService()
+            calendar_accounts_service.update_account_credentials(account["id"], credentials)
+
+        return added_count, deleted_count
+
+    def sync_user_microsoft_calendar(self, user_id: str, start_date: datetime, end_date: datetime) -> bool:
+        """Sync Microsoft Calendar busy slots. Uses multi-calendar sources if available, else legacy."""
+        try:
+            from .calendar_accounts import CalendarAccountsService
+
+            calendar_accounts_service = CalendarAccountsService()
+
+            enabled_sources = []
+            try:
+                all_sources = calendar_accounts_service.get_enabled_sources(user_id)
+                enabled_sources = [
+                    s for s in all_sources
+                    if s.get("account", {}).get("provider") == "microsoft"
+                ]
+            except Exception as e:
+                logging.warning(f"[SYNC] Could not get enabled Microsoft sources: {e}")
+
+            if enabled_sources:
+                return self._sync_multi_calendar(user_id, start_date, end_date, enabled_sources)
+
+            return self._sync_legacy_microsoft_calendar(user_id, start_date, end_date)
+
+        except Exception as e:
+            logging.error(f"Error syncing Microsoft Calendar for user {user_id}: {e}")
+            return False
+
+    def _sync_legacy_microsoft_calendar(self, user_id: str, start_date: datetime, end_date: datetime) -> bool:
+        """Legacy sync method: sync Microsoft calendar from profiles.microsoft_auth_token."""
+        from . import microsoft_calendar
+
+        credentials = microsoft_calendar.get_stored_credentials(user_id)
+        if not credentials:
+            return False
+
+        credentials = microsoft_calendar.refresh_credentials_if_needed(credentials)
+        service = microsoft_calendar.get_calendar_service(credentials, user_id)
+        graph_request = service["graph_request"]
+
+        response = graph_request(
+            "GET",
+            "/me/calendarView",
+            params={
+                "startDateTime": start_date.isoformat(),
+                "endDateTime": end_date.isoformat(),
+                "$top": 500,
+            },
+        )
+        response.raise_for_status()
+        ms_events = response.json().get("value", [])
+
+        ms_event_map = {
+            event.get("id"): event
+            for event in ms_events
+            if event.get("id")
+        }
+
+        db_slots_result = (
+            self.service_role_client.table("busy_slots")
+            .select("id, google_event_id")
+            .eq("user_id", user_id)
+            .gte("start_time_utc", start_date.isoformat())
+            .lte("end_time_utc", end_date.isoformat())
+            .not_.is_("google_event_id", "null")
+            .execute()
+        )
+        db_slots = db_slots_result.data or []
+        db_event_ids = {slot["google_event_id"] for slot in db_slots}
+
+        ms_ids = set(ms_event_map.keys())
+        ids_to_add = ms_ids - db_event_ids
+        ids_to_delete = db_event_ids - ms_ids
+
+        logging.info(f"[SYNC] User {user_id} (Microsoft legacy): Adding {len(ids_to_add)}, Deleting {len(ids_to_delete)}")
+
+        if ids_to_delete:
+            self.service_role_client.table("busy_slots").delete().eq(
+                "user_id", user_id
+            ).in_("google_event_id", list(ids_to_delete)).execute()
+
+        slots_to_add = []
+        for event_id in ids_to_add:
+            event = ms_event_map[event_id]
+            try:
+                busy_slot = BusySlot.from_microsoft_event(user_id, event)
+                slots_to_add.append(busy_slot.to_dict())
+            except ValueError:
+                continue
+
+        if slots_to_add:
+            self.service_role_client.table("busy_slots").insert(slots_to_add).execute()
+
+        return True
+
     def delete_user_google_events(self, user_id: str) -> bool:
         """Delete all Google Calendar synced events for a user."""
         try:
@@ -409,7 +593,7 @@ class BusySlotService:
             ).not_.is_("google_event_id", "null").execute()
             return True
         except Exception as e:
-            print(f"Error deleting Google events for user {user_id}: {str(e)}")
+            logging.error(f"Error deleting Google events for user {user_id}: {e}")
             return False
 
     def get_merged_busy_slots_for_event(
@@ -436,7 +620,7 @@ class BusySlotService:
             ]
 
         except Exception as e:
-            print(f"Error calling RPC function for event {event_id}: {str(e)}")
+            logging.error(f"Error calling RPC function for event {event_id}: {e}")
             return self._get_merged_busy_slots_fallback(event_id, start_date, end_date)
 
     def _get_merged_busy_slots_fallback(
@@ -478,7 +662,7 @@ class BusySlotService:
             return self._merge_overlapping_slots_python(busy_slots)
 
         except Exception as e:
-            print(f"Error in fallback method: {str(e)}")
+            logging.error(f"Error in fallback method: {e}")
             return []
 
     def _merge_overlapping_slots_python(self, busy_slots: List[dict]) -> List[dict]:
@@ -530,17 +714,17 @@ class BusySlotService:
 
         for field in required_fields:
             if field not in slot_data:
-                print(f"Validation error: Missing field '{field}'")
+                logging.warning(f"Validation error: Missing field '{field}'")
                 return False
 
         try:
             start = datetime.fromisoformat(slot_data['start_time_utc'].replace('Z', '+00:00'))
             end = datetime.fromisoformat(slot_data['end_time_utc'].replace('Z', '+00:00'))
             if start >= end:
-                print("Validation error: start_time must be before end_time")
+                logging.warning("Validation error: start_time must be before end_time")
                 return False
         except Exception as e:
-            print(f"Validation error: Invalid datetime format - {str(e)}")
+            logging.warning(f"Validation error: Invalid datetime format - {e}")
             return False
 
         return True
@@ -614,12 +798,7 @@ class BusySlotService:
             return response.count if response and hasattr(response, 'count') else 0
 
         except Exception as e:
-            print(f"Error cleaning up busy slots for user {user_id}: {str(e)}")
+            logging.error(f"Error cleaning up busy slots for user {user_id}: {e}")
             return 0
 
-    def get_busy_slots_summary(
-        self, user_id: str, date_range: Tuple[datetime, datetime]
-    ) -> Optional[Dict[str, Any]]:
-        """Placeholder for generating summary statistics of busy slots."""
-        pass
 
