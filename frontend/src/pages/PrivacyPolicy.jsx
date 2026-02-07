@@ -16,7 +16,7 @@ import {
 import { FiArrowLeft } from "react-icons/fi";
 
 const EFFECTIVE_DATE = "February 5, 2026";
-const CONTACT_EMAIL = "privacy@when-now.com";
+const CONTACT_EMAIL = "whenapp.now@gmail.com";
 const SITE_URL = "https://when-now.com";
 
 /**
