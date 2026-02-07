@@ -19,3 +19,4 @@ python-dateutil==2.8.2
 PyJWT==2.8.0
 httpx>=0.26,<0.29
 postgrest>=0.18.0
+msal>=1.28.0
