@@ -18,6 +18,7 @@ import {
 } from "@chakra-ui/react";
 import { FiChevronDown, FiChevronUp, FiEdit3, FiRefreshCw, FiTrash2 } from "react-icons/fi";
 import { FcGoogle } from "react-icons/fc";
+import { BsMicrosoft } from "react-icons/bs";
 
 import { colors, shadows } from "../../styles/designSystem.js";
 
@@ -53,7 +54,10 @@ function CalendarAccountCard({
     setSettingWriteId(null);
   }
 
-  const providerIcon = account.provider === "google" ? <Icon as={FcGoogle} boxSize={5} /> : null;
+  const providerIcon = account.provider === "microsoft"
+    ? <Icon as={BsMicrosoft} boxSize={5} color="#0078D4" />
+    : <Icon as={FcGoogle} boxSize={5} />;
+  const providerLabel = account.provider === "microsoft" ? "Microsoft" : "Google";
   const chevronIcon = isOpen ? FiChevronUp : FiChevronDown;
 
   function handleSyncClick(e) {
@@ -97,7 +101,7 @@ function CalendarAccountCard({
           </HStack>
 
           <HStack spacing={2}>
-            <Tooltip label="Sync calendars from Google">
+            <Tooltip label={`Sync calendars from ${providerLabel}`}>
               <IconButton
                 icon={isSyncing ? <Spinner size="sm" /> : <FiRefreshCw />}
                 size="sm"

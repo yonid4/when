@@ -31,11 +31,12 @@ const FinalizeEventModal = ({
   event,
   selectedTime,
   participants = [],
-  onFinalize
+  onFinalize,
+  calendarProvider = null
 }) => {
   const [eventName, setEventName] = useState("");
   const [selectedParticipants, setSelectedParticipants] = useState([]);
-  const [includeGoogleMeet, setIncludeGoogleMeet] = useState(false);
+  const [includeOnlineMeeting, setIncludeOnlineMeeting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const toast = useToast();
 
@@ -49,7 +50,7 @@ const FinalizeEventModal = ({
       setEventName(event.name || "");
       // Select all participants by default
       setSelectedParticipants(participants.map(p => p.id || p.user_id));
-      setIncludeGoogleMeet(false);
+      setIncludeOnlineMeeting(false);
     }
   }, [isOpen, event, participants]);
 
@@ -129,7 +130,8 @@ const FinalizeEventModal = ({
         start_time_utc: selectedTime.start_time,
         end_time_utc: selectedTime.end_time,
         participant_ids: selectedParticipants,
-        include_google_meet: includeGoogleMeet
+        include_online_meeting: includeOnlineMeeting,
+        include_google_meet: includeOnlineMeeting
       });
 
       // Success is handled by parent component
@@ -146,7 +148,7 @@ const FinalizeEventModal = ({
     if (!isLoading) {
       setEventName("");
       setSelectedParticipants([]);
-      setIncludeGoogleMeet(false);
+      setIncludeOnlineMeeting(false);
       onClose();
     }
   };
@@ -259,7 +261,7 @@ const FinalizeEventModal = ({
 
             <Divider />
 
-            {/* Google Meet Option */}
+            {/* Online Meeting Option */}
             <Box
               p={3}
               bg="green.50"
@@ -268,14 +270,18 @@ const FinalizeEventModal = ({
               borderColor="green.400"
             >
               <Checkbox
-                isChecked={includeGoogleMeet}
-                onChange={(e) => setIncludeGoogleMeet(e.target.checked)}
+                isChecked={includeOnlineMeeting}
+                onChange={(e) => setIncludeOnlineMeeting(e.target.checked)}
                 isDisabled={isLoading}
                 colorScheme="green"
               >
                 <HStack spacing={2}>
                   <FiVideo />
-                  <Text fontSize="sm" fontWeight="medium">Include Google Meet link</Text>
+                  <Text fontSize="sm" fontWeight="medium">
+                    {calendarProvider === "microsoft"
+                      ? "Include Microsoft Teams link"
+                      : "Include Google Meet link"}
+                  </Text>
                 </HStack>
               </Checkbox>
             </Box>

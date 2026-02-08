@@ -18,9 +18,11 @@ export function useCalendarConnection() {
   const [needsCalendarPrompt, setNeedsCalendarPrompt] = useState(false);
   const [calendarPromptContext, setCalendarPromptContext] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [isGoogleConnected, setIsGoogleConnected] = useState(false);
+  const [isMicrosoftConnected, setIsMicrosoftConnected] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
 
-  async function checkGoogleCalendarConnection() {
+  async function checkCalendarConnection() {
     try {
       setIsChecking(true);
 
@@ -29,7 +31,7 @@ export function useCalendarConnection() {
         const response = await api.get("/api/calendar/connection-status");
         if (response.data.connected) {
           setIsConnected(true);
-          return true;
+          setIsGoogleConnected(true);
         }
       } catch {
         console.debug("Legacy connection check failed, trying new endpoint");
@@ -38,8 +40,14 @@ export function useCalendarConnection() {
       // Check the new calendar-accounts endpoint
       try {
         const accountsResponse = await api.get("/api/calendar-accounts/");
-        const hasAccounts = (accountsResponse.data.accounts?.length || 0) > 0;
+        const accounts = accountsResponse.data.accounts || [];
+        const hasAccounts = accounts.length > 0;
+        const hasGoogle = accounts.some((a) => a.provider === "google");
+        const hasMicrosoft = accounts.some((a) => a.provider === "microsoft");
+
         setIsConnected(hasAccounts);
+        setIsGoogleConnected(hasGoogle);
+        setIsMicrosoftConnected(hasMicrosoft);
         return hasAccounts;
       } catch (accountsError) {
         console.debug("Calendar accounts check failed:", accountsError.message);
@@ -56,8 +64,11 @@ export function useCalendarConnection() {
     }
   }
 
+  // Backward compat alias
+  const checkGoogleCalendarConnection = checkCalendarConnection;
+
   useEffect(() => {
-    checkGoogleCalendarConnection();
+    checkCalendarConnection();
   }, []);
 
   function hasGoogleCalendar() {
@@ -124,8 +135,20 @@ export function useCalendarConnection() {
     }
   }
 
+  async function connectMicrosoftCalendar() {
+    const returnUrl = window.location.pathname;
+
+    const response = await api.get("/api/auth/microsoft", {
+      params: { return_url: returnUrl },
+    });
+
+    if (response.data.auth_url) {
+      window.location.href = response.data.auth_url;
+    }
+  }
+
   async function handleCalendarConnected() {
-    await checkGoogleCalendarConnection();
+    await checkCalendarConnection();
     hideCalendarPrompt();
   }
 
@@ -140,13 +163,17 @@ export function useCalendarConnection() {
     needsCalendarPrompt,
     calendarPromptContext,
     isConnected,
+    isGoogleConnected,
+    isMicrosoftConnected,
     isChecking,
     hasGoogleCalendar,
+    checkCalendarConnection,
     checkGoogleCalendarConnection,
     shouldShowCalendarPrompt,
     showCalendarPrompt,
     hideCalendarPrompt,
     connectGoogleCalendar,
+    connectMicrosoftCalendar,
     handleCalendarConnected,
     handleSkipCalendar,
     markFirstEventCreation,
