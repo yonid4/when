@@ -21,7 +21,7 @@ from supabase import create_client
 
 from ..utils.supabase_client import get_supabase
 
-SCOPES = ["Calendars.ReadWrite", "User.Read", "offline_access"]
+SCOPES = ["Calendars.ReadWrite", "User.Read"]
 GRAPH_API_BASE = "https://graph.microsoft.com/v1.0"
 
 
