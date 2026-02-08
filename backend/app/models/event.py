@@ -30,6 +30,7 @@ class Event(BaseModel):
     microsoft_calendar_event_id: Optional[str] = Field(default=None)
     microsoft_calendar_html_link: Optional[str] = Field(default=None)
     calendar_provider: Optional[str] = Field(default=None)
+    guests_can_invite: Optional[bool] = Field(default=False)
     finalized_at: Optional[datetime] = Field(default=None)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
@@ -70,6 +71,7 @@ class Event(BaseModel):
             "microsoft_calendar_event_id": self.microsoft_calendar_event_id,
             "microsoft_calendar_html_link": self.microsoft_calendar_html_link,
             "calendar_provider": self.calendar_provider,
+            "guests_can_invite": self.guests_can_invite,
             "finalized_at": self.finalized_at.isoformat() if self.finalized_at else None,
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat(),
