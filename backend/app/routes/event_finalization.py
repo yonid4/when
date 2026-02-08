@@ -32,7 +32,7 @@ def _get_error_response(error_message: str) -> tuple:
     if any(err in error_lower for err in calendar_errors):
         return {
             "error": "Calendar not connected",
-            "message": "Your Google Calendar connection has expired. Please log out and log back in to reconnect your calendar.",
+            "message": "Your calendar connection has expired. Please log out and log back in to reconnect your calendar.",
             "needs_reconnect": True
         }, 401
 
@@ -112,7 +112,8 @@ def finalize_event(event_uid, user_id):
             start_time_utc=data["start_time_utc"],
             end_time_utc=data["end_time_utc"],
             participant_ids=data["participant_ids"],
-            include_google_meet=data.get("include_google_meet", False)
+            include_google_meet=data.get("include_google_meet", False),
+            include_online_meeting=data.get("include_online_meeting", False),
         )
 
         logging.info(f"[FINALIZE] Success for event {event_uid}")
@@ -140,14 +141,32 @@ def get_finalization_status(event_uid, user_id):
             "message": f"Event with UID '{event_uid}' not found"
         }), 404
 
+    # Determine which provider was used and provide generic + provider-specific fields
+    calendar_provider = event.get("calendar_provider")
+    calendar_html_link = (
+        event.get("google_calendar_html_link")
+        or event.get("microsoft_calendar_html_link")
+    )
+    calendar_event_id = (
+        event.get("google_calendar_event_id")
+        or event.get("microsoft_calendar_event_id")
+    )
+
     return jsonify({
         "is_finalized": event.get("status") == "finalized",
         "status": event.get("status"),
         "finalized_at": event.get("finalized_at"),
         "finalized_start_time_utc": event.get("finalized_start_time_utc"),
         "finalized_end_time_utc": event.get("finalized_end_time_utc"),
+        "calendar_provider": calendar_provider,
+        "calendar_html_link": calendar_html_link,
+        "calendar_event_id": calendar_event_id,
+        # Backward compat
         "google_calendar_html_link": event.get("google_calendar_html_link"),
-        "google_calendar_event_id": event.get("google_calendar_event_id")
+        "google_calendar_event_id": event.get("google_calendar_event_id"),
+        # Microsoft-specific
+        "microsoft_calendar_html_link": event.get("microsoft_calendar_html_link"),
+        "microsoft_calendar_event_id": event.get("microsoft_calendar_event_id"),
     }), 200
 
 

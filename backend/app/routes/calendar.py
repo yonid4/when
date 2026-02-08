@@ -1,5 +1,5 @@
 """
-Google Calendar integration routes.
+Calendar integration routes (Google and Microsoft).
 """
 
 import logging
@@ -9,12 +9,13 @@ from flask import Blueprint, request, jsonify
 
 from ..services.busy_slots import BusySlotService
 from ..services.events import EventsService
+from ..services import microsoft_calendar
 from ..services.google_calendar import get_stored_credentials, get_calendar_service
 from ..services.users import UsersService
 from ..utils.decorators import require_auth
 from ..utils.supabase_client import get_supabase
 
-calendar_bp = Blueprint("google_calendar", __name__, url_prefix="/api/calendar")
+calendar_bp = Blueprint("calendar", __name__, url_prefix="/api/calendar")
 users_service = UsersService()
 
 
@@ -58,13 +59,19 @@ def _get_sync_window_from_events(events: list) -> tuple[datetime, datetime]:
 @calendar_bp.route('/connection-status', methods=['GET'])
 @require_auth
 def get_connection_status(user_id):
-    """Check if user has connected their Google Calendar."""
+    """Check if user has connected any calendar provider."""
     try:
-        credentials = get_stored_credentials(user_id)
+        google_credentials = get_stored_credentials(user_id)
+        microsoft_credentials = microsoft_calendar.get_stored_credentials(user_id)
         calendar_id = users_service.get_google_calendar_id(user_id)
 
+        google_connected = google_credentials is not None
+        microsoft_connected = microsoft_credentials is not None
+
         return jsonify({
-            "connected": credentials is not None,
+            "connected": google_connected or microsoft_connected,
+            "google_connected": google_connected,
+            "microsoft_connected": microsoft_connected,
             "google_calendar_id": calendar_id
         }), 200
 
@@ -108,13 +115,15 @@ def get_busy_times(event_id, user_id):
 @calendar_bp.route('/sync', methods=['POST'])
 @require_auth
 def sync_calendar(user_id):
-    """Sync user's Google Calendar for the next 90 days."""
+    """Sync user's connected calendars (Google and/or Microsoft)."""
     try:
-        credentials = get_stored_credentials(user_id)
-        if not credentials:
+        google_credentials = get_stored_credentials(user_id)
+        microsoft_credentials = microsoft_calendar.get_stored_credentials(user_id)
+
+        if not google_credentials and not microsoft_credentials:
             return jsonify({
-                'error': 'Google Calendar not connected',
-                'message': 'Please connect your Google Calendar first'
+                'error': 'No calendar connected',
+                'message': 'Please connect a calendar first'
             }), 400
 
         busy_slot_service = BusySlotService()
@@ -127,12 +136,26 @@ def sync_calendar(user_id):
         active_events = [e for e in user_events if e.get('status') != 'cancelled']
         logging.info(f"[SYNC] Window for user {user_id}: {start_date} to {end_date} ({len(active_events)} active events)")
 
-        success = busy_slot_service.sync_user_google_calendar(user_id, start_date, end_date)
+        any_success = False
 
-        if not success:
+        if google_credentials:
+            try:
+                if busy_slot_service.sync_user_google_calendar(user_id, start_date, end_date):
+                    any_success = True
+            except Exception as e:
+                logging.warning(f"[SYNC] Google sync failed for user {user_id}: {e}")
+
+        if microsoft_credentials:
+            try:
+                if busy_slot_service.sync_user_microsoft_calendar(user_id, start_date, end_date):
+                    any_success = True
+            except Exception as e:
+                logging.warning(f"[SYNC] Microsoft sync failed for user {user_id}: {e}")
+
+        if not any_success:
             return jsonify({
                 'error': 'Sync failed',
-                'message': 'Failed to sync Google Calendar'
+                'message': 'Failed to sync calendar'
             }), 500
 
         _mark_proposals_stale_for_events(active_events, access_token)
@@ -272,7 +295,7 @@ def _sync_participants_calendars(
     start_date: datetime,
     end_date: datetime
 ) -> dict:
-    """Sync calendars for all participants and return results."""
+    """Sync calendars for all participants (Google and Microsoft) and return results."""
     busy_slot_service = BusySlotService()
     sync_results = {
         'total_participants': len(participant_ids),
@@ -287,51 +310,52 @@ def _sync_participants_calendars(
         participant_name = profile.get("full_name", "Unknown")
         participant_email = profile.get("email_address", "unknown@email.com")
 
-        credentials = get_stored_credentials(participant_id)
+        google_creds = get_stored_credentials(participant_id)
+        microsoft_creds = microsoft_calendar.get_stored_credentials(participant_id)
 
-        if not credentials:
+        if not google_creds and not microsoft_creds:
             sync_results['skipped'] += 1
             sync_results['details'].append({
                 'user_id': participant_id,
                 'name': participant_name,
                 'email': participant_email,
                 'status': 'skipped',
-                'reason': 'No Google Calendar connected'
+                'reason': 'No calendar connected'
             })
             continue
 
-        try:
-            success = busy_slot_service.sync_user_google_calendar(participant_id, start_date, end_date)
+        any_success = False
 
-            if success:
-                sync_results['synced'] += 1
-                sync_results['details'].append({
-                    'user_id': participant_id,
-                    'name': participant_name,
-                    'email': participant_email,
-                    'status': 'success'
-                })
-            else:
-                sync_results['failed'] += 1
-                sync_results['details'].append({
-                    'user_id': participant_id,
-                    'name': participant_name,
-                    'email': participant_email,
-                    'status': 'failed',
-                    'reason': 'Sync returned false'
-                })
-        except Exception as e:
-            error_message = str(e)
-            is_invalid_grant = 'invalid_grant' in error_message.lower()
+        if google_creds:
+            try:
+                if busy_slot_service.sync_user_google_calendar(participant_id, start_date, end_date):
+                    any_success = True
+            except Exception as e:
+                logging.warning(f"[SYNC] Google sync failed for participant {participant_id}: {e}")
 
+        if microsoft_creds:
+            try:
+                if busy_slot_service.sync_user_microsoft_calendar(participant_id, start_date, end_date):
+                    any_success = True
+            except Exception as e:
+                logging.warning(f"[SYNC] Microsoft sync failed for participant {participant_id}: {e}")
+
+        if any_success:
+            sync_results['synced'] += 1
+            sync_results['details'].append({
+                'user_id': participant_id,
+                'name': participant_name,
+                'email': participant_email,
+                'status': 'success'
+            })
+        else:
             sync_results['failed'] += 1
             sync_results['details'].append({
                 'user_id': participant_id,
                 'name': participant_name,
                 'email': participant_email,
                 'status': 'failed',
-                'reason': 'Google Calendar access expired - user needs to reconnect' if is_invalid_grant else error_message,
-                'needs_reconnect': is_invalid_grant
+                'reason': 'Calendar sync failed - user may need to reconnect'
             })
 
     return sync_results

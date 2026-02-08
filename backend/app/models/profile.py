@@ -13,6 +13,7 @@ class Profile(BaseModel):
     full_name: Optional[str] = Field(default=None)
     avatar_url: Optional[str] = Field(default=None)
     google_auth_token: Optional[Dict[str, Any]] = Field(default=None)
+    microsoft_auth_token: Optional[Dict[str, Any]] = Field(default=None)
     google_calendar_id: Optional[str] = Field(default=None)
     timezone: Optional[str] = Field(default=None)
     created_at: datetime = Field(default_factory=datetime.utcnow)
@@ -29,6 +30,7 @@ class Profile(BaseModel):
             "full_name": self.full_name,
             "avatar_url": self.avatar_url,
             "google_auth_token": self.google_auth_token,
+            "microsoft_auth_token": self.microsoft_auth_token,
             "google_calendar_id": self.google_calendar_id,
             "timezone": self.timezone,
             "created_at": self.created_at.isoformat(),

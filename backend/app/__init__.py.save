@@ -21,7 +21,7 @@ from .routes.events import event_bp
 from .routes.auth import auth_bp
 from .routes.availability import availability_bp
 from .routes.preferences import preferences_bp
-from .routes.google_calendar import calendar_bp
+from .routes.calendar import calendar_bp
 from .routes.busy_slots import busy_slots_bp
 from .routes.preferred_slots import preferred_slots_bp
 from .routes.event_finalization import event_finalization_bp
