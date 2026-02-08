@@ -30,14 +30,14 @@ const MotionBox = motion(Box);
  * Get smart defaults for date range
  */
 const getDefaultDates = () => {
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
+  const today = new Date();
+  today.setDate(today.getDate() + 1);
 
   const twoWeeksOut = new Date();
   twoWeeksOut.setDate(twoWeeksOut.getDate() + 14);
 
   return {
-    startDate: tomorrow.toISOString().split('T')[0],
+    startDate: today.toISOString().split('T')[0],
     endDate: twoWeeksOut.toISOString().split('T')[0]
   };
 };

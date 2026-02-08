@@ -100,7 +100,7 @@ def store_credentials(user_id: str, credentials: dict, provider_email: str = Non
 
     check_response = (
         supabase.table("profiles")
-        .select("id, email")
+        .select("id, email_address")
         .eq("id", user_id)
         .execute()
     )
@@ -119,7 +119,7 @@ def store_credentials(user_id: str, credentials: dict, provider_email: str = Non
         logging.error(f"Failed to store credentials in profiles: {e}")
 
     try:
-        email = provider_email or profile.get("email")
+        email = provider_email or profile.get("email_address")
 
         if email:
             existing_account = (
