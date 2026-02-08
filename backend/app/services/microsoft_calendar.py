@@ -311,7 +311,7 @@ def get_user_calendars_list(credentials: dict) -> list:
             "id": c["id"],
             "summary": c.get("name", c["id"]),
             "primary": c.get("isDefaultCalendar", False),
-            "backgroundColor": c.get("hexColor"),
+            "backgroundColor": c.get("hexColor") or "#0078D4",
             "foregroundColor": None,
             "accessRole": "owner" if c.get("canEdit") else "reader",
             "selected": True,
@@ -320,3 +320,119 @@ def get_user_calendars_list(credentials: dict) -> list:
     ]
 
 
+def _prepare_microsoft_event(event_data: dict, include_online_meeting: bool = False) -> dict:
+    """Convert internal (Google-like) event format to Microsoft Graph API format."""
+    start_dt = event_data["start"]["dateTime"]
+    end_dt = event_data["end"]["dateTime"]
+    tz = event_data["start"].get("timeZone", "UTC")
+
+    # Microsoft Graph expects no trailing Z with explicit timeZone
+    if isinstance(start_dt, str) and start_dt.endswith("Z"):
+        start_dt = start_dt[:-1]
+    if isinstance(end_dt, str) and end_dt.endswith("Z"):
+        end_dt = end_dt[:-1]
+
+    ms_event = {
+        "subject": event_data.get("summary", ""),
+        "body": {
+            "contentType": "text",
+            "content": event_data.get("description", ""),
+        },
+        "start": {
+            "dateTime": start_dt,
+            "timeZone": tz,
+        },
+        "end": {
+            "dateTime": end_dt,
+            "timeZone": tz,
+        },
+        "attendees": [
+            {
+                "emailAddress": {"address": a["email"], "name": a.get("name", "")},
+                "type": "required",
+            }
+            for a in event_data.get("attendees", [])
+        ],
+    }
+
+    if include_online_meeting:
+        ms_event["isOnlineMeeting"] = True
+        ms_event["onlineMeetingProvider"] = "teamsForBusiness"
+
+    return ms_event
+
+
+def create_calendar_event(
+    credentials: dict,
+    user_id: str,
+    calendar_id: str | None,
+    event_data: dict,
+    include_online_meeting: bool = False,
+) -> dict:
+    """Create a calendar event via Microsoft Graph API.
+
+    Returns normalized result: {"id", "htmlLink", "onlineMeetingUrl"}.
+    """
+    service = get_calendar_service(credentials, user_id)
+    ms_event = _prepare_microsoft_event(event_data, include_online_meeting)
+
+    if calendar_id and calendar_id != "primary":
+        endpoint = f"/me/calendars/{calendar_id}/events"
+    else:
+        endpoint = "/me/events"
+
+    response = service["graph_request"]("POST", endpoint, json=ms_event)
+    response.raise_for_status()
+    created = response.json()
+
+    online_meeting_url = None
+    if created.get("onlineMeeting") and created["onlineMeeting"].get("joinUrl"):
+        online_meeting_url = created["onlineMeeting"]["joinUrl"]
+
+    return {
+        "id": created["id"],
+        "htmlLink": created.get("webLink", ""),
+        "onlineMeetingUrl": online_meeting_url,
+    }
+
+
+def create_calendar_event_with_retry(
+    credentials: dict,
+    user_id: str,
+    calendar_id: str | None,
+    event_data: dict,
+    include_online_meeting: bool = False,
+    max_retries: int = 3,
+) -> dict:
+    """Create a calendar event with retry logic for transient errors."""
+    for attempt in range(max_retries):
+        try:
+            return create_calendar_event(
+                credentials=credentials,
+                user_id=user_id,
+                calendar_id=calendar_id,
+                event_data=event_data,
+                include_online_meeting=include_online_meeting,
+            )
+        except requests.exceptions.HTTPError as e:
+            status_code = e.response.status_code if e.response is not None else 0
+
+            if status_code == 401:
+                raise Exception("Microsoft authentication failed. Please reconnect your calendar.") from e
+
+            is_retryable = status_code in (429, 500, 502, 503, 504)
+            if is_retryable and attempt < max_retries - 1:
+                time.sleep(2 ** attempt)
+                continue
+
+            if status_code == 429:
+                raise Exception("Microsoft Calendar API rate limit exceeded. Please try again in a moment.") from e
+
+            raise Exception(f"Failed to create Microsoft calendar event: {e}") from e
+
+        except Exception as e:
+            if attempt == max_retries - 1:
+                raise Exception(f"Failed to create Microsoft calendar event: {e}") from e
+            time.sleep(2 ** attempt)
+
+    raise Exception("Failed to create Microsoft event after maximum retries")

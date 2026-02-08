@@ -97,6 +97,68 @@ def _sync_calendar_sources(user_id: str, credentials, google_email: str | None) 
         logging.error(f"[AUTH] Failed to sync calendar sources: {e}")
 
 
+def _get_microsoft_calendar_info(credentials: dict) -> tuple[str | None, str, str | None]:
+    """Get primary calendar ID, timezone, and email from Microsoft Graph API."""
+    try:
+        headers = {
+            "Authorization": f"Bearer {credentials['access_token']}",
+            "Content-Type": "application/json",
+        }
+
+        import requests
+        GRAPH_API_BASE = "https://graph.microsoft.com/v1.0"
+
+        # Get Microsoft account email
+        me_response = requests.get(f"{GRAPH_API_BASE}/me", headers=headers)
+        me_response.raise_for_status()
+        me_data = me_response.json()
+        microsoft_email = me_data.get("mail") or me_data.get("userPrincipalName")
+
+        # Get default calendar ID
+        calendars_response = requests.get(f"{GRAPH_API_BASE}/me/calendars", headers=headers)
+        calendars_response.raise_for_status()
+        calendars_data = calendars_response.json()
+        default_calendar = next(
+            (c for c in calendars_data.get("value", []) if c.get("isDefaultCalendar")),
+            None
+        )
+        primary_calendar_id = default_calendar["id"] if default_calendar else None
+
+        # Get user timezone from mailbox settings
+        settings_response = requests.get(f"{GRAPH_API_BASE}/me/mailboxSettings", headers=headers)
+        settings_response.raise_for_status()
+        settings_data = settings_response.json()
+        user_timezone = settings_data.get("timeZone", "UTC")
+
+        return primary_calendar_id, user_timezone, microsoft_email
+
+    except Exception as e:
+        logging.warning(f"[AUTH] Could not fetch Microsoft calendar info: {e}")
+        return None, "UTC", None
+
+
+def _sync_microsoft_calendar_sources(user_id: str, credentials: dict, microsoft_email: str | None) -> None:
+    """Sync calendar sources from Microsoft provider."""
+    try:
+        from ..services.calendar_accounts import CalendarAccountsService
+        calendar_accounts_service = CalendarAccountsService()
+
+        if microsoft_email:
+            account = calendar_accounts_service.ensure_account_exists(
+                user_id=user_id,
+                provider="microsoft",
+                provider_email=microsoft_email,
+                credentials=credentials,
+            )
+
+            if account:
+                calendar_accounts_service.sync_calendars_from_provider(account["id"])
+                logging.info(f"[AUTH] Synced Microsoft calendar sources for user {user_id}")
+
+    except Exception as e:
+        logging.error(f"[AUTH] Failed to sync Microsoft calendar sources: {e}")
+
+
 def _schedule_calendar_sync(user_id: str) -> None:
     """Schedule background calendar sync job."""
     try:
@@ -352,11 +414,29 @@ def microsoft_callback():
             return jsonify({"error": "Invalid user token", "message": "Invalid user token"}), 401
 
         user_id = user.id
+
+        # Get Microsoft account info (email, calendar ID, timezone)
+        primary_calendar_id, user_timezone, microsoft_email = _get_microsoft_calendar_info(credentials)
+
+        # Use Microsoft email if available, fall back to Supabase email
         user_metadata = user.user_metadata or {}
-        provider_email = user_metadata.get("email")
+        provider_email = microsoft_email or user_metadata.get("email")
 
         microsoft_calendar.store_credentials(user_id, credentials, provider_email)
         logging.info(f"[AUTH] Stored Microsoft credentials for user {user_id}")
+
+        # Update profile timezone if not already set
+        try:
+            users_service = UsersService()
+            profile = users_service.get_profile(user_id)
+            if profile and not profile.get("timezone"):
+                users_service.update_profile(user_id, {"timezone": user_timezone})
+                logging.info(f"[AUTH] Set timezone for user {user_id} to {user_timezone}")
+        except Exception as e:
+            logging.warning(f"[AUTH] Could not update timezone: {e}")
+
+        # Sync calendar sources from Microsoft
+        _sync_microsoft_calendar_sources(user_id, credentials, provider_email)
 
         _schedule_calendar_sync(user_id)
 

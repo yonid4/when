@@ -1,10 +1,11 @@
 """
-Event finalization service for creating Google Calendar events.
+Event finalization service for creating calendar events (Google and Microsoft).
 
-Handles validating finalization requests, creating Google Calendar events
+Handles validating finalization requests, creating calendar events
 with retry logic, sending invitations, and updating event status.
 """
 
+import logging
 import os
 import time
 from datetime import datetime, timezone
@@ -12,6 +13,7 @@ from typing import Any, Dict, List, Optional
 
 from supabase import create_client
 
+from ..services import microsoft_calendar
 from ..services.google_calendar import get_calendar_service, get_stored_credentials
 from ..utils.supabase_client import get_supabase
 
@@ -37,9 +39,10 @@ class EventFinalizationService:
         start_time_utc: str,
         end_time_utc: str,
         participant_ids: List[str],
-        include_google_meet: bool = False
+        include_google_meet: bool = False,
+        include_online_meeting: bool = False,
     ) -> Dict[str, Any]:
-        """Finalize an event and create Google Calendar event."""
+        """Finalize an event and create calendar event (Google or Microsoft)."""
         event = self._get_event(event_id)
         if not event:
             raise Exception("Event not found")
@@ -50,9 +53,13 @@ class EventFinalizationService:
         if event.get("status") == "finalized":
             raise Exception("Event already finalized")
 
-        credentials = get_stored_credentials(coordinator_id)
-        if not credentials:
-            raise Exception("Google Calendar not connected. Please connect your calendar first.")
+        # Detect which calendar provider to use
+        provider, credentials, calendar_id = self._detect_coordinator_provider(coordinator_id)
+        if not provider or not credentials:
+            raise Exception("No calendar connected. Please connect your calendar first.")
+
+        # Merge legacy include_google_meet with new include_online_meeting
+        wants_online_meeting = include_google_meet or include_online_meeting
 
         coordinator = self._get_user_profile(coordinator_id)
         if not coordinator:
@@ -72,31 +79,45 @@ class EventFinalizationService:
             end_time_utc=end_time_utc,
             attendee_emails=attendee_emails,
             coordinator_timezone=coordinator.get("timezone", "UTC"),
-            include_google_meet=include_google_meet,
+            include_google_meet=wants_online_meeting,
             event_id=event_id
         )
 
         try:
-            created_event = self._create_google_calendar_event_with_retry(
-                credentials=credentials,
-                coordinator_id=coordinator_id,
-                event_data=calendar_event,
-                include_meet=include_google_meet
-            )
+            if provider == "microsoft":
+                created_event = microsoft_calendar.create_calendar_event_with_retry(
+                    credentials=credentials,
+                    user_id=coordinator_id,
+                    calendar_id=calendar_id,
+                    event_data=calendar_event,
+                    include_online_meeting=wants_online_meeting,
+                )
+            else:
+                created_event = self._create_google_calendar_event_with_retry(
+                    credentials=credentials,
+                    coordinator_id=coordinator_id,
+                    event_data=calendar_event,
+                    include_meet=wants_online_meeting
+                )
         except Exception as e:
-            raise Exception(f"Failed to create Google Calendar event: {str(e)}")
+            raise Exception(f"Failed to create calendar event: {str(e)}")
+
+        calendar_event_id = created_event["id"]
+        calendar_html_link = created_event.get("htmlLink", "")
+        online_meeting_url = created_event.get("hangoutLink") or created_event.get("onlineMeetingUrl")
 
         try:
             self._update_event_finalization(
                 event_id=event_id,
                 start_time_utc=start_time_utc,
                 end_time_utc=end_time_utc,
-                google_event_id=created_event["id"],
-                google_html_link=created_event["htmlLink"]
+                calendar_event_id=calendar_event_id,
+                calendar_html_link=calendar_html_link,
+                calendar_provider=provider,
             )
         except Exception as e:
-            print(f"CRITICAL: Google event created but DB update failed: {e}")
-            raise Exception("Event created in Google Calendar but failed to update database. Please contact support.")
+            logging.critical(f"Calendar event created but DB update failed: {e}")
+            raise Exception("Event created in calendar but failed to update database. Please contact support.")
 
         try:
             self._create_finalization_notifications(
@@ -104,18 +125,61 @@ class EventFinalizationService:
                 participants=participants,
                 coordinator_id=coordinator_id,
                 start_time_utc=start_time_utc,
-                google_html_link=created_event["htmlLink"]
+                google_html_link=calendar_html_link
             )
         except Exception as e:
-            print(f"Warning: Failed to create finalization notifications: {e}")
+            logging.warning(f"Failed to create finalization notifications: {e}")
 
         return {
             "success": True,
-            "google_event_id": created_event["id"],
-            "html_link": created_event["htmlLink"],
-            "meet_link": created_event.get("hangoutLink")
+            "calendar_provider": provider,
+            "calendar_event_id": calendar_event_id,
+            "html_link": calendar_html_link,
+            "online_meeting_url": online_meeting_url,
+            # Backward compat
+            "google_event_id": calendar_event_id if provider == "google" else None,
+            "meet_link": created_event.get("hangoutLink") if provider == "google" else None,
         }
     
+    def _detect_coordinator_provider(self, coordinator_id: str) -> tuple:
+        """Detect which calendar provider the coordinator uses.
+
+        Returns (provider, credentials, calendar_id).
+        """
+        # First: check calendar_accounts for a write calendar preference
+        try:
+            from ..services.calendar_accounts import CalendarAccountsService
+            cas = CalendarAccountsService()
+
+            write_cal = cas.get_write_calendar(coordinator_id)
+            if write_cal and write_cal.get("account"):
+                account = write_cal["account"]
+                if account.get("credentials"):
+                    return (
+                        account["provider"],
+                        account["credentials"],
+                        write_cal.get("calendar_id", "primary"),
+                    )
+
+            # Fall back to any account with credentials
+            accounts = cas.get_user_accounts(coordinator_id)
+            for account in accounts:
+                if account.get("credentials"):
+                    return (account["provider"], account["credentials"], "primary")
+        except Exception as e:
+            logging.debug(f"calendar_accounts lookup failed: {e}")
+
+        # Last resort: check legacy credentials
+        google_creds = get_stored_credentials(coordinator_id)
+        if google_creds:
+            return ("google", google_creds, "primary")
+
+        ms_creds = microsoft_calendar.get_stored_credentials(coordinator_id)
+        if ms_creds:
+            return ("microsoft", ms_creds, "primary")
+
+        return (None, None, None)
+
     def _get_event(self, event_id: str) -> Optional[Dict[str, Any]]:
         """Get event by ID."""
         try:
@@ -253,20 +317,29 @@ class EventFinalizationService:
         event_id: str,
         start_time_utc: str,
         end_time_utc: str,
-        google_event_id: str,
-        google_html_link: str
+        calendar_event_id: str,
+        calendar_html_link: str,
+        calendar_provider: str = "google",
     ) -> None:
         """Update event with finalization details."""
+        update_data = {
+            "status": "finalized",
+            "finalized_start_time_utc": start_time_utc,
+            "finalized_end_time_utc": end_time_utc,
+            "calendar_provider": calendar_provider,
+            "finalized_at": datetime.now(timezone.utc).isoformat(),
+        }
+
+        if calendar_provider == "google":
+            update_data["google_calendar_event_id"] = calendar_event_id
+            update_data["google_calendar_html_link"] = calendar_html_link
+        elif calendar_provider == "microsoft":
+            update_data["microsoft_calendar_event_id"] = calendar_event_id
+            update_data["microsoft_calendar_html_link"] = calendar_html_link
+
         response = (
             self.service_role_client.table("events")
-            .update({
-                "status": "finalized",
-                "finalized_start_time_utc": start_time_utc,
-                "finalized_end_time_utc": end_time_utc,
-                "google_calendar_event_id": google_event_id,
-                "google_calendar_html_link": google_html_link,
-                "finalized_at": datetime.now(timezone.utc).isoformat()
-            })
+            .update(update_data)
             .eq("id", event_id)
             .execute()
         )

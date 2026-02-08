@@ -159,8 +159,8 @@ def delete_user_busy_slots(event_id, target_user_id, user_id):
 
 @busy_slots_bp.route('/sync/<string:target_user_id>', methods=['POST'])
 @require_auth
-def sync_user_google_calendar(target_user_id, user_id):
-    """Sync busy slots from user's Google Calendar."""
+def sync_user_calendar(target_user_id, user_id):
+    """Sync busy slots from user's connected calendars (Google and/or Microsoft)."""
     data = request.get_json() or {}
     start_date_str = data.get('start_date')
     end_date_str = data.get('end_date')
@@ -175,19 +175,32 @@ def sync_user_google_calendar(target_user_id, user_id):
         start_date = datetime.fromisoformat(start_date_str)
         end_date = datetime.fromisoformat(end_date_str)
 
-        success = busy_slots_service.sync_user_google_calendar(target_user_id, start_date, end_date)
+        google_success = False
+        microsoft_success = False
 
-        if success:
-            return jsonify({'message': 'Google Calendar synced successfully'}), 200
+        try:
+            google_success = busy_slots_service.sync_user_google_calendar(target_user_id, start_date, end_date)
+        except Exception as e:
+            import logging
+            logging.warning(f"Google calendar sync failed for user {target_user_id}: {e}")
+
+        try:
+            microsoft_success = busy_slots_service.sync_user_microsoft_calendar(target_user_id, start_date, end_date)
+        except Exception as e:
+            import logging
+            logging.warning(f"Microsoft calendar sync failed for user {target_user_id}: {e}")
+
+        if google_success or microsoft_success:
+            return jsonify({'message': 'Calendar synced successfully'}), 200
         else:
             return jsonify({
                 'error': 'Sync failed',
-                'message': 'Could not sync Google Calendar. Check credentials.'
+                'message': 'Could not sync calendar. Check credentials.'
             }), 400
 
     except Exception as e:
         return jsonify({
-            'error': 'Failed to sync Google Calendar',
+            'error': 'Failed to sync calendar',
             'message': str(e)
         }), 400
 
