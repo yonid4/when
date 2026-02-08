@@ -154,7 +154,7 @@ const EventPage = () => {
         const myParticipantRecord = participantsData?.find(p => p.user_id === user?.id);
         if (myParticipantRecord) {
           setUserRsvp(myParticipantRecord.rsvp_status);
-          setCanInvite(myParticipantRecord.can_invite || false);
+          setCanInvite(myParticipantRecord.can_invite || eventData.guests_can_invite || false);
         } else {
           setCanInvite(false);
         }

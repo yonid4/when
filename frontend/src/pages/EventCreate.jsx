@@ -253,6 +253,7 @@ const EventCreate = () => {
         video_call_link: formData.videoLink,
         duration_minutes: parseInt(formData.duration),
         coordinator_timezone: userTimezone, // Include user's timezone
+        guests_can_invite: formData.guestPermissions.canInviteOthers,
       };
 
       // 2. Add datetime fields based on mode

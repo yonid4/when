@@ -45,7 +45,13 @@ def _get_event_by_uid(event_uid: str) -> dict | None:
 
 
 def _check_invite_permission(event: dict, user_id: str) -> tuple[bool, str | None]:
-    """Check if user has permission to invite. Returns (has_permission, error_message)."""
+    """Check if user has permission to invite. Returns (has_permission, error_message).
+
+    Permission is granted if any of these are true:
+    - User is the coordinator
+    - Event-level guests_can_invite is true (and user is a participant)
+    - Per-participant can_invite is true
+    """
     if event["coordinator_id"] == user_id:
         return True, None
 
@@ -60,6 +66,11 @@ def _check_invite_permission(event: dict, user_id: str) -> tuple[bool, str | Non
     if not participant_response.data:
         return False, "You must be a participant to invite others"
 
+    # Event-level: everyone can invite
+    if event.get("guests_can_invite"):
+        return True, None
+
+    # Per-participant check
     if not participant_response.data[0].get("can_invite"):
         return False, "You don't have permission to invite users"
 
