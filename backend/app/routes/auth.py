@@ -187,8 +187,12 @@ def _encode_oauth_state(user_token: str | None, return_url: str = "/") -> str:
     return base64.urlsafe_b64encode(json.dumps(state_data).encode()).decode()
 
 
-def _build_success_html(provider: str = "Google Calendar") -> str:
+def _build_success_html(provider: str = "Google Calendar", return_url: str = "/") -> str:
     """Build HTML response for successful OAuth callback."""
+    from ..config import Config
+    frontend_url = Config.FRONTEND_URL.rstrip("/")
+    redirect_url = f"{frontend_url}{return_url}"
+
     return f"""
     <!DOCTYPE html>
     <html>
@@ -233,6 +237,10 @@ def _build_success_html(provider: str = "Google Calendar") -> str:
             setTimeout(function() {{
                 window.close();
             }}, 1500);
+            // Fallback: if window.close() didn't work (not a popup), redirect
+            setTimeout(function() {{
+                window.location.href = "{redirect_url}";
+            }}, 2000);
         </script>
     </body>
     </html>
@@ -325,6 +333,7 @@ def google_callback():
     try:
         state_data = _decode_oauth_state(state)
         user_token = state_data.get('user_token')
+        return_url = state_data.get('return_url', '/')
 
         credentials = auth_service.exchange_code_for_credentials(code)
 
@@ -358,7 +367,7 @@ def google_callback():
         except Exception as e:
             logging.error(f"[AUTH] Error enriching profile with Google data: {e}")
 
-        return _build_success_html(), 200
+        return _build_success_html(return_url=return_url), 200
 
     except ValueError as e:
         logging.error(f"[AUTH] ValueError in google/callback: {e}")
@@ -406,6 +415,7 @@ def microsoft_callback():
     try:
         state_data = _decode_oauth_state(state)
         user_token = state_data.get("user_token")
+        return_url = state_data.get("return_url", "/")
 
         credentials = microsoft_calendar.get_credentials_from_code(code)
 
@@ -440,7 +450,7 @@ def microsoft_callback():
 
         _schedule_calendar_sync(user_id)
 
-        return _build_success_html("Microsoft Calendar"), 200
+        return _build_success_html("Microsoft Calendar", return_url=return_url), 200
 
     except ValueError as e:
         logging.error(f"[AUTH] ValueError in microsoft/callback: {e}")
