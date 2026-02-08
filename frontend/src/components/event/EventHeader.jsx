@@ -19,7 +19,9 @@ import { shadows } from "../../styles/designSystem";
  * @param {string} props.eventName - Event name/title
  * @param {string} props.status - Event status (planning, finalized, etc.)
  * @param {boolean} props.isCoordinator - Is current user the coordinator
- * @param {string} props.googleCalendarLink - Link to Google Calendar event
+ * @param {string} props.calendarLink - Link to calendar event (any provider)
+ * @param {string} props.calendarProvider - Calendar provider ("google" or "microsoft")
+ * @param {string} props.googleCalendarLink - Deprecated: use calendarLink instead
  * @param {Function} props.onBack - Handler for back button
  * @param {Function} props.onEdit - Handler for edit action
  * @param {Function} props.onCopyLink - Handler for copy link action
@@ -28,11 +30,18 @@ const EventHeader = ({
   eventName,
   status,
   isCoordinator,
+  calendarLink,
+  calendarProvider,
   googleCalendarLink,
   onBack,
   onEdit,
   onCopyLink
 }) => {
+  const effectiveLink = calendarLink || googleCalendarLink;
+  const calendarLabel = calendarProvider === "microsoft"
+    ? "View in Outlook Calendar"
+    : "View in Google Calendar";
+
   return (
     <Flex
       px={4}
@@ -80,14 +89,14 @@ const EventHeader = ({
           <MenuItem icon={<FiCopy />} onClick={onCopyLink}>
             Copy Link
           </MenuItem>
-          {googleCalendarLink && (
+          {effectiveLink && (
             <MenuItem
               icon={<FiExternalLink />}
               as="a"
-              href={googleCalendarLink}
+              href={effectiveLink}
               target="_blank"
             >
-              View in Google Calendar
+              {calendarLabel}
             </MenuItem>
           )}
         </MenuList>

@@ -284,37 +284,49 @@ const EventPage = () => {
     }
   };
 
-  const handleReconnectGoogleCalendar = async () => {
+  // Determine which calendar provider the coordinator uses
+  const calendarProvider = event?.calendar_provider || null;
+  const calendarLink = event?.google_calendar_html_link || event?.microsoft_calendar_html_link || null;
+
+  const handleReconnectCalendar = async () => {
     if (isDemo) {
-      toast({ title: "Google Calendar (Demo)", description: "Calendar reconnection simulated successfully", status: "success", duration: 3000, isClosable: true });
+      toast({ title: "Calendar (Demo)", description: "Calendar reconnection simulated successfully", status: "success", duration: 3000, isClosable: true });
       return;
     }
 
+    // Determine which provider to reconnect based on the event's provider or default to Google
+    const provider = calendarProvider === "microsoft" ? "microsoft" : "google";
+    const providerLabel = provider === "microsoft" ? "Microsoft" : "Google";
+    const authEndpoint = `/api/auth/${provider}?return_url=/events/${eventUid}`;
+
     try {
-      const response = await execute(() => api.get(`/api/auth/google?return_url=/events/${eventUid}`), { showSuccessToast: false });
+      const response = await execute(() => api.get(authEndpoint), { showSuccessToast: false });
       const data = response?.data || response;
 
       if (data?.auth_url) {
         const width = 600, height = 700;
         const left = window.screen.width / 2 - width / 2;
         const top = window.screen.height / 2 - height / 2;
-        const popup = window.open(data.auth_url, "Google Calendar OAuth", `width=${width},height=${height},left=${left},top=${top}`);
+        const popup = window.open(data.auth_url, `${providerLabel} Calendar OAuth`, `width=${width},height=${height},left=${left},top=${top}`);
 
         const checkPopup = setInterval(() => {
           if (popup.closed) {
             clearInterval(checkPopup);
-            toast({ title: "Reconnecting...", description: "Checking Google Calendar connection", status: "info", duration: 2000, isClosable: true });
+            toast({ title: "Reconnecting...", description: `Checking ${providerLabel} Calendar connection`, status: "info", duration: 2000, isClosable: true });
             setTimeout(() => loadEventData(), 1000);
           }
         }, 500);
       } else {
-        toast({ title: "Error", description: "Could not initiate Google Calendar connection", status: "error", duration: 3000, isClosable: true });
+        toast({ title: "Error", description: `Could not initiate ${providerLabel} Calendar connection`, status: "error", duration: 3000, isClosable: true });
       }
     } catch (error) {
-      console.error("Failed to reconnect Google Calendar:", error);
-      toast({ title: "Connection failed", description: error.message || "Could not connect to Google Calendar", status: "error", duration: 3000, isClosable: true });
+      console.error(`Failed to reconnect ${providerLabel} Calendar:`, error);
+      toast({ title: "Connection failed", description: error.message || `Could not connect to ${providerLabel} Calendar`, status: "error", duration: 3000, isClosable: true });
     }
   };
+
+  // Backward compat alias
+  const handleReconnectGoogleCalendar = handleReconnectCalendar;
 
   const handleSyncCalendars = async () => {
     if (isDemo) {
@@ -482,16 +494,21 @@ const EventPage = () => {
         start_time_utc: finalizationData.start_time_utc,
         end_time_utc: finalizationData.end_time_utc,
         participant_ids: finalizationData.participant_ids,
-        include_google_meet: finalizationData.include_google_meet
+        include_google_meet: finalizationData.include_google_meet,
+        include_online_meeting: finalizationData.include_online_meeting
       }), { showSuccessToast: false });
 
       if (finalizationData.title !== event.name) {
         await execute(() => eventsAPI.update(event.id, { name: finalizationData.title }), { showSuccessToast: false });
       }
 
+      const hasOnlineMeeting = result.online_meeting_url || result.meet_link;
+      const providerName = result.calendar_provider === "microsoft" ? "Outlook" : "Google";
       toast({
         title: "Event finalized successfully!",
-        description: result.meet_link ? "Google Calendar event created with Meet link" : "Google Calendar event created",
+        description: hasOnlineMeeting
+          ? `${providerName} Calendar event created with video link`
+          : `${providerName} Calendar event created`,
         status: "success", duration: 5000, isClosable: true
       });
 
@@ -504,7 +521,8 @@ const EventPage = () => {
       const needsReconnect = error.response?.data?.needs_reconnect;
 
       if (needsReconnect || errorMessage?.includes("expired") || errorMessage?.includes("reconnect")) {
-        toast({ title: "Google Calendar Connection Expired", description: "Click the 'Reconnect Google Calendar' button below to refresh your connection.", status: "warning", duration: 15000, isClosable: true, position: "top" });
+        const providerLabel = calendarProvider === "microsoft" ? "Microsoft" : "Google";
+        toast({ title: `${providerLabel} Calendar Connection Expired`, description: `Click the 'Reconnect' button below to refresh your ${providerLabel} Calendar connection.`, status: "warning", duration: 15000, isClosable: true, position: "top" });
       } else {
         toast({ title: "Finalization failed", description: errorMessage || "Could not finalize the event. Please try again.", status: "error", duration: 5000, isClosable: true });
       }
@@ -549,6 +567,8 @@ const EventPage = () => {
         eventName={event.name}
         status={event.status}
         isCoordinator={isCoordinator}
+        calendarLink={calendarLink}
+        calendarProvider={calendarProvider}
         googleCalendarLink={event.google_calendar_html_link}
         onBack={() => navigate("/dashboard")}
         onEdit={() => setIsEditModalOpen(true)}
@@ -636,7 +656,7 @@ const EventPage = () => {
                 onSync={handleSyncCalendars}
                 onInvite={() => setIsInviteModalOpen(true)}
                 onCopyLink={handleCopyLink}
-                onReconnect={handleReconnectGoogleCalendar}
+                onReconnect={handleReconnectCalendar}
                 cardBg={cardBg}
                 isLoading={loading && !event}
               />
@@ -687,6 +707,7 @@ const EventPage = () => {
         selectedTime={selectedFinalizeTime}
         participants={participants}
         onFinalize={handleFinalize}
+        calendarProvider={calendarProvider}
       />
     </Box>
   );

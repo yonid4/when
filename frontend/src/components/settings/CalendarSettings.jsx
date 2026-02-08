@@ -18,6 +18,7 @@ import {
 } from "@chakra-ui/react";
 import { FiCalendar, FiPlus } from "react-icons/fi";
 import { FcGoogle } from "react-icons/fc";
+import { BsMicrosoft } from "react-icons/bs";
 
 import { useCalendarAccounts } from "../../hooks/useCalendarAccounts.js";
 import { useCalendarConnection } from "../../hooks/useCalendarConnection.js";
@@ -45,7 +46,7 @@ function CalendarSettings() {
     refetch,
   } = useCalendarAccounts();
 
-  const { connectGoogleCalendar } = useCalendarConnection();
+  const { connectGoogleCalendar, connectMicrosoftCalendar } = useCalendarConnection();
 
   const [disconnectingAccountId, setDisconnectingAccountId] = useState(null);
   const [syncingAccountId, setSyncingAccountId] = useState(null);
@@ -164,6 +165,20 @@ function CalendarSettings() {
     }
   }
 
+  async function handleConnectMicrosoft() {
+    try {
+      await connectMicrosoftCalendar();
+    } catch (err) {
+      toast({
+        title: "Connection failed",
+        description: err.message || "Failed to connect Microsoft Calendar",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    }
+  }
+
   async function handleDisconnect(accountId) {
     setDisconnectingAccountId(accountId);
     const success = await disconnectAccount(accountId);
@@ -232,14 +247,24 @@ function CalendarSettings() {
               Select which calendars to use for busy time detection
             </Text>
           </VStack>
-          <Button
-            leftIcon={<Icon as={FcGoogle} />}
-            size="sm"
-            variant="outline"
-            onClick={handleConnectGoogle}
-          >
-            Add Google Calendar
-          </Button>
+          <HStack spacing={2}>
+            <Button
+              leftIcon={<Icon as={FcGoogle} />}
+              size="sm"
+              variant="outline"
+              onClick={handleConnectGoogle}
+            >
+              Add Google
+            </Button>
+            <Button
+              leftIcon={<Icon as={BsMicrosoft} color="#0078D4" />}
+              size="sm"
+              variant="outline"
+              onClick={handleConnectMicrosoft}
+            >
+              Add Microsoft
+            </Button>
+          </HStack>
         </HStack>
       </Box>
 
@@ -290,18 +315,33 @@ function CalendarSettings() {
           borderColor={colors.borderLight}
         >
           <VStack spacing={4}>
-            <Icon as={FcGoogle} boxSize={12} />
+            <Icon as={FiCalendar} boxSize={12} color={colors.primary} />
             <VStack spacing={1}>
               <Text fontWeight="medium" color={colors.textPrimary}>
                 No calendars connected
               </Text>
               <Text fontSize="sm" color={colors.textMuted} maxW="300px">
-                Connect your Google Calendar to automatically detect your busy times
+                Connect your calendar to automatically detect your busy times
               </Text>
             </VStack>
-            <Button leftIcon={<FiPlus />} colorScheme="purple" onClick={handleConnectGoogle}>
-              Connect Google Calendar
-            </Button>
+            <HStack spacing={3}>
+              <Button
+                leftIcon={<Icon as={FcGoogle} />}
+                colorScheme="purple"
+                onClick={handleConnectGoogle}
+              >
+                Google Calendar
+              </Button>
+              <Button
+                leftIcon={<Icon as={BsMicrosoft} />}
+                bg="#0078D4"
+                color="white"
+                _hover={{ bg: "#106EBE" }}
+                onClick={handleConnectMicrosoft}
+              >
+                Microsoft Calendar
+              </Button>
+            </HStack>
           </VStack>
         </Box>
       )}

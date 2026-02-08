@@ -1,6 +1,8 @@
 import {
   Box,
   Button,
+  HStack,
+  Icon,
   Modal,
   ModalBody,
   ModalCloseButton,
@@ -11,12 +13,14 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react";
+import { FcGoogle } from "react-icons/fc";
+import { BsMicrosoft } from "react-icons/bs";
 
 const PROMPT_CONTENT = {
   create: {
     title: "Create Your First Event",
     description:
-      "To help you find the best time for your event, we'd like to check your Google Calendar availability.",
+      "To help you find the best time for your event, we'd like to check your calendar availability.",
     benefits: [
       "Automatic availability checking",
       "Smart time suggestions",
@@ -25,7 +29,7 @@ const PROMPT_CONTENT = {
   },
   view: {
     title: "View Availability",
-    description: "Connect your Google Calendar to see when everyone is free for your event.",
+    description: "Connect your calendar to see when everyone is free for your event.",
     benefits: [
       "See everyone's availability",
       "Find the best meeting time",
@@ -34,7 +38,7 @@ const PROMPT_CONTENT = {
   },
   default: {
     title: "Connect Your Calendar",
-    description: "Connect your Google Calendar to get the most out of your event coordination.",
+    description: "Connect your calendar to get the most out of your event coordination.",
     benefits: [
       "Smart availability checking",
       "Automatic time suggestions",
@@ -43,7 +47,7 @@ const PROMPT_CONTENT = {
   },
 };
 
-function CalendarConnectPrompt({ context, onConnect, onSkip, onClose, isVisible = false }) {
+function CalendarConnectPrompt({ context, onConnect, onConnectMicrosoft, onSkip, onClose, isVisible = false }) {
   if (!isVisible) return null;
 
   const content = PROMPT_CONTENT[context] || PROMPT_CONTENT.default;
@@ -103,24 +107,46 @@ function CalendarConnectPrompt({ context, onConnect, onSkip, onClose, isVisible 
 
         <ModalFooter bg="gray.50" py={6} justifyContent="center">
           <VStack spacing={3} w="full">
-            <Button
-              bgGradient="linear(to-r, blue.500, cyan.400)"
-              color="white"
-              size="lg"
-              w="full"
-              onClick={onConnect}
-              _hover={{
-                bgGradient: "linear(to-r, blue.600, cyan.500)",
-                transform: "translateY(-2px)",
-                boxShadow: "xl",
-              }}
-              transition="all 0.3s"
-              py={6}
-              fontSize="md"
-              fontWeight="bold"
-            >
-              Connect Google Calendar
-            </Button>
+            <HStack spacing={3} w="full">
+              <Button
+                bgGradient="linear(to-r, blue.500, cyan.400)"
+                color="white"
+                size="lg"
+                flex={1}
+                onClick={onConnect}
+                leftIcon={<Icon as={FcGoogle} boxSize={5} />}
+                _hover={{
+                  bgGradient: "linear(to-r, blue.600, cyan.500)",
+                  transform: "translateY(-2px)",
+                  boxShadow: "xl",
+                }}
+                transition="all 0.3s"
+                py={6}
+                fontSize="md"
+                fontWeight="bold"
+              >
+                Google
+              </Button>
+              <Button
+                bg="#0078D4"
+                color="white"
+                size="lg"
+                flex={1}
+                onClick={onConnectMicrosoft}
+                leftIcon={<Icon as={BsMicrosoft} boxSize={5} />}
+                _hover={{
+                  bg: "#106EBE",
+                  transform: "translateY(-2px)",
+                  boxShadow: "xl",
+                }}
+                transition="all 0.3s"
+                py={6}
+                fontSize="md"
+                fontWeight="bold"
+              >
+                Microsoft
+              </Button>
+            </HStack>
             <Button variant="ghost" size="sm" onClick={onSkip} color="gray.600" _hover={{ bg: "gray.100" }}>
               Skip for now
             </Button>
