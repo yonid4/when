@@ -24,8 +24,11 @@ import {
   FiUsers,
   FiZap
 } from "react-icons/fi";
+import { FcGoogle } from "react-icons/fc";
+import { BsMicrosoft } from "react-icons/bs";
+import { FaApple } from "react-icons/fa";
 
-import { colors, gradients } from "../../styles/designSystem";
+import { colors } from "../../styles/designSystem";
 
 const MotionBox = motion(Box);
 const MotionCard = motion(Card);
@@ -55,13 +58,13 @@ function AnimatedSection({ children, delay = 0, reducedMotion }) {
 const valueProps = [
   {
     icon: FiZap,
-    color: colors.accent,
+    color: "#F59E0B",
     title: "Lightning Fast",
     description: "Create and share events in seconds, not hours. No more back-and-forth emails."
   },
   {
     icon: FiUsers,
-    color: colors.primary,
+    color: "#4F6CF7",
     title: "Smart Coordination",
     description: "Automatically find times that work for everyone based on real availability."
   },
@@ -73,14 +76,14 @@ const valueProps = [
   },
   {
     icon: FiBell,
-    color: colors.info,
+    color: "#8B5CF6",
     title: "Stay Updated",
     description: "Real-time notifications keep everyone in the loop when plans change."
   }
 ];
 
 const CARD_BG = "white";
-const FEATURE_BG_COLOR = "gray.50";
+const FEATURE_BG_COLOR = "#F8FAFC";
 
 /**
  * Features section with value proposition cards.
@@ -95,7 +98,7 @@ function FeaturesSection({ reducedMotion }) {
         <AnimatedSection reducedMotion={reducedMotion}>
           <VStack spacing={4} textAlign="center" mb={12}>
             <Heading size="2xl">Why teams love When</Heading>
-            <Text fontSize="xl" color="gray.600" maxW="2xl">
+            <Text fontSize="xl" color="#6B7280" maxW="2xl">
               Everything you need to coordinate schedules and bring people together
             </Text>
           </VStack>
@@ -123,7 +126,7 @@ function FeaturesSection({ reducedMotion }) {
                       <Icon as={feature.icon} boxSize={8} color={feature.color} />
                     </Box>
                     <Heading size="md">{feature.title}</Heading>
-                    <Text color="gray.600">{feature.description}</Text>
+                    <Text color="#6B7280">{feature.description}</Text>
                   </VStack>
                 </CardBody>
               </MotionCard>
@@ -150,7 +153,7 @@ function FeaturesSection({ reducedMotion }) {
                   <Heading size="xl">
                     Stop playing email ping-pong
                   </Heading>
-                  <Text fontSize="lg" color="gray.600">
+                  <Text fontSize="lg" color="#6B7280">
                     Share your availability and let others pick a time that works.
                     Or propose multiple options and vote on the best one together.
                   </Text>
@@ -170,7 +173,7 @@ function FeaturesSection({ reducedMotion }) {
                 </VStack>
 
                 <Card bg={CARD_BG} overflow="hidden" boxShadow="xl">
-                  <Box p={8} bgGradient={gradients.primary}>
+                  <Box p={8} bg="#4F6CF7">
                     <VStack spacing={4}>
                       <Card w="full" bg="white">
                         <CardBody>
@@ -256,7 +259,7 @@ function FeaturesSection({ reducedMotion }) {
                   <Heading size="xl">
                     Keep everyone in sync
                   </Heading>
-                  <Text fontSize="lg" color="gray.600">
+                  <Text fontSize="lg" color="#6B7280">
                     Real-time updates, instant notifications, and group discussions
                     make coordination effortless for teams of any size.
                   </Text>
@@ -291,7 +294,7 @@ function FeaturesSection({ reducedMotion }) {
                   <Heading size="xl">
                     Works with your calendar
                   </Heading>
-                  <Text fontSize="lg" color="gray.600">
+                  <Text fontSize="lg" color="#6B7280">
                     Seamlessly integrates with Google Calendar, Outlook, and more.
                     Your availability is always up-to-date, automatically.
                   </Text>
@@ -307,26 +310,26 @@ function FeaturesSection({ reducedMotion }) {
                   <Box p={8}>
                     <VStack spacing={4}>
                       <HStack w="full" p={4} bg="red.50" borderRadius="lg">
-                        <Box w={8} h={8} bg="red.500" borderRadius="md" />
+                        <Icon as={FcGoogle} boxSize={8} />
                         <VStack align="start" spacing={0} flex={1}>
                           <Text fontWeight="bold" fontSize="sm">Google Calendar</Text>
-                          <Text fontSize="xs" color="gray.600">Connected</Text>
+                          <Text fontSize="xs" color="#6B7280">Connected</Text>
                         </VStack>
                         <Badge colorScheme="green">Active</Badge>
                       </HStack>
                       <HStack w="full" p={4} bg="blue.50" borderRadius="lg">
-                        <Box w={8} h={8} bg="blue.500" borderRadius="md" />
+                        <Icon as={BsMicrosoft} boxSize={8} color="#0078D4" />
                         <VStack align="start" spacing={0} flex={1}>
                           <Text fontWeight="bold" fontSize="sm">Outlook Calendar</Text>
-                          <Text fontSize="xs" color="gray.600">Connected</Text>
+                          <Text fontSize="xs" color="#6B7280">Connected</Text>
                         </VStack>
                         <Badge colorScheme="yellow">Coming soon</Badge>
                       </HStack>
                       <HStack w="full" p={4} bg="gray.50" borderRadius="lg">
-                        <Box w={8} h={8} bg="gray.400" borderRadius="md" />
+                        <Icon as={FaApple} boxSize={8} color="#555" />
                         <VStack align="start" spacing={0} flex={1}>
                           <Text fontWeight="bold" fontSize="sm">Apple Calendar</Text>
-                          <Text fontSize="xs" color="gray.600">Not connected</Text>
+                          <Text fontSize="xs" color="#6B7280">Not connected</Text>
                         </VStack>
                         <Badge colorScheme="yellow">Coming soon</Badge>
                       </HStack>

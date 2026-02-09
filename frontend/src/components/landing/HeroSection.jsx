@@ -16,7 +16,7 @@ import {
 import { motion } from "framer-motion";
 import { FiArrowRight, FiCalendar, FiCheck, FiUsers } from "react-icons/fi";
 
-import { colors, gradients } from "../../styles/designSystem";
+import { colors } from "../../styles/designSystem";
 
 const MotionBox = motion(Box);
 
@@ -64,8 +64,8 @@ function HeroSection({ onSignIn, reducedMotion }) {
 
   return (
     <Box
-      bgGradient={gradients.ocean}
-      color="white"
+      bg="white"
+      color="#1F2937"
       position="relative"
       overflow="hidden"
     >
@@ -77,14 +77,15 @@ function HeroSection({ onSignIn, reducedMotion }) {
         right={0}
         bottom={0}
         opacity={0.1}
-        bgImage="radial-gradient(circle at 20% 50%, rgba(255,255,255,0.3) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(255,255,255,0.3) 0%, transparent 50%)"
+        bgImage="radial-gradient(circle at 20% 50%, rgba(79,108,247,0.08) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(79,108,247,0.08) 0%, transparent 50%)"
       />
 
       <Container maxW="container.xl" position="relative" py={20}>
         <VStack spacing={8} textAlign="center">
           <MotionBox {...animationProps}>
             <Badge
-              colorScheme="whiteAlpha"
+              bg="#EFF6FF"
+              color="#4F6CF7"
               fontSize="md"
               px={4}
               py={2}
@@ -101,11 +102,11 @@ function HeroSection({ onSignIn, reducedMotion }) {
             >
               Find the perfect time,
               <br />
-              <Text as="span" color="yellow.300">
+              <Text as="span" color="#4F6CF7">
                 together
               </Text>
             </Heading>
-            <Text fontSize="xl" maxW="2xl" mx="auto" mb={8} opacity={0.9}>
+            <Text fontSize="xl" maxW="2xl" mx="auto" mb={8} color="#6B7280">
               Say goodbye to endless email threads and scheduling conflicts.
               When brings people together at the perfect time, every time.
             </Text>
@@ -115,14 +116,14 @@ function HeroSection({ onSignIn, reducedMotion }) {
             <HStack spacing={4}>
               <Button
                 size="lg"
-                bg="white"
-                color={colors.primary}
+                bg="#4F6CF7"
+                color="white"
                 px={8}
                 py={7}
                 fontSize="lg"
                 fontWeight="bold"
                 rightIcon={<FiArrowRight />}
-                _hover={{ transform: "translateY(-2px)", shadow: "xl" }}
+                _hover={{ bg: "#3B5CE4", transform: "translateY(-2px)", shadow: "0 6px 20px rgba(79,108,247,0.4)" }}
                 transition="all 0.3s"
                 onClick={onSignIn}
               >
@@ -134,13 +135,12 @@ function HeroSection({ onSignIn, reducedMotion }) {
           {/* Hero Illustration */}
           <MotionBox {...cardAnimationProps} mt={12}>
             <Card
-              bg="whiteAlpha.200"
-              backdropFilter="blur(10px)"
+              bg="white"
               borderRadius="2xl"
               overflow="hidden"
               maxW="900px"
               mx="auto"
-              boxShadow="2xl"
+              boxShadow="0 8px 32px rgba(79,108,247,0.12)"
             >
               <Box p={8} bg="white" borderRadius="xl">
                 <SimpleGrid columns={3} spacing={4}>
