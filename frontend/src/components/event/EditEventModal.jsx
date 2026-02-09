@@ -193,20 +193,10 @@ const EditEventModal = ({ isOpen, onClose, event, onSuccess }) => {
       <ModalContent borderRadius="xl" overflow="hidden">
         {/* Gradient Header */}
         <Box
-          bgGradient="linear(to-r, purple.600, blue.500)"
+          bg="brand.600"
           position="relative"
           overflow="hidden"
         >
-          {/* Background Pattern */}
-          <Box
-            position="absolute"
-            top={0}
-            left={0}
-            right={0}
-            bottom={0}
-            opacity={0.1}
-            bgImage="radial-gradient(circle at 20% 50%, rgba(255,255,255,0.3) 0%, transparent 50%)"
-          />
           <ModalHeader color="white" position="relative" py={6}>
             <EditIcon mr={2} />
             Edit Event
@@ -345,14 +335,14 @@ const EditEventModal = ({ isOpen, onClose, event, onSuccess }) => {
             Cancel
           </Button>
           <Button
-            bgGradient="linear(to-r, purple.500, blue.500)"
+            bg="brand.500"
             color="white"
             onClick={handleSave}
             isLoading={isSaving}
             loadingText="Saving..."
             leftIcon={<EditIcon />}
             _hover={{
-              bgGradient: "linear(to-r, purple.600, blue.600)",
+              bg: "brand.600",
               transform: "translateY(-2px)",
               boxShadow: "lg"
             }}

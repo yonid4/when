@@ -126,14 +126,14 @@ const TimeSlotDisplay = ({
 
     const getSlotColor = useCallback((count) => {
         if (count <= 0) return 'transparent';
-        if (count <= 2) return '#efbbff';
-        if (count <= 4) return '#d896ff';
-        if (count <= 6) return '#be29ec';
-        if (count <= 9) return '#800080';
-        return '#660066';
+        if (count <= 2) return '#D4DDE8';
+        if (count <= 4) return '#B5C4D6';
+        if (count <= 6) return '#6B7C98';
+        if (count <= 9) return '#4E5D71';
+        return '#3A4555';
     }, []);
 
-    const getTextColor = useCallback((count) => count >= 7 ? 'white' : 'black', []);
+    const getTextColor = useCallback((count) => count >= 5 ? 'white' : 'black', []);
 
     // Process slots to calculate density and merge adjacent blocks
     const processedBlocks = useMemo(() => {
@@ -434,8 +434,8 @@ const TimeSlotDisplay = ({
                             left="0"
                             right="0"
                             w="calc(100% - 8px)"
-                            bg="rgba(190, 41, 236, 0.3)"
-                            border="2px dashed #be29ec"
+                            bg="rgba(107, 124, 152, 0.3)"
+                            border="2px dashed #6B7C98"
                             borderRadius="md"
                             mx={1}
                             pointerEvents="none"
@@ -444,7 +444,7 @@ const TimeSlotDisplay = ({
                             alignItems="center"
                             justifyContent="center"
                         >
-                            <Text fontSize="xs" fontWeight="bold" color="purple.800">
+                            <Text fontSize="xs" fontWeight="bold" color="brand.800">
                                 {format(dragStart < dragEnd ? dragStart : dragEnd, 'h:mm a')} - {format(dragStart < dragEnd ? dragEnd : dragStart, 'h:mm a')}
                             </Text>
                         </Box>

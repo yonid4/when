@@ -36,7 +36,7 @@ import { formatEventDateTime, formatEventDateOnly } from "../../utils/dateUtils"
 
 const EVENT_TYPE_INFO = {
   meeting: { icon: FiUsers, label: "Meeting", color: "blue" },
-  social: { icon: FiCoffee, label: "Social", color: "purple" },
+  social: { icon: FiCoffee, label: "Social", color: "brand" },
   birthday: { icon: FiGift, label: "Birthday", color: "pink" },
   other: { icon: FiMoreHorizontal, label: "Other", color: "gray" }
 };

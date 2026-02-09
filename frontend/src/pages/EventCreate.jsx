@@ -422,7 +422,7 @@ const EventCreate = () => {
       <Progress
         value={progressPercentage}
         size="xs"
-        colorScheme="purple"
+        colorScheme="brand"
         bg="gray.100"
         borderRadius={0}
       />
@@ -460,7 +460,7 @@ const EventCreate = () => {
                 onSubmit={handleSubmit}
                 isLoading={loading}
                 submitLabel={formData.guests.length > 0 ? "Create & Send Invitations" : "Create Event"}
-                submitColorScheme="purple"
+                submitColorScheme="brand"
                 mt={8}
               />
             </Box>

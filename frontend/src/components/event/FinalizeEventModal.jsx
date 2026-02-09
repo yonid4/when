@@ -42,7 +42,7 @@ const FinalizeEventModal = ({
 
   const borderColor = useColorModeValue("gray.200", "gray.700");
   const hoverBg = useColorModeValue("gray.50", "gray.700");
-  const selectedBg = useColorModeValue("purple.50", "purple.900");
+  const selectedBg = useColorModeValue("brand.50", "brand.900");
 
   // Initialize state when modal opens
   useEffect(() => {
@@ -344,7 +344,7 @@ const FinalizeEventModal = ({
                           onChange={() => toggleParticipant(participantId)}
                           onClick={(e) => e.stopPropagation()}
                           isDisabled={isLoading}
-                          colorScheme="purple"
+                          colorScheme="brand"
                         />
                         <Avatar
                           size="sm"

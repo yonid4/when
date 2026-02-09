@@ -124,7 +124,7 @@ const UserList = ({ participants, onUserSelect, isCoordinator = false, onInviteU
                         isDisabled={inviteStatus === "sending" || !email}
                         isLoading={inviteStatus === "sending"}
                         loadingText="Sending"
-                        bg="#2B2B2B" color="white" _hover={{ bg: "#6B7280" }}
+                        bg="#5E5653" color="white" _hover={{ bg: "#6B7280" }}
                         size="sm"
                         minW="80px"
                       >

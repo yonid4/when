@@ -38,8 +38,8 @@ const RIGHT_SECTION_STYLES = {
 };
 
 const GHOST_HOVER_STYLE = { bg: "rgba(255,255,255,0.1)" };
-const PRIMARY_BUTTON_HOVER = { bg: "#EDE9FE" };
-const PRIMARY_COLOR = "#7C3AED";
+const PRIMARY_BUTTON_HOVER = { bg: "#E8EBF0" };
+const PRIMARY_COLOR = "#6B7C98";
 
 function Header() {
   const navigate = useNavigate();

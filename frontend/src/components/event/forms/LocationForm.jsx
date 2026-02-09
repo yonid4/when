@@ -198,7 +198,7 @@ const LocationForm = ({ formData, onChange }) => {
                       onChange("location", "");
                     }
                   }}
-                  colorScheme="purple"
+                  colorScheme="brand"
                 >
                   <Text fontSize="sm" color="gray.600">
                     Location to be announced later

@@ -59,7 +59,7 @@ const Settings = () => {
 
           {/* Settings Tabs */}
           <Card shadow={shadows.card} borderRadius="xl" overflow="hidden">
-            <Tabs colorScheme="purple" variant="enclosed-colored">
+            <Tabs colorScheme="brand" variant="enclosed-colored">
               <TabList bg={colors.surfaceHover} borderBottom="none">
                 <Tab _selected={selectedTabStyles} fontWeight="medium">
                   <HStack spacing={2}>

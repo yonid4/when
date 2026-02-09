@@ -1,6 +1,7 @@
 """
 Busy slots routes for managing user busy time slots.
 """
+from __future__ import annotations
 
 from datetime import datetime
 

@@ -63,7 +63,7 @@ const TimeSlotDisplayExample = ({
                     <Button
                         size="sm"
                         variant={viewMode === 'calendar' ? 'solid' : 'outline'}
-                        colorScheme="purple"
+                        colorScheme="brand"
                         onClick={() => setViewMode('calendar')}
                     >
                         Calendar View
@@ -71,7 +71,7 @@ const TimeSlotDisplayExample = ({
                     <Button
                         size="sm"
                         variant={viewMode === 'timeline' ? 'solid' : 'outline'}
-                        colorScheme="purple"
+                        colorScheme="brand"
                         onClick={() => setViewMode('timeline')}
                     >
                         Timeline View
@@ -117,23 +117,23 @@ const TimeSlotDisplayExample = ({
             {viewMode === 'timeline' && (
                 <HStack spacing={4} fontSize="xs" color="gray.600" wrap="wrap" flexShrink={0}>
                     <HStack spacing={1}>
-                        <Box w="16px" h="16px" bg="#efbbff" borderRadius="sm" />
+                        <Box w="16px" h="16px" bg="#D4DDE8" borderRadius="sm" />
                         <Text>1-2 people</Text>
                     </HStack>
                     <HStack spacing={1}>
-                        <Box w="16px" h="16px" bg="#d896ff" borderRadius="sm" />
+                        <Box w="16px" h="16px" bg="#B5C4D6" borderRadius="sm" />
                         <Text>3-4 people</Text>
                     </HStack>
                     <HStack spacing={1}>
-                        <Box w="16px" h="16px" bg="#be29ec" borderRadius="sm" />
+                        <Box w="16px" h="16px" bg="#6B7C98" borderRadius="sm" />
                         <Text>5-6 people</Text>
                     </HStack>
                     <HStack spacing={1}>
-                        <Box w="16px" h="16px" bg="#800080" borderRadius="sm" />
+                        <Box w="16px" h="16px" bg="#4E5D71" borderRadius="sm" />
                         <Text>7-9 people</Text>
                     </HStack>
                     <HStack spacing={1}>
-                        <Box w="16px" h="16px" bg="#660066" borderRadius="sm" />
+                        <Box w="16px" h="16px" bg="#3A4555" borderRadius="sm" />
                         <Text>10+ people</Text>
                     </HStack>
                 </HStack>

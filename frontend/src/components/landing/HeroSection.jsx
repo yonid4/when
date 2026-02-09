@@ -144,7 +144,7 @@ function HeroSection({ onSignIn, reducedMotion }) {
             >
               <Box p={8} bg="white" borderRadius="xl">
                 <SimpleGrid columns={3} spacing={4}>
-                  <Box p={4} bg="purple.50" borderRadius="lg">
+                  <Box p={4} bg="brand.50" borderRadius="lg">
                     <Icon as={FiCalendar} boxSize={8} color={colors.primary} mb={2} />
                     <Text color="gray.700" fontWeight="bold">Create Event</Text>
                   </Box>

@@ -16,7 +16,7 @@ import { formatDistanceToNow } from "date-fns";
 import { notificationsAPI } from "../../services/apiService.js";
 
 const NOTIFICATION_ICONS = {
-  event_invitation: { icon: FiCalendar, gradient: "linear(to-r, purple.500, blue.500)" },
+  event_invitation: { icon: FiCalendar, gradient: "linear(to-r, brand.500, brand.600)" },
   event_finalized: { icon: FiCheckCircle, gradient: "linear(to-r, green.400, teal.500)" },
   event_deleted: { icon: FiXCircle, gradient: "linear(to-r, red.400, pink.400)" },
   event_time_changed: { icon: FiRefreshCw, gradient: "linear(to-r, orange.400, yellow.400)" },
@@ -96,9 +96,9 @@ function NotificationItem({ notification, onUpdate, onNavigate }) {
   return (
     <Box
       p={3}
-      bg={notification.is_read ? "white" : "purple.50"}
+      bg={notification.is_read ? "white" : "brand.50"}
       borderLeft="4px"
-      borderColor={notification.is_read ? "gray.200" : "purple.400"}
+      borderColor={notification.is_read ? "gray.200" : "brand.400"}
       _hover={{ bg: "gray.50", transform: "translateX(4px)" }}
       transition="all 0.3s"
       position="relative"

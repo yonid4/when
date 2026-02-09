@@ -168,7 +168,7 @@ const EventSchedulingForm = ({ formData, onChange }) => {
                 position="absolute"
                 top={-2}
                 right={3}
-                colorScheme="purple"
+                colorScheme="brand"
                 fontSize="xs"
                 px={2}
                 borderRadius="full"
@@ -259,7 +259,7 @@ const EventSchedulingForm = ({ formData, onChange }) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <Card variant="outline" borderRadius="lg" bg="purple.50" borderColor="purple.200">
+          <Card variant="outline" borderRadius="lg" bg="brand.50" borderColor="brand.200">
             <CardBody>
               <VStack spacing={6} align="stretch">
                 {/* Date Range Section */}
@@ -299,7 +299,7 @@ const EventSchedulingForm = ({ formData, onChange }) => {
                   </Grid>
                 </Box>
 
-                <Divider borderColor="purple.200" />
+                <Divider borderColor="brand.200" />
 
                 {/* Daily Hours Section */}
                 <Box>
@@ -377,7 +377,7 @@ const EventSchedulingForm = ({ formData, onChange }) => {
                   key={option.value}
                   size="md"
                   variant={isSelected ? "solid" : "outline"}
-                  colorScheme={isSelected ? "purple" : "gray"}
+                  colorScheme={isSelected ? "brand" : "gray"}
                   borderRadius="full"
                   onClick={() => onChange("duration", option.value)}
                   px={5}

@@ -1,6 +1,7 @@
 """
 Event routes for managing events and event participants.
 """
+from __future__ import annotations
 
 import logging
 import os
@@ -119,7 +120,8 @@ def create_event(user_id):
             "status": "planning",
             "event_type": event_type,
             "video_call_link": data.get("video_call_link"),
-            "location": data.get("location")
+            "location": data.get("location"),
+            "guests_can_invite": data.get("guests_can_invite", False)
         }
 
         events_service = EventsService()

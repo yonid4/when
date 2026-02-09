@@ -1,6 +1,7 @@
 """
 Routes for AI-powered time proposal generation.
 """
+from __future__ import annotations
 
 import logging
 

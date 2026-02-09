@@ -102,20 +102,10 @@ const InviteModal = ({ isOpen, onClose, eventUid, onSuccess }) => {
       <ModalContent borderRadius="xl" overflow="hidden">
         {/* Gradient Header */}
         <Box
-          bgGradient="linear(to-r, purple.600, blue.500)"
+          bg="brand.600"
           position="relative"
           overflow="hidden"
         >
-          {/* Background Pattern */}
-          <Box
-            position="absolute"
-            top={0}
-            left={0}
-            right={0}
-            bottom={0}
-            opacity={0.1}
-            bgImage="radial-gradient(circle at 20% 50%, rgba(255,255,255,0.3) 0%, transparent 50%)"
-          />
           <ModalHeader color="white" position="relative" py={6}>
             <EmailIcon mr={2} />
             Invite Participants
@@ -134,21 +124,21 @@ const InviteModal = ({ isOpen, onClose, eventUid, onSuccess }) => {
               placeholder="john@example.com&#10;jane@example.com"
               rows={6}
               isDisabled={isSending}
-              borderColor="purple.200"
+              borderColor="brand.200"
               _focus={{
-                borderColor: "purple.400",
-                boxShadow: "0 0 0 1px var(--chakra-colors-purple-400)"
+                borderColor: "brand.400",
+                boxShadow: "0 0 0 1px var(--chakra-colors-brand-400)"
               }}
               _hover={{
-                borderColor: "purple.300"
+                borderColor: "brand.300"
               }}
             />
             <Box
               p={3}
-              bg="purple.50"
+              bg="brand.50"
               borderRadius="md"
               borderLeft="4px"
-              borderColor="purple.400"
+              borderColor="brand.400"
             >
               <Text fontSize="xs" color="gray.700">
                 <strong>Note:</strong> Users must have signed up with When using these email addresses
@@ -168,14 +158,14 @@ const InviteModal = ({ isOpen, onClose, eventUid, onSuccess }) => {
             Cancel
           </Button>
           <Button
-            bgGradient="linear(to-r, purple.500, blue.500)"
+            bg="brand.500"
             color="white"
             onClick={handleSendInvites}
             isLoading={isSending}
             loadingText="Sending..."
             leftIcon={<EmailIcon />}
             _hover={{
-              bgGradient: "linear(to-r, purple.600, blue.600)",
+              bg: "brand.600",
               transform: "translateY(-2px)",
               boxShadow: "lg"
             }}

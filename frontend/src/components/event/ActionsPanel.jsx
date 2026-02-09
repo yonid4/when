@@ -89,7 +89,7 @@ const ActionsPanel = ({
         {/* Primary Action - Coordinator: View Proposed Times */}
         {isCoordinator && !isFinalized && (
           <Button
-            colorScheme="purple"
+            colorScheme="brand"
             w="full"
             size="md"
             leftIcon={isLoadingProposals ? <Spinner size="sm" /> : <FiClock />}

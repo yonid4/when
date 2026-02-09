@@ -38,7 +38,7 @@ function FormStepNavigation({
     return (
       <Button
         rightIcon={<FiArrowRight />}
-        colorScheme="purple"
+        colorScheme="brand"
         onClick={onNext}
         size="lg"
         w={responsiveWidth}

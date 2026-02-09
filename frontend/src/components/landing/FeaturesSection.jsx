@@ -144,7 +144,7 @@ function FeaturesSection({ reducedMotion }) {
                 alignItems="center"
               >
                 <VStack align="start" spacing={6}>
-                  <Badge colorScheme="purple" fontSize="sm" px={3} py={1}>
+                  <Badge colorScheme="brand" fontSize="sm" px={3} py={1}>
                     SCHEDULING
                   </Badge>
                   <Heading size="xl">

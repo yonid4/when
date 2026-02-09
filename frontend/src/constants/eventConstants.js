@@ -10,7 +10,7 @@ export const eventTypes = [
   { value: "meeting", label: "Meeting", color: "blue", icon: FiBriefcase },
   { value: "social", label: "Social", color: "green", icon: FiMusic },
   { value: "birthday", label: "Birthday", color: "pink", icon: FiGift },
-  { value: "other", label: "Other", color: "purple", icon: FiCalendar }
+  { value: "other", label: "Other", color: "brand", icon: FiCalendar }
 ];
 
 /**
