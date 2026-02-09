@@ -27,7 +27,7 @@ describe('CalendarView', () => {
       start: new Date('2025-12-25T14:00:00.000Z'),
       end: new Date('2025-12-25T15:00:00.000Z'),
       type: 'preferred-slot',
-      backgroundColor: '#be29ec',
+      backgroundColor: '#6B7C98',
       textColor: 'white',
     },
     {
@@ -439,11 +439,11 @@ describe('CalendarView', () => {
       expect(calendar).toBeInTheDocument();
     });
 
-    it('applies purple gradient colors to preferred slots', () => {
+    it('applies blue-gray density colors to preferred slots', () => {
       const preferredEvent = {
         ...mockEvents[0],
         type: 'preferred-slot',
-        backgroundColor: '#be29ec',
+        backgroundColor: '#6B7C98',
       };
 
       renderWithProviders(

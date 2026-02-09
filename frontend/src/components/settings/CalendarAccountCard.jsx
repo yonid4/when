@@ -176,7 +176,7 @@ function CalendarSourceRow({ source, isEnabled, isPending, isSettingWrite, onTog
       borderTop="1px solid"
       borderColor={colors.borderLight}
       _hover={{ bg: colors.surfaceHover }}
-      bg={isPending ? "purple.50" : "transparent"}
+      bg={isPending ? "brand.50" : "transparent"}
     >
       <HStack spacing={3} flex={1}>
         <Box w={3} h={3} borderRadius="full" bg={source.color || colors.primary} flexShrink={0} />
@@ -192,12 +192,12 @@ function CalendarSourceRow({ source, isEnabled, isPending, isSettingWrite, onTog
               {source.calendar_name}
             </Text>
             {source.is_write_calendar && (
-              <Badge colorScheme="purple" size="sm" fontSize="xs" px={1.5} py={0.5}>
+              <Badge colorScheme="brand" size="sm" fontSize="xs" px={1.5} py={0.5}>
                 Write
               </Badge>
             )}
             {isPending && (
-              <Box w={1.5} h={1.5} borderRadius="full" bg="purple.400" flexShrink={0} />
+              <Box w={1.5} h={1.5} borderRadius="full" bg="brand.400" flexShrink={0} />
             )}
           </HStack>
           <Text fontSize="xs" color={colors.textFaint} noOfLines={1}>
@@ -213,7 +213,7 @@ function CalendarSourceRow({ source, isEnabled, isPending, isSettingWrite, onTog
               icon={isSettingWrite ? <Spinner size="xs" /> : <FiEdit3 />}
               size="xs"
               variant="ghost"
-              colorScheme="purple"
+              colorScheme="brand"
               aria-label="Set as write calendar"
               onClick={handleSetWriteClick}
               isDisabled={isSettingWrite}
@@ -223,7 +223,7 @@ function CalendarSourceRow({ source, isEnabled, isPending, isSettingWrite, onTog
 
         <Switch
           size="sm"
-          colorScheme="purple"
+          colorScheme="brand"
           isChecked={isEnabled}
           onChange={onToggle}
         />

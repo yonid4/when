@@ -23,7 +23,7 @@ export function useColorScheme() {
   // Interactive elements
   const hoverBg = useColorModeValue("gray.50", "gray.700");
   const activeBg = useColorModeValue("gray.100", "gray.600");
-  const selectedBg = useColorModeValue("purple.50", "purple.900");
+  const selectedBg = useColorModeValue("brand.50", "brand.900");
 
   // Status colors
   const successBg = useColorModeValue("green.50", "green.900");
@@ -34,7 +34,7 @@ export function useColorScheme() {
   // Input and form elements
   const inputBg = useColorModeValue("white", "gray.700");
   const inputBorder = useColorModeValue("gray.300", "gray.600");
-  const inputFocusBorder = useColorModeValue("purple.500", "purple.300");
+  const inputFocusBorder = useColorModeValue("brand.500", "brand.300");
 
   // Shadow variants
   const shadowLight = useColorModeValue("0 1px 3px rgba(0,0,0,0.12)", "0 1px 3px rgba(0,0,0,0.3)");

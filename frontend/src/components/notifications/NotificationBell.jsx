@@ -197,13 +197,13 @@ function NotificationBell({ currentUserId, isAuthenticated }) {
         borderRadius="xl"
         boxShadow="2xl"
         border="2px"
-        borderColor="purple.200"
+        borderColor="brand.200"
       >
         <PopoverHeader
-          bgGradient="linear(to-r, purple.50, blue.50)"
+          bg="brand.50"
           borderTopRadius="xl"
           borderBottom="1px"
-          borderColor="purple.100"
+          borderColor="brand.100"
         >
           <HStack justify="space-between">
             <Text fontWeight="bold" fontSize="md">
@@ -213,8 +213,8 @@ function NotificationBell({ currentUserId, isAuthenticated }) {
               <Button
                 size="xs"
                 variant="ghost"
-                color="purple.600"
-                _hover={{ bgGradient: "linear(to-r, purple.500, blue.500)", color: "white" }}
+                color="brand.600"
+                _hover={{ bg: "brand.500", color: "white" }}
                 transition="all 0.3s"
                 onClick={handleMarkAllRead}
               >

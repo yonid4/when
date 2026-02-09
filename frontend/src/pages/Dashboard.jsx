@@ -146,7 +146,7 @@ const EventCard = ({ event, onClick }) => {
           size="sm"
           w="full"
           variant="ghost"
-          colorScheme="purple"
+          colorScheme="brand"
           onClick={(e) => {
             e.stopPropagation();
             onClick();
@@ -581,7 +581,7 @@ const Dashboard = () => {
                   <Icon as={FiClock} boxSize={10} color="gray.300" mb={3} />
                   <Text color="gray.500" mb={3}>No events being planned</Text>
                   <Button
-                    colorScheme="purple"
+                    colorScheme="brand"
                     size="sm"
                     leftIcon={<FiPlus />}
                     onClick={() => navigate("/event/create")}
@@ -766,7 +766,7 @@ const Dashboard = () => {
             <Box mt={6}>
               <Button
                 w="full"
-                colorScheme="purple"
+                colorScheme="brand"
                 size="md"
                 leftIcon={<FiPlus />}
                 onClick={() => navigate("/event/create")}

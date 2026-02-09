@@ -7,6 +7,7 @@ Notes:
   and in ``calendar_accounts`` with provider="microsoft".
 - Uses requests to call Microsoft Graph API directly.
 """
+from __future__ import annotations
 
 import logging
 import os

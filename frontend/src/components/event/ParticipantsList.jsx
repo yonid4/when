@@ -97,7 +97,7 @@ const ParticipantsList = ({ participants, rsvpStats, cardBg, isLoading = false }
         >
           Participants
         </Text>
-        <Badge colorScheme="purple" borderRadius="full" fontSize="xs">
+        <Badge colorScheme="brand" borderRadius="full" fontSize="xs">
           {participants.length}
         </Badge>
       </HStack>

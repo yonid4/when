@@ -1,6 +1,7 @@
 """
 Preferred slots routes for managing user preferred time slots for events.
 """
+from __future__ import annotations
 
 import logging
 

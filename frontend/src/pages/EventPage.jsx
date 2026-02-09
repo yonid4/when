@@ -594,9 +594,9 @@ const EventPage = () => {
               <Flex justify="flex-end" align="center" mb={2} flexShrink={0}>
                 <HStack spacing={4} fontSize="xs" color="gray.500">
                   <HStack spacing={1.5}><Box w="10px" h="10px" bg="gray.400" opacity={0.6} borderRadius="sm" /><Text>Busy</Text></HStack>
-                  <HStack spacing={1.5}><Box w="10px" h="10px" bg="#efbbff" borderRadius="sm" /><Text>1-2</Text></HStack>
-                  <HStack spacing={1.5}><Box w="10px" h="10px" bg="#be29ec" borderRadius="sm" /><Text>5-6</Text></HStack>
-                  <HStack spacing={1.5}><Box w="10px" h="10px" bg="#660066" borderRadius="sm" /><Text>10+</Text></HStack>
+                  <HStack spacing={1.5}><Box w="10px" h="10px" bg="#D4DDE8" borderRadius="sm" /><Text>1-2</Text></HStack>
+                  <HStack spacing={1.5}><Box w="10px" h="10px" bg="#6B7C98" borderRadius="sm" /><Text>5-6</Text></HStack>
+                  <HStack spacing={1.5}><Box w="10px" h="10px" bg="#3A4555" borderRadius="sm" /><Text>10+</Text></HStack>
                 </HStack>
               </Flex>
 

@@ -3,11 +3,11 @@
 
 export const colors = {
   // Primary colors
-  primary: "#7C3AED",
-  primaryLight: "#A78BFA",
-  primaryDark: "#5B21B6",
-  primaryHover: "#6D28D9",
-  primarySoft: "#EDE9FE",
+  primary: "#6B7C98",
+  primaryLight: "#8B9BB2",
+  primaryDark: "#546175",
+  primaryHover: "#5E6E88",
+  primarySoft: "#E8EBF0",
 
   // Secondary colors
   secondary: "#10B981",
@@ -184,11 +184,11 @@ export const animations = {
 
 // Common gradient combinations
 export const gradients = {
-  primary: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.primaryLight} 100%)`,
+  primary: colors.primary,
   secondary: `linear-gradient(135deg, ${colors.secondary} 0%, ${colors.secondaryLight} 100%)`,
   accent: `linear-gradient(135deg, ${colors.accent} 0%, ${colors.accentLight} 100%)`,
   sunset: "linear-gradient(135deg, #F59E0B 0%, #EF4444 50%, #EC4899 100%)",
-  ocean: "linear-gradient(135deg, #3B82F6 0%, #8B5CF6 50%, #7C3AED 100%)",
+  ocean: "#6B7C98",
   forest: "linear-gradient(135deg, #10B981 0%, #059669 100%)"
 };
 

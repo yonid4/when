@@ -23,7 +23,7 @@ const MotionBox = motion(Box);
 const slides = [
   {
     badge: "AI-POWERED",
-    badgeColor: "purple",
+    badgeColor: "brand",
     title: "Smart Time Proposals",
     description:
       "Our AI analyzes everyone's calendars and suggests the best meeting times automatically. No more manual comparison.",
@@ -116,7 +116,7 @@ function ProposalsVisual({ items }) {
               {item.preferred > 0 && (
                 <>
                   <Text color="gray.400">·</Text>
-                  <Text color="purple.600" fontWeight="semibold">
+                  <Text color="brand.600" fontWeight="semibold">
                     {item.preferred} prefer
                   </Text>
                 </>

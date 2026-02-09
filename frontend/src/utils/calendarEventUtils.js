@@ -108,18 +108,18 @@ export function getDensityColors(density) {
   let backgroundColor;
 
   if (density <= 2) {
-    backgroundColor = "#efbbff";
+    backgroundColor = "#D4DDE8";
   } else if (density <= 4) {
-    backgroundColor = "#d896ff";
+    backgroundColor = "#B5C4D6";
   } else if (density <= 6) {
-    backgroundColor = "#be29ec";
+    backgroundColor = "#6B7C98";
   } else if (density <= 9) {
-    backgroundColor = "#800080";
+    backgroundColor = "#4E5D71";
   } else {
-    backgroundColor = "#660066";
+    backgroundColor = "#3A4555";
   }
 
-  const textColor = density >= 7 ? "white" : "#2b2b2b";
+  const textColor = density >= 5 ? "white" : "#5E5653";
 
   return { backgroundColor, textColor };
 }

@@ -293,7 +293,7 @@ function CalendarSettings() {
             <>
               <Divider orientation="vertical" h="20px" />
               <HStack spacing={2}>
-                <Badge colorScheme="purple" fontSize="xs">
+                <Badge colorScheme="brand" fontSize="xs">
                   Write
                 </Badge>
                 <Text fontSize="sm" color={colors.textSecondary} noOfLines={1}>
@@ -327,7 +327,7 @@ function CalendarSettings() {
             <HStack spacing={3}>
               <Button
                 leftIcon={<Icon as={FcGoogle} />}
-                colorScheme="purple"
+                colorScheme="brand"
                 onClick={handleConnectGoogle}
               >
                 Google Calendar
@@ -368,7 +368,7 @@ function CalendarSettings() {
           bg={colors.surfaceHover}
           borderRadius="lg"
           border="1px solid"
-          borderColor="purple.200"
+          borderColor="brand.200"
         >
           <VStack spacing={3} align="stretch">
             {allWouldBeDisabled && (
@@ -389,7 +389,7 @@ function CalendarSettings() {
                 Cancel
               </Button>
               <Button
-                colorScheme="purple"
+                colorScheme="brand"
                 size="sm"
                 onClick={handleConfirm}
                 isDisabled={allWouldBeDisabled || isSaving}

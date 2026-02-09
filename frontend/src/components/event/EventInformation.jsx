@@ -12,7 +12,7 @@ import {
 } from "@chakra-ui/react";
 import { CalendarIcon, TimeIcon, ExternalLinkIcon, CopyIcon } from "@chakra-ui/icons";
 
-const PRIMARY_COLOR = "#2B2B2B";
+const PRIMARY_COLOR = "#5E5653";
 
 async function copyToClipboard(text) {
   if (navigator.clipboard && window.isSecureContext) {

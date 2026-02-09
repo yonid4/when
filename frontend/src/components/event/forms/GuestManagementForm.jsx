@@ -222,7 +222,7 @@ const GuestManagementForm = ({
               Add Guests
             </FormLabel>
             {guestCount > 0 && (
-              <Badge colorScheme="purple" borderRadius="full" px={2}>
+              <Badge colorScheme="brand" borderRadius="full" px={2}>
                 {guestCount} invited
               </Badge>
             )}
@@ -255,7 +255,7 @@ const GuestManagementForm = ({
                     exit={{ opacity: 0, scale: 0.8 }}
                     transition={{ duration: 0.15 }}
                     size="lg"
-                    colorScheme="purple"
+                    colorScheme="brand"
                     borderRadius="full"
                     py={1}
                     px={2}
@@ -422,7 +422,7 @@ const GuestManagementForm = ({
                         canInviteOthers: e.target.checked
                       })
                     }
-                    colorScheme="purple"
+                    colorScheme="brand"
                     size="lg"
                   />
                 </HStack>
@@ -448,7 +448,7 @@ const GuestManagementForm = ({
                         canSeeGuestList: e.target.checked
                       })
                     }
-                    colorScheme="purple"
+                    colorScheme="brand"
                     size="lg"
                   />
                 </HStack>

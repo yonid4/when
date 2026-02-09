@@ -9,7 +9,7 @@ function RouteLoadingFallback() {
       minH="60vh"
       bg="gray.50"
     >
-      <Spinner size="xl" color="purple.500" thickness="4px" />
+      <Spinner size="xl" color="brand.500" thickness="4px" />
     </Box>
   );
 }

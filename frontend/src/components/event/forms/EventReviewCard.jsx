@@ -57,7 +57,7 @@ const SectionCard = ({ title, icon, onEdit, stepIndex, children }) => (
             icon={<FiEdit2 />}
             size="sm"
             variant="ghost"
-            colorScheme="purple"
+            colorScheme="brand"
             onClick={() => onEdit(stepIndex)}
             aria-label={`Edit ${title}`}
           />
@@ -176,7 +176,7 @@ const EventReviewCard = ({ formData, onEditStep }) => {
                           icon={<FiEdit2 />}
                           size="xs"
                           variant="ghost"
-                          colorScheme="purple"
+                          colorScheme="brand"
                           onClick={() => onEditStep(1)}
                           aria-label="Edit when"
                           ml="auto"
@@ -218,7 +218,7 @@ const EventReviewCard = ({ formData, onEditStep }) => {
                           icon={<FiEdit2 />}
                           size="xs"
                           variant="ghost"
-                          colorScheme="purple"
+                          colorScheme="brand"
                           onClick={() => onEditStep(3)}
                           aria-label="Edit where"
                           ml="auto"
@@ -289,7 +289,7 @@ const EventReviewCard = ({ formData, onEditStep }) => {
                       </HStack>
                     ))}
                     {guestCount > MAX_VISIBLE_GUESTS && (
-                      <Badge colorScheme="purple" borderRadius="full" px={3} py={2}>
+                      <Badge colorScheme="brand" borderRadius="full" px={3} py={2}>
                         +{guestCount - MAX_VISIBLE_GUESTS} more
                       </Badge>
                     )}
