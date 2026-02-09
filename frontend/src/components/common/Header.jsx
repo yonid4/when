@@ -124,7 +124,7 @@ function Header() {
         <img
           src="/when_logo.png"
           alt="When logo"
-          style={{ height: "40px", width: "auto" }}
+          style={{ height: "60px", width: "auto" }}
         />
       </button>
 
