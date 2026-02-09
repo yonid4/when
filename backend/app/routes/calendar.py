@@ -137,17 +137,26 @@ def sync_calendar(user_id):
         logging.info(f"[SYNC] Window for user {user_id}: {start_date} to {end_date} ({len(active_events)} active events)")
 
         any_success = False
+        sync_details = []
 
         if google_credentials:
             try:
-                if busy_slot_service.sync_user_google_calendar(user_id, start_date, end_date):
+                result = busy_slot_service.sync_user_google_calendar(user_id, start_date, end_date)
+                if isinstance(result, dict):
+                    any_success = True
+                    sync_details.extend(result.get("sources", []))
+                elif result:
                     any_success = True
             except Exception as e:
                 logging.warning(f"[SYNC] Google sync failed for user {user_id}: {e}")
 
         if microsoft_credentials:
             try:
-                if busy_slot_service.sync_user_microsoft_calendar(user_id, start_date, end_date):
+                result = busy_slot_service.sync_user_microsoft_calendar(user_id, start_date, end_date)
+                if isinstance(result, dict):
+                    any_success = True
+                    sync_details.extend(result.get("sources", []))
+                elif result:
                     any_success = True
             except Exception as e:
                 logging.warning(f"[SYNC] Microsoft sync failed for user {user_id}: {e}")
@@ -160,7 +169,10 @@ def sync_calendar(user_id):
 
         _mark_proposals_stale_for_events(active_events, access_token)
 
-        return jsonify({'message': 'Calendar synced successfully'}), 200
+        response = {'message': 'Calendar synced successfully'}
+        if sync_details:
+            response['sync_details'] = sync_details
+        return jsonify(response), 200
 
     except Exception as e:
         return jsonify({
@@ -328,14 +340,16 @@ def _sync_participants_calendars(
 
         if google_creds:
             try:
-                if busy_slot_service.sync_user_google_calendar(participant_id, start_date, end_date):
+                result = busy_slot_service.sync_user_google_calendar(participant_id, start_date, end_date)
+                if isinstance(result, dict) or result:
                     any_success = True
             except Exception as e:
                 logging.warning(f"[SYNC] Google sync failed for participant {participant_id}: {e}")
 
         if microsoft_creds:
             try:
-                if busy_slot_service.sync_user_microsoft_calendar(participant_id, start_date, end_date):
+                result = busy_slot_service.sync_user_microsoft_calendar(participant_id, start_date, end_date)
+                if isinstance(result, dict) or result:
                     any_success = True
             except Exception as e:
                 logging.warning(f"[SYNC] Microsoft sync failed for participant {participant_id}: {e}")

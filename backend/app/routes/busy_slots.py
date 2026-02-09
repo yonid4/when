@@ -175,23 +175,32 @@ def sync_user_calendar(target_user_id, user_id):
         start_date = datetime.fromisoformat(start_date_str)
         end_date = datetime.fromisoformat(end_date_str)
 
-        google_success = False
-        microsoft_success = False
+        google_result = False
+        microsoft_result = False
+        sync_details = []
 
         try:
-            google_success = busy_slots_service.sync_user_google_calendar(target_user_id, start_date, end_date)
+            google_result = busy_slots_service.sync_user_google_calendar(target_user_id, start_date, end_date)
+            if isinstance(google_result, dict):
+                sync_details.extend(google_result.get("sources", []))
         except Exception as e:
             import logging
             logging.warning(f"Google calendar sync failed for user {target_user_id}: {e}")
 
         try:
-            microsoft_success = busy_slots_service.sync_user_microsoft_calendar(target_user_id, start_date, end_date)
+            microsoft_result = busy_slots_service.sync_user_microsoft_calendar(target_user_id, start_date, end_date)
+            if isinstance(microsoft_result, dict):
+                sync_details.extend(microsoft_result.get("sources", []))
         except Exception as e:
             import logging
             logging.warning(f"Microsoft calendar sync failed for user {target_user_id}: {e}")
 
-        if google_success or microsoft_success:
-            return jsonify({'message': 'Calendar synced successfully'}), 200
+        any_success = bool(google_result) or bool(microsoft_result)
+        if any_success:
+            response = {'message': 'Calendar synced successfully'}
+            if sync_details:
+                response['sync_details'] = sync_details
+            return jsonify(response), 200
         else:
             return jsonify({
                 'error': 'Sync failed',

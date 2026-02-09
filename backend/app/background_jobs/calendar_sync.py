@@ -19,11 +19,21 @@ def sync_user_calendar_job(user_id: str) -> None:
 
     busy_slot_service = BusySlotService()
 
-    google_ok = busy_slot_service.sync_user_google_calendar(user_id, start_date, end_date)
-    microsoft_ok = busy_slot_service.sync_user_microsoft_calendar(user_id, start_date, end_date)
+    google_result = busy_slot_service.sync_user_google_calendar(user_id, start_date, end_date)
+    microsoft_result = busy_slot_service.sync_user_microsoft_calendar(user_id, start_date, end_date)
 
-    if google_ok or microsoft_ok:
-        logging.info(f"[SYNC] Successfully synced calendar for user {user_id} (google={google_ok}, microsoft={microsoft_ok})")
+    for label, result in [("Google", google_result), ("Microsoft", microsoft_result)]:
+        if isinstance(result, dict):
+            for src in result.get("sources", []):
+                logging.info(
+                    f"[SYNC] {label} source '{src.get('calendar_name')}': "
+                    f"status={src.get('status')}, added={src.get('added')}, "
+                    f"deleted={src.get('deleted')}, error={src.get('error')}"
+                )
+
+    any_ok = bool(google_result) or bool(microsoft_result)
+    if any_ok:
+        logging.info(f"[SYNC] Successfully synced calendar for user {user_id}")
     else:
         logging.warning(f"[SYNC] Failed to sync any calendars for user {user_id}")
 
