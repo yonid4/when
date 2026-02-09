@@ -84,13 +84,15 @@ class BusySlotService:
         """Upsert a busy slot (update if exists, insert if new)."""
         try:
             if busy_slot.google_event_id:
-                existing = (
+                query = (
                     self.service_role_client.table("busy_slots")
                     .select("*")
                     .eq("user_id", busy_slot.user_id)
                     .eq("google_event_id", busy_slot.google_event_id)
-                    .execute()
                 )
+                if busy_slot.google_calendar_id:
+                    query = query.eq("google_calendar_id", busy_slot.google_calendar_id)
+                existing = query.execute()
 
                 if existing.data:
                     busy_slot.updated_at = datetime.utcnow()
@@ -125,9 +127,12 @@ class BusySlotService:
     def delete_busy_slot(self, busy_slot: BusySlot) -> bool:
         """Delete a busy slot."""
         try:
-            self.supabase.table("busy_slots").delete().eq(
-                "google_event_id", busy_slot.google_event_id
-            ).execute()
+            query = self.supabase.table("busy_slots").delete().eq(
+                "user_id", busy_slot.user_id
+            ).eq("google_event_id", busy_slot.google_event_id)
+            if busy_slot.google_calendar_id:
+                query = query.eq("google_calendar_id", busy_slot.google_calendar_id)
+            query.execute()
             return True
         except Exception as e:
             logging.error(f"Error deleting busy slot for slot id {busy_slot.id}: {e}")
@@ -185,8 +190,8 @@ class BusySlotService:
             logging.error(f"Error bulk storing busy slots: {e}")
             return []
 
-    def sync_user_google_calendar(self, user_id: str, start_date: datetime, end_date: datetime) -> bool:
-        """Sync Google Calendar busy slots. Uses multi-calendar sources if available, else legacy."""
+    def sync_user_google_calendar(self, user_id: str, start_date: datetime, end_date: datetime):
+        """Sync Google Calendar busy slots. Returns dict (multi-calendar) or bool (legacy)."""
         try:
             from .calendar_accounts import CalendarAccountsService
 
@@ -273,12 +278,15 @@ class BusySlotService:
 
     def _sync_multi_calendar(
         self, user_id: str, start_date: datetime, end_date: datetime, enabled_sources: List[dict]
-    ) -> bool:
-        """Multi-calendar sync: sync from all enabled calendar sources."""
+    ) -> dict:
+        """Multi-calendar sync: sync from all enabled calendar sources. Returns per-source details."""
         total_added = 0
         total_deleted = 0
+        sources_results = []
 
         for source in enabled_sources:
+            source_id = source.get("id")
+            calendar_name = source.get("calendar_name", source.get("calendar_id", "unknown"))
             try:
                 provider = source.get("account", {}).get("provider", "google")
                 if provider == "microsoft":
@@ -291,11 +299,32 @@ class BusySlotService:
                     )
                 total_added += added
                 total_deleted += deleted
+                sources_results.append({
+                    "source_id": source_id,
+                    "calendar_name": calendar_name,
+                    "status": "success",
+                    "added": added,
+                    "deleted": deleted,
+                    "error": None,
+                })
             except Exception as e:
-                logging.error(f"[SYNC] Error syncing source {source.get('id')}: {e}")
+                logging.error(f"[SYNC] Error syncing source {source_id}: {e}")
+                sources_results.append({
+                    "source_id": source_id,
+                    "calendar_name": calendar_name,
+                    "status": "error",
+                    "added": 0,
+                    "deleted": 0,
+                    "error": str(e),
+                })
 
         logging.info(f"[SYNC] User {user_id} multi-calendar total: Added {total_added}, Deleted {total_deleted}")
-        return True
+        return {
+            "success": all(s["status"] == "success" for s in sources_results),
+            "total_added": total_added,
+            "total_deleted": total_deleted,
+            "sources": sources_results,
+        }
 
     def _sync_single_source(
         self, user_id: str, start_date: datetime, end_date: datetime, source: dict
@@ -492,8 +521,8 @@ class BusySlotService:
 
         return added_count, deleted_count
 
-    def sync_user_microsoft_calendar(self, user_id: str, start_date: datetime, end_date: datetime) -> bool:
-        """Sync Microsoft Calendar busy slots. Uses multi-calendar sources if available, else legacy."""
+    def sync_user_microsoft_calendar(self, user_id: str, start_date: datetime, end_date: datetime):
+        """Sync Microsoft Calendar busy slots. Returns dict (multi-calendar) or bool (legacy)."""
         try:
             from .calendar_accounts import CalendarAccountsService
 

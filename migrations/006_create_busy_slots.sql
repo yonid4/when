@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS busy_slots (
     last_synced_at TIMESTAMPTZ DEFAULT NOW(),
     calendar_source_id UUID REFERENCES calendar_sources(id) ON DELETE SET NULL,
 
-    CONSTRAINT busy_slots_user_google_event_unique UNIQUE (user_id, google_event_id)
+    CONSTRAINT busy_slots_user_event_calendar_unique UNIQUE (user_id, google_event_id, google_calendar_id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_busy_slots_calendar_source ON busy_slots(calendar_source_id);
@@ -26,6 +26,7 @@ CREATE INDEX IF NOT EXISTS idx_busy_slots_last_synced ON busy_slots(last_synced_
 CREATE INDEX IF NOT EXISTS idx_busy_slots_time_range ON busy_slots(start_time_utc, end_time_utc);
 CREATE INDEX IF NOT EXISTS idx_busy_slots_user_id ON busy_slots(user_id);
 CREATE INDEX IF NOT EXISTS idx_busy_slots_user_time ON busy_slots(user_id, start_time_utc, end_time_utc);
+CREATE INDEX IF NOT EXISTS idx_busy_slots_user_calendar ON busy_slots(user_id, google_calendar_id);
 
 ALTER TABLE busy_slots ENABLE ROW LEVEL SECURITY;
 
