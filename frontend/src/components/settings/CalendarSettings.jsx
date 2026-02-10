@@ -257,7 +257,7 @@ function CalendarSettings() {
               Add Google
             </Button>
             <Button
-              leftIcon={<Icon as={BsMicrosoft} color="#0078D4" />}
+              leftIcon={<Icon as={BsMicrosoft} color={colors.microsoft} />}
               size="sm"
               variant="outline"
               onClick={handleConnectMicrosoft}
@@ -334,9 +334,9 @@ function CalendarSettings() {
               </Button>
               <Button
                 leftIcon={<Icon as={BsMicrosoft} />}
-                bg="#0078D4"
+                bg={colors.microsoft}
                 color="white"
-                _hover={{ bg: "#106EBE" }}
+                _hover={{ bg: colors.microsoftHover }}
                 onClick={handleConnectMicrosoft}
               >
                 Microsoft Calendar

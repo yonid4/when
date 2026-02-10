@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Box, Button, HStack, VStack, Text } from '@chakra-ui/react';
+import { colors } from '../../styles/designSystem';
 import TimeSlotDisplay from './TimeSlotDisplay';
 import CalendarView from '../calendar/CalendarView';
 
@@ -117,23 +118,23 @@ const TimeSlotDisplayExample = ({
             {viewMode === 'timeline' && (
                 <HStack spacing={4} fontSize="xs" color="gray.600" wrap="wrap" flexShrink={0}>
                     <HStack spacing={1}>
-                        <Box w="16px" h="16px" bg="#D4DDE8" borderRadius="sm" />
+                        <Box w="16px" h="16px" bg={colors.density1} borderRadius="sm" />
                         <Text>1-2 people</Text>
                     </HStack>
                     <HStack spacing={1}>
-                        <Box w="16px" h="16px" bg="#B5C4D6" borderRadius="sm" />
+                        <Box w="16px" h="16px" bg={colors.density2} borderRadius="sm" />
                         <Text>3-4 people</Text>
                     </HStack>
                     <HStack spacing={1}>
-                        <Box w="16px" h="16px" bg="#6B7C98" borderRadius="sm" />
+                        <Box w="16px" h="16px" bg={colors.density3} borderRadius="sm" />
                         <Text>5-6 people</Text>
                     </HStack>
                     <HStack spacing={1}>
-                        <Box w="16px" h="16px" bg="#4E5D71" borderRadius="sm" />
+                        <Box w="16px" h="16px" bg={colors.density4} borderRadius="sm" />
                         <Text>7-9 people</Text>
                     </HStack>
                     <HStack spacing={1}>
-                        <Box w="16px" h="16px" bg="#3A4555" borderRadius="sm" />
+                        <Box w="16px" h="16px" bg={colors.density5} borderRadius="sm" />
                         <Text>10+ people</Text>
                     </HStack>
                 </HStack>

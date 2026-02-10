@@ -1,6 +1,7 @@
 /**
  * Calendar event transformation utilities
  */
+import { colors } from "../styles/designSystem";
 
 /**
  * Transform busy slots for calendar display
@@ -108,18 +109,18 @@ export function getDensityColors(density) {
   let backgroundColor;
 
   if (density <= 2) {
-    backgroundColor = "#D4DDE8";
+    backgroundColor = colors.density1;
   } else if (density <= 4) {
-    backgroundColor = "#B5C4D6";
+    backgroundColor = colors.density2;
   } else if (density <= 6) {
-    backgroundColor = "#6B7C98";
+    backgroundColor = colors.density3;
   } else if (density <= 9) {
-    backgroundColor = "#4E5D71";
+    backgroundColor = colors.density4;
   } else {
-    backgroundColor = "#3A4555";
+    backgroundColor = colors.density5;
   }
 
-  const textColor = density >= 5 ? "white" : "#5E5653";
+  const textColor = density >= 5 ? colors.densityTextInverse : colors.densityText;
 
   return { backgroundColor, textColor };
 }

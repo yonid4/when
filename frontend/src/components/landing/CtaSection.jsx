@@ -16,6 +16,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, useInView } from "framer-motion";
 import { FiArrowRight } from "react-icons/fi";
 
+import { colors, gradients } from "../../styles/designSystem";
 
 const MotionBox = motion(Box);
 
@@ -31,7 +32,7 @@ function FooterLink({ children, onClick }) {
       as="a"
       cursor="pointer"
       fontSize="sm"
-      color="#94A3B8"
+      color={colors.textFaint}
       _hover={{ color: "white" }}
       onClick={onClick}
     >
@@ -64,7 +65,7 @@ function CtaSection({ onSignIn, reducedMotion }) {
   return (
     <>
       {/* CTA Section */}
-      <Box bgGradient="linear(135deg, #4F6CF7 0%, #6366F1 100%)" color="white" py={20}>
+      <Box bg={gradients.primary} color="white" py={20}>
         <Container maxW="container.md">
           <MotionBox
             ref={ref}
@@ -81,7 +82,7 @@ function CtaSection({ onSignIn, reducedMotion }) {
               <Button
                 size="lg"
                 bg="white"
-                color="#4F6CF7"
+                color={colors.primary}
                 px={12}
                 py={7}
                 fontSize="lg"
@@ -102,17 +103,17 @@ function CtaSection({ onSignIn, reducedMotion }) {
       </Box>
 
       {/* Footer */}
-      <Box bg="#1F2937" color="white" py={12}>
+      <Box bg={colors.gray800} color="white" py={12}>
         <Container maxW="container.xl">
           <Grid
             templateColumns={{ base: "1fr", md: "repeat(4, 1fr)" }}
             gap={8}
           >
             <VStack align="start" spacing={4}>
-              <Heading size="md" color="#4F6CF7">
+              <Heading size="md" color={colors.primary}>
                 When
               </Heading>
-              <Text fontSize="sm" color="#94A3B8">
+              <Text fontSize="sm" color={colors.textFaint}>
                 Find the perfect time, together.
               </Text>
             </VStack>
@@ -147,7 +148,7 @@ function CtaSection({ onSignIn, reducedMotion }) {
             flexDirection={{ base: "column", md: "row" }}
             gap={4}
           >
-            <Text fontSize="sm" color="#94A3B8">
+            <Text fontSize="sm" color={colors.textFaint}>
               &copy; 2025 When. All rights reserved.
             </Text>
             <HStack spacing={6}>

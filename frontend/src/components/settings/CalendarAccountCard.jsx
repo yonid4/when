@@ -55,7 +55,7 @@ function CalendarAccountCard({
   }
 
   const providerIcon = account.provider === "microsoft"
-    ? <Icon as={BsMicrosoft} boxSize={5} color="#0078D4" />
+    ? <Icon as={BsMicrosoft} boxSize={5} color={colors.microsoft} />
     : <Icon as={FcGoogle} boxSize={5} />;
   const providerLabel = account.provider === "microsoft" ? "Microsoft" : "Google";
   const chevronIcon = isOpen ? FiChevronUp : FiChevronDown;
