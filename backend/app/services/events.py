@@ -164,11 +164,9 @@ class EventsService:
             if existing.data:
                 return existing.data[0]
             
-            rsvp_status = "going" if status == "accepted" else None
-
             result = (
                 self.service_role_client.table("event_participants")
-                .insert({"event_id": event_id, "user_id": user_id, "status": status, "rsvp_status": rsvp_status})
+                .insert({"event_id": event_id, "user_id": user_id, "status": status})
                 .execute()
             )
 
@@ -188,9 +186,11 @@ class EventsService:
                 print("Invalid status")
                 return None
 
+            rsvp_status = "going" if status == "accepted" else None
+
             result = (
                 self.service_role_client.table("event_participants")
-                .update({"status": status})
+                .update({"status": status, "rsvp_status": rsvp_status})
                 .eq("event_id", event_id)
                 .eq("user_id", user_id)
                 .execute()
