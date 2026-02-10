@@ -163,10 +163,12 @@ class EventsService:
 
             if existing.data:
                 return existing.data[0]
+            
+            rsvp_status = "going" if status == "accepted" else None
 
             result = (
                 self.service_role_client.table("event_participants")
-                .insert({"event_id": event_id, "user_id": user_id, "status": status})
+                .insert({"event_id": event_id, "user_id": user_id, "status": status, "rsvp_status": rsvp_status})
                 .execute()
             )
 
