@@ -322,7 +322,7 @@ function FeaturesSection({ reducedMotion }) {
                           <Text fontWeight="bold" fontSize="sm">Outlook Calendar</Text>
                           <Text fontSize="xs" color={colors.gray500}>Connected</Text>
                         </VStack>
-                        <Badge colorScheme="yellow">Coming soon</Badge>
+                        <Badge colorScheme="green">Active</Badge>
                       </HStack>
                       <HStack w="full" p={4} bg="gray.50" borderRadius="lg">
                         <Icon as={FaApple} boxSize={8} color={colors.gray600} />
