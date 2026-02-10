@@ -166,14 +166,14 @@ function HeroSection({ onSignIn, reducedMotion }) {
             <VStack spacing={4}>
               <HStack>
                 <AvatarGroup size="md" max={5}>
-                  <Avatar name="Sarah K" />
-                  <Avatar name="Mike R" />
-                  <Avatar name="Emma L" />
-                  <Avatar name="Alex T" />
-                  <Avatar name="Jordan P" />
+                  <Avatar name="Sarah K" src="https://randomuser.me/api/portraits/women/44.jpg" />
+                  <Avatar name="Mike R" src="https://randomuser.me/api/portraits/men/32.jpg" />
+                  <Avatar name="Emma L" src="https://randomuser.me/api/portraits/women/68.jpg" />
+                  <Avatar name="Alex T" src="https://randomuser.me/api/portraits/men/75.jpg" />
+                  <Avatar name="Jordan P" src="https://randomuser.me/api/portraits/men/85.jpg" />
                 </AvatarGroup>
                 <Text fontWeight="medium">
-                  Join 10,000+ teams using When
+                  Stop the back-and-forth. Let When find the time.
                 </Text>
               </HStack>
             </VStack>

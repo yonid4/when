@@ -20,18 +20,22 @@ const MotionBox = motion(Box);
 const PEOPLE = [
   {
     name: "Sarah",
+    src: "https://randomuser.me/api/portraits/women/44.jpg",
     slots: [false, true, true, false, true, false, true, true]
   },
   {
     name: "Mike",
+    src: "https://randomuser.me/api/portraits/men/32.jpg",
     slots: [true, false, true, true, true, false, false, true]
   },
   {
     name: "Emma",
+    src: "https://randomuser.me/api/portraits/women/68.jpg",
     slots: [false, true, true, true, false, true, true, false]
   },
   {
     name: "Alex",
+    src: "https://randomuser.me/api/portraits/men/75.jpg",
     slots: [true, true, false, true, true, true, false, true]
   }
 ];
@@ -85,6 +89,7 @@ function PersonColumn({ person, index, totalPeople, scrollProgress }) {
       {/* Avatar */}
       <Avatar
         name={person.name}
+        src={person.src}
         size="md"
         mb={3}
         border="3px solid white"
@@ -150,7 +155,7 @@ function StaticVersion() {
           <HStack spacing={4} justify="center" flexWrap="wrap">
             {PEOPLE.map((person, index) => (
               <VStack key={index} spacing={2}>
-                <Avatar name={person.name} size="lg" />
+                <Avatar name={person.name} src={person.src} size="lg" />
                 <Text fontSize="sm" color="gray.600">{person.name}</Text>
               </VStack>
             ))}
