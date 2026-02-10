@@ -15,6 +15,7 @@ import {
 } from "@chakra-ui/react";
 import { FcGoogle } from "react-icons/fc";
 import { BsMicrosoft } from "react-icons/bs";
+import { colors } from "../../styles/designSystem";
 
 const PROMPT_CONTENT = {
   create: {
@@ -128,14 +129,14 @@ function CalendarConnectPrompt({ context, onConnect, onConnectMicrosoft, onSkip,
                 Google
               </Button>
               <Button
-                bg="#0078D4"
+                bg={colors.microsoft}
                 color="white"
                 size="lg"
                 flex={1}
                 onClick={onConnectMicrosoft}
                 leftIcon={<Icon as={BsMicrosoft} boxSize={5} />}
                 _hover={{
-                  bg: "#106EBE",
+                  bg: colors.microsoftHover,
                   transform: "translateY(-2px)",
                   boxShadow: "xl",
                 }}

@@ -65,7 +65,7 @@ function HeroSection({ onSignIn, reducedMotion }) {
   return (
     <Box
       bg="white"
-      color="#1F2937"
+      color={colors.gray800}
       position="relative"
       overflow="hidden"
     >
@@ -84,8 +84,8 @@ function HeroSection({ onSignIn, reducedMotion }) {
         <VStack spacing={8} textAlign="center">
           <MotionBox {...animationProps}>
             <Badge
-              bg="#EFF6FF"
-              color="#4F6CF7"
+              bg={colors.primarySoft}
+              color={colors.primary}
               fontSize="md"
               px={4}
               py={2}
@@ -102,11 +102,11 @@ function HeroSection({ onSignIn, reducedMotion }) {
             >
               Find the perfect time,
               <br />
-              <Text as="span" color="#4F6CF7">
+              <Text as="span" color={colors.primary}>
                 together
               </Text>
             </Heading>
-            <Text fontSize="xl" maxW="2xl" mx="auto" mb={8} color="#6B7280">
+            <Text fontSize="xl" maxW="2xl" mx="auto" mb={8} color={colors.gray500}>
               Say goodbye to endless email threads and scheduling conflicts.
               When brings people together at the perfect time, every time.
             </Text>
@@ -116,14 +116,14 @@ function HeroSection({ onSignIn, reducedMotion }) {
             <HStack spacing={4}>
               <Button
                 size="lg"
-                bg="#4F6CF7"
+                bg={colors.primary}
                 color="white"
                 px={8}
                 py={7}
                 fontSize="lg"
                 fontWeight="bold"
                 rightIcon={<FiArrowRight />}
-                _hover={{ bg: "#3B5CE4", transform: "translateY(-2px)", shadow: "0 6px 20px rgba(79,108,247,0.4)" }}
+                _hover={{ bg: colors.primaryHover, transform: "translateY(-2px)", shadow: "0 6px 20px rgba(79,108,247,0.4)" }}
                 transition="all 0.3s"
                 onClick={onSignIn}
               >

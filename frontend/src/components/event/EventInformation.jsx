@@ -11,8 +11,9 @@ import {
   useToast
 } from "@chakra-ui/react";
 import { CalendarIcon, TimeIcon, ExternalLinkIcon, CopyIcon } from "@chakra-ui/icons";
+import { colors } from "../../styles/designSystem";
 
-const PRIMARY_COLOR = "#5E5653";
+const PRIMARY_COLOR = colors.gray800;
 
 async function copyToClipboard(text) {
   if (navigator.clipboard && window.isSecureContext) {

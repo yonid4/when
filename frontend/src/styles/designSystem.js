@@ -3,11 +3,11 @@
 
 export const colors = {
   // Primary colors
-  primary: "#6B7C98",
-  primaryLight: "#8B9BB2",
-  primaryDark: "#546175",
-  primaryHover: "#5E6E88",
-  primarySoft: "#E8EBF0",
+  primary: "#4F6CF7",
+  primaryLight: "#7B93F9",
+  primaryDark: "#3B5CE4",
+  primaryHover: "#3B5CE4",
+  primarySoft: "#EFF6FF",
 
   // Secondary colors
   secondary: "#10B981",
@@ -52,7 +52,7 @@ export const colors = {
   textSecondary: "#6B7280",
   textTertiary: "#9CA3AF",
   textInverse: "#FFFFFF",
-  textHeading: "#1E293B",
+  textHeading: "#1F2937",
   textBody: "#475569",
   textMuted: "#64748B",
   textFaint: "#94A3B8",
@@ -62,7 +62,42 @@ export const colors = {
   borderMedium: "#D1D5DB",
   borderDark: "#9CA3AF",
   borderSubtle: "#E2E8F0",
-  borderHover: "#CBD5E1"
+  borderHover: "#CBD5E1",
+
+  // Density heatmap (for time slot visualization)
+  density1: "#BFDBFE",
+  density2: "#93BBFD",
+  density3: "#4F6CF7",
+  density4: "#2545B8",
+  density5: "#172554",
+  densityText: "#1F2937",
+  densityTextInverse: "#FFFFFF",
+
+  // Third-party brand
+  microsoft: "#0078D4",
+  microsoftHover: "#106EBE",
+
+  // Feature icons (landing page, but globally available)
+  featureAmber: "#F59E0B",
+  featurePurple: "#8B5CF6",
+
+  // Calendar UI (Google Calendar-style rendering)
+  calendarGoogleBlue: "#1a73e8",
+  calendarGoogleGreen: "#188038",
+  calendarGoogleGreenDark: "#137333",
+  calendarGoogleCyan: "#039be5",
+  calendarGoogleRed: "#ea4335",
+  calendarGooglePurple: "#a142f4",
+  calendarGoogleGray: "#5f6368",
+  calendarGridText: "#3c4043",
+  calendarGridLabel: "#70757a",
+  calendarGridBorder: "#dadce0",
+  calendarGridHover: "#f1f3f4",
+  calendarEventPurpleBg: "#d7aefb",
+  calendarEventGreenBg: "#e6f4ea",
+  calendarTodayBg: "#e8f0fe",
+  calendarSelection: "#60A5FA",
+  calendarSelectionDark: "#3B82F6",
 };
 
 export const spacing = {
@@ -184,11 +219,11 @@ export const animations = {
 
 // Common gradient combinations
 export const gradients = {
-  primary: colors.primary,
+  primary: "linear-gradient(135deg, #4F6CF7 0%, #6366F1 100%)",
   secondary: `linear-gradient(135deg, ${colors.secondary} 0%, ${colors.secondaryLight} 100%)`,
   accent: `linear-gradient(135deg, ${colors.accent} 0%, ${colors.accentLight} 100%)`,
   sunset: "linear-gradient(135deg, #F59E0B 0%, #EF4444 50%, #EC4899 100%)",
-  ocean: "#6B7C98",
+  ocean: "#4F6CF7",
   forest: "linear-gradient(135deg, #10B981 0%, #059669 100%)"
 };
 
@@ -223,4 +258,3 @@ export default {
   gradients,
   components
 };
-

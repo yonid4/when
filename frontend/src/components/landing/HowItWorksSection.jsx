@@ -32,8 +32,8 @@ const steps = [
   {
     number: "02",
     icon: FiUsers,
-    iconBg: "blue.50",
-    iconColor: "#4F6CF7",
+    iconBg: colors.primarySoft,
+    iconColor: colors.primary,
     title: "Invite Participants",
     description:
       "Share a simple link with your team. They can mark their availability without signing up."
@@ -70,7 +70,7 @@ function HowItWorksSection({ reducedMotion }) {
   const isInView = useInView(ref, { once: true, margin: "-100px" });
 
   return (
-    <Box py={20} bg="#F8FAFC">
+    <Box py={20} bg={colors.bgPage}>
       <Container maxW="container.xl">
         <VStack spacing={4} textAlign="center" mb={16}>
           <MotionBox
@@ -82,7 +82,7 @@ function HowItWorksSection({ reducedMotion }) {
             <Heading size="2xl" mb={4}>
               How it works
             </Heading>
-            <Text fontSize="xl" color="#6B7280" maxW="2xl" mx="auto">
+            <Text fontSize="xl" color={colors.gray500} maxW="2xl" mx="auto">
               Three simple steps to schedule your next meeting
             </Text>
           </MotionBox>
@@ -127,10 +127,10 @@ function HowItWorksSection({ reducedMotion }) {
                   <Box p={3} bg={step.iconBg} borderRadius="xl">
                     <Icon as={step.icon} boxSize={7} color={step.iconColor} />
                   </Box>
-                  <Heading size="md" color="#1F2937">
+                  <Heading size="md" color={colors.gray800}>
                     {step.title}
                   </Heading>
-                  <Text color="#6B7280" lineHeight="tall">
+                  <Text color={colors.gray500} lineHeight="tall">
                     {step.description}
                   </Text>
                 </VStack>
@@ -150,7 +150,7 @@ function HowItWorksSection({ reducedMotion }) {
                   p={2}
                   shadow="sm"
                 >
-                  <Icon as={FiArrowRight} color="#94A3B8" boxSize={4} />
+                  <Icon as={FiArrowRight} color={colors.textFaint} boxSize={4} />
                 </Box>
               )}
             </MotionCard>

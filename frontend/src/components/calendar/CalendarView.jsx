@@ -4,6 +4,7 @@ import { Box, Flex, Text, VStack } from "@chakra-ui/react";
 import { endOfDay, format, getDay, isSameDay, parse, startOfDay, startOfWeek } from "date-fns";
 import enUS from "date-fns/locale/en-US";
 import "react-big-calendar/lib/css/react-big-calendar.css";
+import { colors } from "../../styles/designSystem";
 
 const locales = { "en-US": enUS };
 
@@ -17,7 +18,7 @@ const localizer = dateFnsLocalizer({
 
 const MonthDateHeader = memo(function MonthDateHeader({ date }) {
   return (
-    <Box fontSize="0.875rem" fontWeight="600" color="#111827" p={2} textAlign="right">
+    <Box fontSize="0.875rem" fontWeight="600" color={colors.gray900} p={2} textAlign="right">
       {format(date, "d")}
     </Box>
   );
@@ -27,7 +28,7 @@ const MonthEvent = memo(function MonthEvent({ event }) {
   if (event.type === "month-busy") {
     const label = event.busyCount === 1 ? "busy slot" : "busy slots";
     return (
-      <Box bg="#5f6368" color="white" px={1.5} py={0.5} borderRadius="sm" fontWeight="medium" fontSize="10px" w="full">
+      <Box bg={colors.calendarGoogleGray} color="white" px={1.5} py={0.5} borderRadius="sm" fontWeight="medium" fontSize="10px" w="full">
         {event.busyCount} {label}
       </Box>
     );
@@ -35,7 +36,7 @@ const MonthEvent = memo(function MonthEvent({ event }) {
   if (event.type === "month-preferred") {
     const label = event.preferredCount === 1 ? "preferred slot" : "preferred slots";
     return (
-      <Box bg="#a142f4" color="white" px={1.5} py={0.5} borderRadius="sm" fontWeight="medium" fontSize="10px" w="full">
+      <Box bg={colors.calendarGooglePurple} color="white" px={1.5} py={0.5} borderRadius="sm" fontWeight="medium" fontSize="10px" w="full">
         {event.preferredCount} {label}
       </Box>
     );
@@ -50,24 +51,24 @@ const GoogleStyleDateHeader = memo(function GoogleStyleDateHeader({ date, highli
   const dayNumber = format(date, "d");
 
   let bgColor = "transparent";
-  let textColor = "#3c4043";
+  let textColor = colors.calendarGridText;
   let fontWeightValue = "400";
 
   if (isToday) {
-    bgColor = "#1a73e8";
+    bgColor = colors.calendarGoogleBlue;
     textColor = "white";
     fontWeightValue = "500";
   } else if (isHighlighted) {
-    bgColor = "#1e8e3e";
+    bgColor = colors.calendarGoogleGreen;
     textColor = "white";
     fontWeightValue = "500";
   }
 
-  const hoverStyle = !isToday && !isHighlighted ? { bg: "#f1f3f4" } : {};
+  const hoverStyle = !isToday && !isHighlighted ? { bg: colors.calendarGridHover } : {};
 
   return (
     <VStack spacing={0} py={2} px={2} h="70px" justify="center">
-      <Text fontSize="11px" fontWeight="500" color="#70757a" letterSpacing="0.8px">
+      <Text fontSize="11px" fontWeight="500" color={colors.calendarGridLabel} letterSpacing="0.8px">
         {dayOfWeek}
       </Text>
       <Flex
@@ -102,19 +103,19 @@ const GoogleStyleEvent = memo(function GoogleStyleEvent({ event }) {
 
     return (
       <VStack spacing={0} h="100%" w="100%" align="stretch" borderRadius="4px" overflow="hidden" position="relative">
-        <Box position="absolute" top="0" left="0" right="0" bg="white" px={2} py={1} borderBottom="1px solid #dadce0" zIndex={2}>
-          <Text fontSize="11px" fontWeight="600" color="#3c4043" textAlign="center" whiteSpace="nowrap">
+        <Box position="absolute" top="0" left="0" right="0" bg="white" px={2} py={1} borderBottom={`1px solid ${colors.calendarGridBorder}`} zIndex={2}>
+          <Text fontSize="11px" fontWeight="600" color={colors.calendarGridText} textAlign="center" whiteSpace="nowrap">
             {timeRange}
           </Text>
         </Box>
         <Flex flex="1" pt="28px" minH="0">
-          <Box flex="1" bg="#5f6368" opacity={busyOpacity} display="flex" alignItems="center" justifyContent="center" px={1}>
+          <Box flex="1" bg={colors.calendarGoogleGray} opacity={busyOpacity} display="flex" alignItems="center" justifyContent="center" px={1}>
             <Text fontSize="10px" color="white" fontWeight="500" textAlign="center">
               {event.busyCount} busy
             </Text>
           </Box>
-          <Box flex="1" bg={event.preferredBackgroundColor || "#d7aefb"} display="flex" alignItems="center" justifyContent="center" px={1}>
-            <Text fontSize="10px" color={event.preferredTextColor || "#5f6368"} fontWeight="500" textAlign="center">
+          <Box flex="1" bg={event.preferredBackgroundColor || colors.calendarEventPurpleBg} display="flex" alignItems="center" justifyContent="center" px={1}>
+            <Text fontSize="10px" color={event.preferredTextColor || colors.calendarGoogleGray} fontWeight="500" textAlign="center">
               {event.preferredCount} available
             </Text>
           </Box>
@@ -126,10 +127,10 @@ const GoogleStyleEvent = memo(function GoogleStyleEvent({ event }) {
   if (event.type === "preferred-slot") {
     return (
       <Box px={2} py={1} h="100%" overflow="hidden">
-        <Text fontSize="11px" fontWeight="600" color={event.textColor || "#3c4043"} mb={0.5} whiteSpace="nowrap">
+        <Text fontSize="11px" fontWeight="600" color={event.textColor || colors.calendarGridText} mb={0.5} whiteSpace="nowrap">
           {startTime}
         </Text>
-        <Text fontSize="11px" color={event.textColor || "#5f6368"} whiteSpace="nowrap">
+        <Text fontSize="11px" color={event.textColor || colors.calendarGoogleGray} whiteSpace="nowrap">
           Available
         </Text>
       </Box>
@@ -250,7 +251,7 @@ function CalendarView({
       return {
         style: {
           backgroundColor: "transparent",
-          border: "1px solid #dadce0",
+          border: `1px solid ${colors.calendarGridBorder}`,
           borderRadius: "4px",
           padding: 0,
           overflow: "visible",
@@ -263,10 +264,10 @@ function CalendarView({
     if (event.type === "preferred-slot") {
       return {
         style: {
-          backgroundColor: event.backgroundColor || "#d7aefb",
-          color: event.textColor || "#3c4043",
+          backgroundColor: event.backgroundColor || colors.calendarEventPurpleBg,
+          color: event.textColor || colors.calendarGridText,
           border: "1px solid #b794f6",
-          borderLeft: "4px solid #a142f4",
+          borderLeft: `4px solid ${colors.calendarGooglePurple}`,
           borderRadius: "4px",
           cursor: "pointer",
           boxShadow: baseBoxShadow,
@@ -281,10 +282,10 @@ function CalendarView({
 
       return {
         style: {
-          backgroundColor: "#5f6368",
+          backgroundColor: colors.calendarGoogleGray,
           opacity,
-          border: "1px solid #5f6368",
-          borderLeft: "4px solid #3c4043",
+          border: `1px solid ${colors.calendarGoogleGray}`,
+          borderLeft: `4px solid ${colors.calendarGridText}`,
           borderRadius: "4px",
           color: "white",
           cursor: "default",
@@ -298,9 +299,9 @@ function CalendarView({
     if (event.type === "finalized") {
       return {
         style: {
-          backgroundColor: "#1e8e3e",
-          border: "1px solid #188038",
-          borderLeft: "4px solid #137333",
+          backgroundColor: colors.calendarGoogleGreen,
+          border: `1px solid ${colors.calendarGoogleGreen}`,
+          borderLeft: `4px solid ${colors.calendarGoogleGreenDark}`,
           borderRadius: "4px",
           color: "white",
           fontWeight: "500",
@@ -312,10 +313,10 @@ function CalendarView({
 
     return {
       style: {
-        backgroundColor: "#039be5",
-        borderLeft: "4px solid #0288d1",
+        backgroundColor: colors.calendarGoogleCyan,
+        borderLeft: `4px solid ${colors.calendarGoogleCyan}`,
         borderRadius: "4px",
-        border: "1px solid #0288d1",
+        border: `1px solid ${colors.calendarGoogleCyan}`,
         boxShadow: baseBoxShadow,
         overflow: "hidden",
       },
@@ -330,7 +331,7 @@ function CalendarView({
   const dayPropGetter = useCallback(
     (date) => {
       if (highlightDate && isSameDay(date, highlightDate)) {
-        return { style: { backgroundColor: "#e6f4ea" } };
+        return { style: { backgroundColor: colors.calendarEventGreenBg } };
       }
       return {};
     },
@@ -352,7 +353,7 @@ function CalendarView({
       height: "100%",
     },
     ".rbc-header": {
-      borderBottom: "1px solid #dadce0",
+      borderBottom: `1px solid ${colors.calendarGridBorder}`,
       padding: "0 !important",
       fontWeight: "500",
       height: "70px",
@@ -361,22 +362,22 @@ function CalendarView({
     },
     ".rbc-time-header-content": { height: "70px", minHeight: "70px" },
     ".rbc-row-bg": { display: "none !important" },
-    ".rbc-today": { backgroundColor: "#e8f0fe" },
-    ".rbc-time-view": { border: "none", borderTop: "1px solid #dadce0" },
-    ".rbc-label": { fontSize: "10px", color: "#70757a", fontWeight: "400", paddingRight: "8px" },
+    ".rbc-today": { backgroundColor: colors.calendarTodayBg },
+    ".rbc-time-view": { border: "none", borderTop: `1px solid ${colors.calendarGridBorder}` },
+    ".rbc-label": { fontSize: "10px", color: colors.calendarGridLabel, fontWeight: "400", paddingRight: "8px" },
     ".rbc-timeslot-group": { minHeight: "48px", borderBottom: "1px solid #f0f0f0" },
     ".rbc-time-slot": { borderTop: "none" },
-    ".rbc-time-slot:first-child": { borderTop: "1px solid #dadce0" },
+    ".rbc-time-slot:first-child": { borderTop: `1px solid ${colors.calendarGridBorder}` },
     ".rbc-time-gutter": { backgroundColor: "white", width: "60px" },
     ".rbc-time-header-gutter": { backgroundColor: "white", height: "70px", minHeight: "70px" },
-    ".rbc-day-slot": { borderLeft: "1px solid #dadce0" },
+    ".rbc-day-slot": { borderLeft: `1px solid ${colors.calendarGridBorder}` },
     ".rbc-day-slot .rbc-time-slot": { borderTop: "none" },
     ".rbc-events-container": { marginRight: "0px" },
     ".rbc-event": { padding: 0 },
     ".rbc-event-content": { overflow: "hidden" },
     ".rbc-event:focus": { outline: "none" },
     ".rbc-selected": { transform: "scale(1.01)", transition: "transform 0.1s ease", zIndex: 4 },
-    ".rbc-current-time-indicator": { backgroundColor: "#ea4335", height: "2px", zIndex: 10 },
+    ".rbc-current-time-indicator": { backgroundColor: colors.calendarGoogleRed, height: "2px", zIndex: 10 },
     ".rbc-current-time-indicator::before": {
       content: '""',
       position: "absolute",
@@ -385,14 +386,14 @@ function CalendarView({
       width: "12px",
       height: "12px",
       borderRadius: "50%",
-      backgroundColor: "#ea4335",
+      backgroundColor: colors.calendarGoogleRed,
       border: "2px solid white",
     },
     ".rbc-toolbar": { padding: "12px 0", marginBottom: "12px" },
     ".rbc-toolbar button": {
       backgroundColor: "white",
-      border: "1px solid #dadce0",
-      color: "#3c4043",
+      border: `1px solid ${colors.calendarGridBorder}`,
+      color: colors.calendarGridText,
       padding: "8px 16px",
       borderRadius: "4px",
       fontWeight: "500",
@@ -401,15 +402,15 @@ function CalendarView({
     },
     ".rbc-toolbar button:hover": {
       borderColor: "#d2d3d4",
-      backgroundColor: "#f8f9fa",
+      backgroundColor: colors.calendarGridHover,
       boxShadow: "0 1px 1px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15)",
     },
-    ".rbc-toolbar button.rbc-active": { backgroundColor: "#1a73e8", borderColor: "#1a73e8", color: "white" },
+    ".rbc-toolbar button.rbc-active": { backgroundColor: colors.calendarGoogleBlue, borderColor: colors.calendarGoogleBlue, color: "white" },
     ".rbc-toolbar button.rbc-active:hover": { backgroundColor: "#1765cc", borderColor: "#1765cc" },
-    ".rbc-month-view": { border: "1px solid #dadce0", borderRadius: "8px" },
-    ".rbc-month-row": { borderTop: "1px solid #dadce0" },
-    ".rbc-day-bg": { borderLeft: "1px solid #dadce0" },
-    ".rbc-off-range-bg": { backgroundColor: "#f8f9fa" },
+    ".rbc-month-view": { border: `1px solid ${colors.calendarGridBorder}`, borderRadius: "8px" },
+    ".rbc-month-row": { borderTop: `1px solid ${colors.calendarGridBorder}` },
+    ".rbc-day-bg": { borderLeft: `1px solid ${colors.calendarGridBorder}` },
+    ".rbc-off-range-bg": { backgroundColor: colors.calendarGridHover },
     ".rbc-time-content": { scrollBehavior: "smooth" },
   };
 

@@ -1,8 +1,9 @@
 import { Header } from "./components/common";
+import { colors } from "./styles/designSystem";
 
 const LAYOUT_STYLES = {
   minHeight: "100vh",
-  background: "#f7f9fb"
+  background: colors.bgPage
 };
 
 function Layout({ children }) {

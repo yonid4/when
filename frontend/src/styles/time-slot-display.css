@@ -18,27 +18,27 @@
 
 /* Color scheme classes for density */
 .density-1-2 {
-  background-color: #D4DDE8;
-  color: #2b2b2b;
+  background-color: var(--density-1);
+  color: var(--secondary-color);
 }
 
 .density-3-4 {
-  background-color: #B5C4D6;
-  color: #2b2b2b;
+  background-color: var(--density-2);
+  color: var(--secondary-color);
 }
 
 .density-5-6 {
-  background-color: #6B7C98;
+  background-color: var(--density-3);
   color: white;
 }
 
 .density-7-9 {
-  background-color: #4E5D71;
+  background-color: var(--density-4);
   color: white;
 }
 
 .density-10-plus {
-  background-color: #3A4555;
+  background-color: var(--density-5);
   color: white;
 }
 

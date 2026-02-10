@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useRef, useCallback, memo } from 'react';
 import { format, differenceInMinutes, addMinutes, isSameDay, setHours, setMinutes } from 'date-fns';
 import { Box, Tooltip, Text, Flex, VStack } from '@chakra-ui/react';
+import { colors } from '../../styles/designSystem';
 
 // Memoized grid line component
 const GridLine = memo(({ hour, minHour, maxHour }) => (
@@ -126,11 +127,11 @@ const TimeSlotDisplay = ({
 
     const getSlotColor = useCallback((count) => {
         if (count <= 0) return 'transparent';
-        if (count <= 2) return '#D4DDE8';
-        if (count <= 4) return '#B5C4D6';
-        if (count <= 6) return '#6B7C98';
-        if (count <= 9) return '#4E5D71';
-        return '#3A4555';
+        if (count <= 2) return colors.density1;
+        if (count <= 4) return colors.density2;
+        if (count <= 6) return colors.density3;
+        if (count <= 9) return colors.density4;
+        return colors.density5;
     }, []);
 
     const getTextColor = useCallback((count) => count >= 5 ? 'white' : 'black', []);
@@ -434,8 +435,8 @@ const TimeSlotDisplay = ({
                             left="0"
                             right="0"
                             w="calc(100% - 8px)"
-                            bg="rgba(107, 124, 152, 0.3)"
-                            border="2px dashed #6B7C98"
+                            bg="rgba(79, 108, 247, 0.3)"
+                            border={`2px dashed ${colors.primary}`}
                             borderRadius="md"
                             mx={1}
                             pointerEvents="none"

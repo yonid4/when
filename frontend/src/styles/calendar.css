@@ -24,7 +24,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   overflow: hidden;
 }
@@ -35,7 +35,7 @@
 
 .calendar-container .rbc-time-header {
   display: flex;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--color-border);
   height: 40px;
   min-height: 40px;
   max-height: 40px;
@@ -44,7 +44,7 @@
 }
 
 .calendar-container .rbc-time-header.rbc-overflowing {
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--color-border);
 }
 
 /* Time Gutter Header (Left corner) */
@@ -54,7 +54,7 @@
   max-width: 80px;
   flex: 0 0 80px;
   background: white;
-  border-right: 1px solid #e2e8f0;
+  border-right: 1px solid var(--color-border);
 }
 
 /* Day Headers Container */
@@ -71,7 +71,7 @@
   align-items: center;
   justify-content: center;
   background: white;
-  border-right: 1px solid #e2e8f0;
+  border-right: 1px solid var(--color-border);
   padding: 8px 4px;
   font-size: 0.875rem;
   font-weight: 500;
@@ -85,7 +85,7 @@
 
 /* Today's header highlighting */
 .calendar-container .rbc-header.rbc-today {
-  background-color: #f7f9fb;
+  background-color: var(--color-bg-page);
 }
 
 /* Disable header interactions */
@@ -134,7 +134,7 @@
   max-width: 80px;
   flex: 0 0 80px;
   background: white;
-  border-right: 1px solid #e2e8f0;
+  border-right: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
 }
@@ -145,7 +145,7 @@
   display: flex;
   flex-direction: column;
   position: relative;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--color-border);
 }
 
 /* Remove border from last hour group */
@@ -167,7 +167,7 @@
 
 /* Add line at 30-minute mark */
 .calendar-container .rbc-time-gutter .rbc-time-slot:nth-child(2) {
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--color-border);
 }
 
 /* ============================================
@@ -186,7 +186,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid #e2e8f0;
+  border-right: 1px solid var(--color-border);
   position: relative;
   min-width: 0;
 }
@@ -198,7 +198,7 @@
 
 /* Today column highlighting */
 .calendar-container .rbc-day-slot.rbc-today {
-  background-color: #f7f9fb;
+  background-color: var(--color-bg-page);
 }
 
 /* Hour Group in Day Column */
@@ -207,7 +207,7 @@
   display: flex;
   flex-direction: column;
   position: relative;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--color-border);
 }
 
 /* Remove border from last hour group */
@@ -224,7 +224,7 @@
 
 /* Add horizontal line at 30-minute mark */
 .calendar-container .rbc-day-slot.rbc-time-column .rbc-time-slot:nth-child(2) {
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--color-border);
 }
 
 /* Stronger borders for today's column */
@@ -280,7 +280,7 @@
 
 .calendar-container .rbc-toolbar button {
   background-color: white;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--color-border);
   color: var(--secondary-color);
   padding: 0.5rem 1rem;
   border-radius: 6px;
@@ -292,7 +292,7 @@
 
 .calendar-container .rbc-toolbar button:hover {
   border-color: var(--secondary-color);
-  background-color: #f7f9fb;
+  background-color: var(--color-bg-page);
 }
 
 .calendar-container .rbc-toolbar button.rbc-active {
@@ -320,7 +320,7 @@
 }
 
 .calendar-container .rbc-time-content::-webkit-scrollbar-thumb {
-  background-color: #e2e8f0;
+  background-color: var(--color-border);
   border-radius: 4px;
 }
 
@@ -333,24 +333,24 @@
    ============================================ */
 
 .calendar-container .rbc-month-view {
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   overflow: hidden;
 }
 
 .calendar-container .rbc-month-row {
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--color-border);
   display: flex !important;
   flex-direction: column !important;
   position: relative !important;
 }
 
 .calendar-container .rbc-day-bg {
-  border-left: 1px solid #e2e8f0;
+  border-left: 1px solid var(--color-border);
 }
 
 .calendar-container .rbc-day-bg.rbc-today {
-  background-color: #f7f9fb;
+  background-color: var(--color-bg-page);
 }
 
 .calendar-container .rbc-off-range-bg {
@@ -469,7 +469,7 @@
 
 /* Specific styling for preferred events in month view */
 .calendar-container .rbc-month-view .month-preferred-event {
-  background-color: #6B7C98 !important;
+  background-color: var(--primary-color) !important;
   border: none !important;
   color: white !important;
   order: 2 !important;
@@ -486,37 +486,37 @@
 
 /* Preferred slots - blue-gray density shades (like busy slots) */
 .calendar-container .preferred-slot-density-1 {
-  background-color: rgba(107, 124, 152, 0.2) !important;
+  background-color: rgba(79, 108, 247, 0.2) !important;
   /* Very light blue-gray - 1 person */
-  border: 1px solid rgba(107, 124, 152, 0.4) !important;
+  border: 1px solid rgba(79, 108, 247, 0.4) !important;
   cursor: pointer;
 }
 
 .calendar-container .preferred-slot-density-2 {
-  background-color: rgba(107, 124, 152, 0.35) !important;
+  background-color: rgba(79, 108, 247, 0.35) !important;
   /* Light blue-gray - 2 people */
-  border: 1px solid rgba(107, 124, 152, 0.5) !important;
+  border: 1px solid rgba(79, 108, 247, 0.5) !important;
   cursor: pointer;
 }
 
 .calendar-container .preferred-slot-density-3 {
-  background-color: rgba(107, 124, 152, 0.5) !important;
+  background-color: rgba(79, 108, 247, 0.5) !important;
   /* Medium blue-gray - 3 people */
-  border: 1px solid rgba(107, 124, 152, 0.6) !important;
+  border: 1px solid rgba(79, 108, 247, 0.6) !important;
   cursor: pointer;
 }
 
 .calendar-container .preferred-slot-density-4 {
-  background-color: rgba(107, 124, 152, 0.65) !important;
+  background-color: rgba(79, 108, 247, 0.65) !important;
   /* Dark blue-gray - 4 people */
-  border: 1px solid rgba(107, 124, 152, 0.7) !important;
+  border: 1px solid rgba(79, 108, 247, 0.7) !important;
   cursor: pointer;
 }
 
 .calendar-container .preferred-slot-density-5-plus {
-  background-color: rgba(107, 124, 152, 0.8) !important;
+  background-color: rgba(79, 108, 247, 0.8) !important;
   /* Darkest blue-gray - 5+ people */
-  border: 1px solid rgba(107, 124, 152, 0.9) !important;
+  border: 1px solid rgba(79, 108, 247, 0.9) !important;
   cursor: pointer;
 }
 
@@ -532,7 +532,7 @@
 
 /* Finalized event slot (Task 3) */
 .calendar-container .finalized-event {
-  background-color: #10B981 !important;
+  background-color: var(--color-success) !important;
   /* solid green */
   border: 3px solid #059669 !important;
   opacity: 1;
