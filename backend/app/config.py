@@ -28,7 +28,8 @@ class Config:
     # Gemini API Settings
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
     GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
-    GEMINI_MAX_RETRIES = os.getenv("GEMINI_MAX_RETRIES", 3)
+    _max_retries = os.getenv("GEMINI_MAX_RETRIES", "3")
+    GEMINI_MAX_RETRIES = int(_max_retries) if str(_max_retries).isdigit() else 3
 
     # Microsoft/Outlook Calendar API settings
     MICROSOFT_CLIENT_ID = os.getenv("MICROSOFT_CLIENT_ID")
