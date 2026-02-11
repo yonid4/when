@@ -151,7 +151,7 @@ def create_event(user_id):
         # Add creator as participant
         events_service_with_auth = _get_events_service()
         try:
-            events_service_with_auth.add_participant(event['id'], user_id)
+            events_service_with_auth.add_participant(event['id'], user_id, "accepted", "going")
         except Exception as e:
             logging.warning(f"[EVENT] Failed to add creator as participant: {e}")
 
