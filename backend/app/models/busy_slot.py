@@ -100,7 +100,7 @@ class BusySlot(BaseModel):
         cls,
         user_id: str,
         event: dict,
-        calendar_id: str = "primary",
+        calendar_id: str = "microsoft_primary",
     ) -> 'BusySlot':
         """Create a BusySlot from a Microsoft Graph calendar event."""
         start_str = event.get('start', {}).get('dateTime')
