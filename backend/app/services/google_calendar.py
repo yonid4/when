@@ -216,6 +216,11 @@ def get_stored_credentials(user_id: str) -> Optional[Credentials]:
     if not creds_dict:
         return None
 
+    return credentials_from_dict(creds_dict)
+
+
+def credentials_from_dict(creds_dict: dict) -> Credentials:
+    """Convert a credentials dict (from DB) into a google Credentials object."""
     return Credentials(
         token=creds_dict["token"],
         refresh_token=creds_dict.get("refresh_token"),
