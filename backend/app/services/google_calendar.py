@@ -326,11 +326,22 @@ def get_user_calendars_list(credentials: Credentials) -> list:
 
 def get_credentials_from_dict(creds_dict: dict) -> Credentials:
     """Create a Credentials object from a dictionary."""
+    # Filter out OpenID/userinfo scopes — they are only needed during the
+    # initial OAuth consent flow and cause 'invalid_scope' errors when sent
+    # to Google's token endpoint during refresh.
+    _NON_API_SCOPES = {
+        "openid",
+        "https://www.googleapis.com/auth/userinfo.email",
+        "https://www.googleapis.com/auth/userinfo.profile",
+    }
+    stored_scopes = creds_dict.get("scopes", [])
+    api_scopes = [s for s in stored_scopes if s not in _NON_API_SCOPES] or None
+
     return Credentials(
         token=creds_dict["token"],
         refresh_token=creds_dict.get("refresh_token"),
         token_uri=creds_dict.get("token_uri", "https://oauth2.googleapis.com/token"),
         client_id=creds_dict.get("client_id"),
         client_secret=creds_dict.get("client_secret"),
-        scopes=creds_dict.get("scopes", [])
+        scopes=api_scopes,
     )
