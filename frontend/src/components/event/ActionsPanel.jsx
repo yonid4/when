@@ -138,7 +138,7 @@ const ActionsPanel = ({
           <Button
             flex={1}
             size="xs"
-            variant="ghost"
+            variant="outline"
             leftIcon={<FiCopy />}
             onClick={onCopyLink}
           >
@@ -147,7 +147,7 @@ const ActionsPanel = ({
           <Button
             flex={1}
             size="xs"
-            variant="ghost"
+            variant="outline"
             leftIcon={<FiCalendar />}
             onClick={onReconnect}
             data-reconnect-calendar
