@@ -199,7 +199,11 @@ class BusySlotService:
 
             enabled_sources = []
             try:
-                enabled_sources = calendar_accounts_service.get_enabled_sources(user_id)
+                all_sources = calendar_accounts_service.get_enabled_sources(user_id)
+                enabled_sources = [
+                    s for s in all_sources
+                    if s.get("account", {}).get("provider") == "google"
+                ]
             except Exception as e:
                 logging.warning(f"[SYNC] Could not get enabled sources (may not be migrated): {e}")
 
@@ -243,6 +247,7 @@ class BusySlotService:
             self.service_role_client.table("busy_slots")
             .select("id, google_event_id")
             .eq("user_id", user_id)
+            .eq("google_calendar_id", "primary")
             .gte("start_time_utc", start_date.isoformat())
             .lte("end_time_utc", end_date.isoformat())
             .not_.is_("google_event_id", "null")
@@ -260,7 +265,7 @@ class BusySlotService:
         if ids_to_delete:
             self.service_role_client.table("busy_slots").delete().eq(
                 "user_id", user_id
-            ).in_("google_event_id", list(ids_to_delete)).execute()
+            ).eq("google_calendar_id", "primary").in_("google_event_id", list(ids_to_delete)).execute()
 
         slots_to_add = []
         for event_id in ids_to_add:
@@ -268,7 +273,8 @@ class BusySlotService:
             try:
                 busy_slot = BusySlot.from_google_event(user_id, event)
                 slots_to_add.append(busy_slot.to_dict())
-            except ValueError:
+            except ValueError as e:
+                logging.debug(f"[SYNC] Skipping Google event {event_id}: {e}")
                 continue
 
         if slots_to_add:
@@ -404,7 +410,8 @@ class BusySlotService:
                 slot_dict = busy_slot.to_dict()
                 slot_dict["calendar_source_id"] = source_id
                 slots_to_add.append(slot_dict)
-            except ValueError:
+            except ValueError as e:
+                logging.debug(f"[SYNC] Skipping Google event {composite_key}: {e}")
                 continue
 
         added_count = 0
@@ -506,7 +513,8 @@ class BusySlotService:
                 slot_dict = busy_slot.to_dict()
                 slot_dict["calendar_source_id"] = source_id
                 slots_to_add.append(slot_dict)
-            except ValueError:
+            except ValueError as e:
+                logging.debug(f"[SYNC] Skipping Microsoft event {composite_key}: {e}")
                 continue
 
         added_count = 0
@@ -581,6 +589,7 @@ class BusySlotService:
             self.service_role_client.table("busy_slots")
             .select("id, google_event_id")
             .eq("user_id", user_id)
+            .eq("google_calendar_id", "microsoft_primary")
             .gte("start_time_utc", start_date.isoformat())
             .lte("end_time_utc", end_date.isoformat())
             .not_.is_("google_event_id", "null")
@@ -598,7 +607,7 @@ class BusySlotService:
         if ids_to_delete:
             self.service_role_client.table("busy_slots").delete().eq(
                 "user_id", user_id
-            ).in_("google_event_id", list(ids_to_delete)).execute()
+            ).eq("google_calendar_id", "microsoft_primary").in_("google_event_id", list(ids_to_delete)).execute()
 
         slots_to_add = []
         for event_id in ids_to_add:
@@ -606,7 +615,8 @@ class BusySlotService:
             try:
                 busy_slot = BusySlot.from_microsoft_event(user_id, event)
                 slots_to_add.append(busy_slot.to_dict())
-            except ValueError:
+            except ValueError as e:
+                logging.debug(f"[SYNC] Skipping Microsoft legacy event {event_id}: {e}")
                 continue
 
         if slots_to_add:
