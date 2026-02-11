@@ -141,7 +141,7 @@ class EventsService:
             print(f"Failed to get user events: {str(e)}")
             return []
 
-    def add_participant(self, event_id: str, user_id: str, status: str = "pending", rsvp_status: str = "maybe") -> Optional[dict]:
+    def add_participant(self, event_id: str, user_id: str, status: Optional[str] = None, rsvp_status: Optional[str] = None) -> Optional[dict]:
         """Add a participant to an event."""
         try:
             if not event_id or not user_id:
@@ -153,21 +153,19 @@ class EventsService:
                 print(f"Event {event_id} not found")
                 return None
             
-            if not self.validate_participant_status(status):
-                print(f"Invalid status: {status}")
-                return None
+            # if not self.validate_participant_status(status):
+            #     print(f"Invalid status: {status}")
+            #     return None
             
-            if not self.validate_rsvp_status(rsvp_status):
-                print(f"Invalid RSVP status: {rsvp_status}")
-                return None
+            # if not self.validate_rsvp_status(rsvp_status):
+            #     print(f"Invalid RSVP status: {rsvp_status}")
+            #     return None
 
             existing = (
                 self.service_role_client.table("event_participants")
                 .select("*")
                 .eq("event_id", event_id)
                 .eq("user_id", user_id)
-                .eq("status", status)
-                .eq("rsvp_status", rsvp_status)
                 .execute()
             )
 
@@ -176,7 +174,12 @@ class EventsService:
             
             result = (
                 self.service_role_client.table("event_participants")
-                .insert({"event_id": event_id, "user_id": user_id, "status": status})
+                .insert({
+                    "event_id": event_id, 
+                    "user_id": user_id, 
+                    "status": status,
+                    "rsvp_status": rsvp_status
+                    })
                 .execute()
             )
 
