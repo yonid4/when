@@ -152,14 +152,6 @@ class EventsService:
             if not event:
                 print(f"Event {event_id} not found")
                 return None
-            
-            # if not self.validate_participant_status(status):
-            #     print(f"Invalid status: {status}")
-            #     return None
-            
-            # if not self.validate_rsvp_status(rsvp_status):
-            #     print(f"Invalid RSVP status: {rsvp_status}")
-            #     return None
 
             existing = (
                 self.service_role_client.table("event_participants")
@@ -174,12 +166,7 @@ class EventsService:
             
             result = (
                 self.service_role_client.table("event_participants")
-                .insert({
-                    "event_id": event_id, 
-                    "user_id": user_id, 
-                    "status": status,
-                    "rsvp_status": rsvp_status
-                    })
+                .insert({"event_id": event_id, "user_id": user_id, "status": status, "rsvp_status": rsvp_status})
                 .execute()
             )
 
