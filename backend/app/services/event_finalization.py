@@ -155,22 +155,14 @@ class EventFinalizationService:
             if write_cal and write_cal.get("account"):
                 account = write_cal["account"]
                 if account.get("credentials"):
-                    creds = account["credentials"]
-                    if account["provider"] == "google":
-                        creds = get_credentials_from_dict(creds)
-                    return (
-                        account["provider"],
-                        creds,
-                        write_cal.get("calendar_id", "primary"),
-                    )
+                    creds = get_credentials_from_dict(account["credentials"]) if account["provider"] == "google" else account["credentials"]
+                    return (account["provider"], creds, write_cal.get("calendar_id", "primary"))
 
             # Fall back to any account with credentials
             accounts = cas.get_user_accounts(coordinator_id)
             for account in accounts:
                 if account.get("credentials"):
-                    creds = account["credentials"]
-                    if account["provider"] == "google":
-                        creds = get_credentials_from_dict(creds)
+                    creds = get_credentials_from_dict(account["credentials"]) if account["provider"] == "google" else account["credentials"]
                     return (account["provider"], creds, "primary")
         except Exception as e:
             logging.debug(f"calendar_accounts lookup failed: {e}")
