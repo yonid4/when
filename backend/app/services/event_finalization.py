@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Optional
 from supabase import create_client
 
 from ..services import microsoft_calendar
-from ..services.google_calendar import get_calendar_service, get_stored_credentials
+from ..services.google_calendar import credentials_from_dict, get_calendar_service, get_stored_credentials
 from ..utils.supabase_client import get_supabase
 
 
@@ -155,9 +155,12 @@ class EventFinalizationService:
             if write_cal and write_cal.get("account"):
                 account = write_cal["account"]
                 if account.get("credentials"):
+                    creds = account["credentials"]
+                    if account["provider"] == "google":
+                        creds = credentials_from_dict(creds)
                     return (
                         account["provider"],
-                        account["credentials"],
+                        creds,
                         write_cal.get("calendar_id", "primary"),
                     )
 
@@ -165,7 +168,10 @@ class EventFinalizationService:
             accounts = cas.get_user_accounts(coordinator_id)
             for account in accounts:
                 if account.get("credentials"):
-                    return (account["provider"], account["credentials"], "primary")
+                    creds = account["credentials"]
+                    if account["provider"] == "google":
+                        creds = credentials_from_dict(creds)
+                    return (account["provider"], creds, "primary")
         except Exception as e:
             logging.debug(f"calendar_accounts lookup failed: {e}")
 
