@@ -109,8 +109,24 @@ class BusySlot(BaseModel):
         if not start_str or not end_str or 'T' not in start_str:
             raise ValueError("All-day events are not supported for busy slots")
 
-        start_dt = datetime.fromisoformat(start_str.replace('Z', '+00:00'))
-        end_dt = datetime.fromisoformat(end_str.replace('Z', '+00:00'))
+        # Microsoft Graph returns 7 decimal places (e.g. '.0000000');
+        # Python fromisoformat supports at most 6, so truncate.
+        def _parse_ms_datetime(s: str) -> datetime:
+            s = s.replace('Z', '+00:00')
+            dot = s.find('.')
+            if dot != -1:
+                # Find where fractional seconds end (before +/- timezone or end of string)
+                end = dot + 1
+                while end < len(s) and s[end].isdigit():
+                    end += 1
+                frac = s[dot + 1:end]
+                if len(frac) > 6:
+                    frac = frac[:6]
+                s = s[:dot + 1] + frac + s[end:]
+            return datetime.fromisoformat(s)
+
+        start_dt = _parse_ms_datetime(start_str)
+        end_dt = _parse_ms_datetime(end_str)
 
         return cls(
             user_id=user_id,
