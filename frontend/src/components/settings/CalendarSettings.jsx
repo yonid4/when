@@ -195,41 +195,21 @@ function CalendarSettings() {
     });
   }
 
-  async function handleSyncCalendars() {
-    setIsSaving(true);
-    let successCount = 0;
-    let failCount = 0;
-
-    for (const account of accounts) {
-      setSyncingAccountId(account.id);
-      const result = await syncAccountCalendars(account.id);
-      if (result) {
-        successCount++;
-      } else {
-        failCount++;
-      }
-    }
+  async function handleSyncCalendars(accountId) {
+    setSyncingAccountId(accountId);
+    const result = await syncAccountCalendars(accountId);
 
     setSyncingAccountId(null);
-    setIsSaving(false);
 
-    if (failCount === 0) {
-      toast({
-        title: "All calendars synced",
-        description: `Successfully synced ${successCount} account${successCount !== 1 ? "s" : ""}`,
-        status: "success",
-        duration: 3000,
-        isClosable: true,
-      });
-    } else {
-      toast({
-        title: "Some syncs failed",
-        description: `${successCount} succeeded, ${failCount} failed. Please try again.`,
-        status: "warning",
-        duration: 5000,
-        isClosable: true,
-      });
-    }
+    toast({
+      title: result ? "Calendars synced" : "Sync failed",
+      description: result
+        ? `Found ${result.count} calendars`
+        : "Failed to sync calendars. Please try again.",
+      status: result ? "success" : "error",
+      duration: result ? 3000 : 5000,
+      isClosable: true,
+    });
   }
 
   async function handleSetWriteCalendar(sourceId) {
