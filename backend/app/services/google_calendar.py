@@ -216,19 +216,7 @@ def get_stored_credentials(user_id: str) -> Optional[Credentials]:
     if not creds_dict:
         return None
 
-    return credentials_from_dict(creds_dict)
-
-
-def credentials_from_dict(creds_dict: dict) -> Credentials:
-    """Convert a credentials dict (from DB) into a google Credentials object."""
-    return Credentials(
-        token=creds_dict["token"],
-        refresh_token=creds_dict.get("refresh_token"),
-        token_uri=creds_dict.get("token_uri", "https://oauth2.googleapis.com/token"),
-        client_id=creds_dict.get("client_id"),
-        client_secret=creds_dict.get("client_secret"),
-        scopes=creds_dict.get("scopes", [])
-    )
+    return get_credentials_from_dict(creds_dict)
 
 def refresh_credentials_if_needed(credentials: Credentials) -> Credentials:
     """Refresh credentials if they are expired and have a refresh token."""
