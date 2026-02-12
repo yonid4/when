@@ -50,8 +50,7 @@ def sample_busy_slot():
         "user_id": "user-123",
         "start_time_utc": "2025-12-20T14:00:00Z",
         "end_time_utc": "2025-12-20T15:00:00Z",
-        "event_title": "Team Meeting",
-        "google_event_id": "gcal-event-123",
+        "provider_event_id": "gcal-event-123",
         "created_at": "2025-12-18T10:00:00Z"
     }
 
@@ -208,7 +207,7 @@ class TestUpsertBusySlot:
             user_id="user-123",
             start_time_utc=datetime(2025, 12, 20, 14, 0, tzinfo=timezone.utc),
             end_time_utc=datetime(2025, 12, 20, 15, 0, tzinfo=timezone.utc),
-            google_event_id="gcal-new-123"
+            provider_event_id="gcal-new-123"
         )
 
         # Mock no existing slot
@@ -227,7 +226,7 @@ class TestUpsertBusySlot:
 
         # Assert
         assert result is not None
-        assert result["google_event_id"] == "gcal-new-123"
+        assert result["provider_event_id"] == "gcal-new-123"
 
     def test_upsert_busy_slot_update_existing(self, busy_slot_service, mock_supabase):
         """Test upserting an existing busy slot (update)."""
@@ -236,7 +235,7 @@ class TestUpsertBusySlot:
             user_id="user-123",
             start_time_utc=datetime(2025, 12, 20, 14, 0, tzinfo=timezone.utc),
             end_time_utc=datetime(2025, 12, 20, 15, 0, tzinfo=timezone.utc),
-            google_event_id="gcal-existing-123",
+            provider_event_id="gcal-existing-123",
             event_title="Updated Meeting"
         )
 
@@ -245,7 +244,7 @@ class TestUpsertBusySlot:
         existing_result.data = [{
             "id": "busy-123",
             "user_id": "user-123",
-            "google_event_id": "gcal-existing-123"
+            "provider_event_id": "gcal-existing-123"
         }]
 
         # Mock update
@@ -260,10 +259,10 @@ class TestUpsertBusySlot:
 
         # Assert
         assert result is not None
-        assert result["event_title"] == "Updated Meeting"
+        assert result["provider_event_id"] == "gcal-existing-123"
 
-    def test_upsert_busy_slot_no_google_event_id(self, busy_slot_service, mock_supabase):
-        """Test upserting slot without google_event_id (insert)."""
+    def test_upsert_busy_slot_no_provider_event_id(self, busy_slot_service, mock_supabase):
+        """Test upserting slot without provider_event_id (insert)."""
         # Arrange
         busy_slot = BusySlot(
             user_id="user-123",
@@ -408,7 +407,7 @@ class TestSyncUserGoogleCalendar:
         # DB has gcal-event-3 (needs deletion) but not gcal-event-1 or gcal-event-2 (needs addition)
         db_slots = Mock()
         db_slots.data = [
-            {"id": "busy-123", "google_event_id": "gcal-event-3"}
+            {"id": "busy-123", "provider_event_id": "gcal-event-3"}
         ]
 
         mock_service.events.return_value.list.return_value.execute.return_value = google_events

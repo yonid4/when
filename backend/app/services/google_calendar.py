@@ -116,7 +116,7 @@ def store_credentials(user_id: str, credentials: Credentials, provider_email: st
         }
 
     check_response = supabase.table("profiles").select(
-        "id, email_address, google_calendar_id"
+        "id, email_address"
     ).eq("id", user_id).execute()
 
     if not check_response.data:
@@ -133,7 +133,7 @@ def store_credentials(user_id: str, credentials: Credentials, provider_email: st
         logging.error(f"[ERROR] Failed to store credentials in profiles: {e}")
 
     try:
-        email = provider_email or profile.get("google_calendar_id") or profile.get("email_address")
+        email = provider_email or profile.get("email_address")
 
         if email:
             existing_account = (

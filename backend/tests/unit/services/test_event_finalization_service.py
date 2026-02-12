@@ -119,7 +119,7 @@ class TestFinalizeEvent:
 
                                     # Assert
                                     assert result["success"] is True
-                                    assert "google_event_id" in result
+                                    assert "provider_event_id" in result
                                     assert "html_link" in result
 
     def test_finalize_event_not_coordinator(self, finalization_service, sample_event):
@@ -348,6 +348,6 @@ class TestHelperMethods:
             event_id="event-123",
             start_time_utc="2025-12-20T14:00:00Z",
             end_time_utc="2025-12-20T15:00:00Z",
-            google_event_id="gcal-123",
-            google_html_link="https://calendar.google.com/event"
+            provider_event_id="gcal-123",
+            calendar_html_link="https://calendar.google.com/event"
         )

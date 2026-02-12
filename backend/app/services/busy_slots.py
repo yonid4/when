@@ -4,7 +4,7 @@ Busy slots service.
 Key behaviors:
 - All times are treated as UTC ISO strings when stored/fetched from Supabase.
 - Calendar sync (Google and Microsoft) skips all-day events and upserts by
-  (user_id, google_event_id).
+  (user_id, provider_event_id).
 - Merged-busy computation prefers a Supabase RPC; falls back to Python if RPC fails.
 """
 
@@ -83,15 +83,15 @@ class BusySlotService:
     def upsert_busy_slot(self, busy_slot: BusySlot) -> Optional[dict]:
         """Upsert a busy slot (update if exists, insert if new)."""
         try:
-            if busy_slot.google_event_id:
+            if busy_slot.provider_event_id:
                 query = (
                     self.service_role_client.table("busy_slots")
                     .select("*")
                     .eq("user_id", busy_slot.user_id)
-                    .eq("google_event_id", busy_slot.google_event_id)
+                    .eq("provider_event_id", busy_slot.provider_event_id)
                 )
-                if busy_slot.google_calendar_id:
-                    query = query.eq("google_calendar_id", busy_slot.google_calendar_id)
+                if busy_slot.calendar_source_id:
+                    query = query.eq("calendar_source_id", busy_slot.calendar_source_id)
                 existing = query.execute()
 
                 if existing.data:
@@ -129,9 +129,9 @@ class BusySlotService:
         try:
             query = self.supabase.table("busy_slots").delete().eq(
                 "user_id", busy_slot.user_id
-            ).eq("google_event_id", busy_slot.google_event_id)
-            if busy_slot.google_calendar_id:
-                query = query.eq("google_calendar_id", busy_slot.google_calendar_id)
+            ).eq("provider_event_id", busy_slot.provider_event_id)
+            if busy_slot.calendar_source_id:
+                query = query.eq("calendar_source_id", busy_slot.calendar_source_id)
             query.execute()
             return True
         except Exception as e:
@@ -245,16 +245,16 @@ class BusySlotService:
 
         db_slots_result = (
             self.service_role_client.table("busy_slots")
-            .select("id, google_event_id")
+            .select("id, provider_event_id")
             .eq("user_id", user_id)
-            .eq("google_calendar_id", "primary")
+            .eq("calendar_source_id", "primary")
             .gte("start_time_utc", start_date.isoformat())
             .lte("end_time_utc", end_date.isoformat())
-            .not_.is_("google_event_id", "null")
+            .not_.is_("provider_event_id", "null")
             .execute()
         )
         db_slots = db_slots_result.data or []
-        db_event_ids = {slot["google_event_id"] for slot in db_slots}
+        db_event_ids = {slot["provider_event_id"] for slot in db_slots}
 
         google_ids = set(google_event_map.keys())
         ids_to_add = google_ids - db_event_ids
@@ -265,7 +265,7 @@ class BusySlotService:
         if ids_to_delete:
             self.service_role_client.table("busy_slots").delete().eq(
                 "user_id", user_id
-            ).eq("google_calendar_id", "primary").in_("google_event_id", list(ids_to_delete)).execute()
+            ).eq("calendar_source_id", "primary").in_("provider_event_id", list(ids_to_delete)).execute()
 
         slots_to_add = []
         for event_id in ids_to_add:
@@ -372,17 +372,17 @@ class BusySlotService:
 
         db_slots_result = (
             self.service_role_client.table("busy_slots")
-            .select("id, google_event_id, google_calendar_id")
+            .select("id, provider_event_id")
             .eq("user_id", user_id)
-            .eq("google_calendar_id", calendar_id)
+            .eq("calendar_source_id", source_id)
             .gte("start_time_utc", start_date.isoformat())
             .lte("end_time_utc", end_date.isoformat())
-            .not_.is_("google_event_id", "null")
+            .not_.is_("provider_event_id", "null")
             .execute()
         )
         db_slots = db_slots_result.data or []
         db_event_keys = {
-            f"{slot['google_calendar_id']}:{slot['google_event_id']}"
+            f"{calendar_id}:{slot['provider_event_id']}"
             for slot in db_slots
         }
 
@@ -394,11 +394,11 @@ class BusySlotService:
 
         deleted_count = 0
         if keys_to_delete:
-            event_ids_to_delete = [k.split(":")[1] for k in keys_to_delete]
+            event_ids_to_delete = [k.split(":", 1)[1] for k in keys_to_delete]
             self.service_role_client.table("busy_slots").delete().eq(
                 "user_id", user_id
-            ).eq("google_calendar_id", calendar_id).in_(
-                "google_event_id", event_ids_to_delete
+            ).eq("calendar_source_id", source_id).in_(
+                "provider_event_id", event_ids_to_delete
             ).execute()
             deleted_count = len(keys_to_delete)
 
@@ -406,9 +406,9 @@ class BusySlotService:
         for composite_key in keys_to_add:
             event = google_event_map[composite_key]
             try:
-                busy_slot = BusySlot.from_google_event(user_id, event, google_calendar_id=calendar_id)
+                busy_slot = BusySlot.from_google_event(user_id, event)
+                busy_slot.calendar_source_id = source_id
                 slot_dict = busy_slot.to_dict()
-                slot_dict["calendar_source_id"] = source_id
                 slots_to_add.append(slot_dict)
             except ValueError as e:
                 logging.debug(f"[SYNC] Skipping Google event {composite_key}: {e}")
@@ -475,17 +475,17 @@ class BusySlotService:
 
         db_slots_result = (
             self.service_role_client.table("busy_slots")
-            .select("id, google_event_id, google_calendar_id")
+            .select("id, provider_event_id")
             .eq("user_id", user_id)
-            .eq("google_calendar_id", calendar_id)
+            .eq("calendar_source_id", source_id)
             .gte("start_time_utc", start_date.isoformat())
             .lte("end_time_utc", end_date.isoformat())
-            .not_.is_("google_event_id", "null")
+            .not_.is_("provider_event_id", "null")
             .execute()
         )
         db_slots = db_slots_result.data or []
         db_event_keys = {
-            f"{slot['google_calendar_id']}:{slot['google_event_id']}"
+            f"{calendar_id}:{slot['provider_event_id']}"
             for slot in db_slots
         }
 
@@ -500,8 +500,8 @@ class BusySlotService:
             event_ids_to_delete = [k.split(":", 1)[1] for k in keys_to_delete]
             self.service_role_client.table("busy_slots").delete().eq(
                 "user_id", user_id
-            ).eq("google_calendar_id", calendar_id).in_(
-                "google_event_id", event_ids_to_delete
+            ).eq("calendar_source_id", source_id).in_(
+                "provider_event_id", event_ids_to_delete
             ).execute()
             deleted_count = len(keys_to_delete)
 
@@ -509,9 +509,9 @@ class BusySlotService:
         for composite_key in keys_to_add:
             event = ms_event_map[composite_key]
             try:
-                busy_slot = BusySlot.from_microsoft_event(user_id, event, calendar_id=calendar_id)
+                busy_slot = BusySlot.from_microsoft_event(user_id, event)
+                busy_slot.calendar_source_id = source_id
                 slot_dict = busy_slot.to_dict()
-                slot_dict["calendar_source_id"] = source_id
                 slots_to_add.append(slot_dict)
             except ValueError as e:
                 logging.debug(f"[SYNC] Skipping Microsoft event {composite_key}: {e}")
@@ -587,16 +587,16 @@ class BusySlotService:
 
         db_slots_result = (
             self.service_role_client.table("busy_slots")
-            .select("id, google_event_id")
+            .select("id, provider_event_id")
             .eq("user_id", user_id)
-            .eq("google_calendar_id", "microsoft_primary")
+            .eq("calendar_source_id", "microsoft_primary")
             .gte("start_time_utc", start_date.isoformat())
             .lte("end_time_utc", end_date.isoformat())
-            .not_.is_("google_event_id", "null")
+            .not_.is_("provider_event_id", "null")
             .execute()
         )
         db_slots = db_slots_result.data or []
-        db_event_ids = {slot["google_event_id"] for slot in db_slots}
+        db_event_ids = {slot["provider_event_id"] for slot in db_slots}
 
         ms_ids = set(ms_event_map.keys())
         ids_to_add = ms_ids - db_event_ids
@@ -607,7 +607,7 @@ class BusySlotService:
         if ids_to_delete:
             self.service_role_client.table("busy_slots").delete().eq(
                 "user_id", user_id
-            ).eq("google_calendar_id", "microsoft_primary").in_("google_event_id", list(ids_to_delete)).execute()
+            ).eq("calendar_source_id", "microsoft_primary").in_("provider_event_id", list(ids_to_delete)).execute()
 
         slots_to_add = []
         for event_id in ids_to_add:
@@ -629,7 +629,7 @@ class BusySlotService:
         try:
             self.service_role_client.table("busy_slots").delete().eq(
                 "user_id", user_id
-            ).not_.is_("google_event_id", "null").execute()
+            ).not_.is_("provider_event_id", "null").execute()
             return True
         except Exception as e:
             logging.error(f"Error deleting Google events for user {user_id}: {e}")

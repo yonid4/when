@@ -137,7 +137,7 @@ class EventFinalizationService:
             "html_link": calendar_html_link,
             "online_meeting_url": online_meeting_url,
             # Backward compat
-            "google_event_id": calendar_event_id if provider == "google" else None,
+            "provider_event_id": calendar_event_id if provider == "google" else None,
             "meet_link": created_event.get("hangoutLink") if provider == "google" else None,
         }
     

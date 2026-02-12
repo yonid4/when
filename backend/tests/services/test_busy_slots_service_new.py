@@ -53,7 +53,7 @@ def test_store_and_upsert_busy_slot(monkeypatch):
     service, mock_sb = make_service(monkeypatch)
     mock_table = mock_sb.table.return_value
 
-    # upsert path: no existing -> insert (slot has no google_event_id)
+    # upsert path: no existing -> insert (slot has no provider_event_id)
     ins_exec = Mock(); ins_exec.data = [{"id": "new"}]
     mock_table.insert.return_value.execute.return_value = ins_exec
 
@@ -61,8 +61,8 @@ def test_store_and_upsert_busy_slot(monkeypatch):
     out = service.upsert_busy_slot(slot)
     assert out == {"id": "new"}
 
-    # upsert path: existing -> update (provide google_event_id)
-    slot.google_event_id = "gid"
+    # upsert path: existing -> update (provide provider_event_id)
+    slot.provider_event_id = "gid"
     sel_exec = Mock(); sel_exec.data = [{"id": "existing"}]
     upd_exec = Mock(); upd_exec.data = [{"id": "existing", "updated": True}]
     mock_table.select.return_value.eq.return_value.eq.return_value.execute.return_value = sel_exec

@@ -351,7 +351,6 @@ def google_callback():
 
             profile_updates = {
                 "avatar_url": user_metadata.get("avatar_url"),
-                "google_calendar_id": google_calendar_id,
                 "timezone": user_timezone
             }
 
@@ -475,7 +474,6 @@ def enrich_profile(user_id):
         if profile.get("google_auth_token"):
             return jsonify({
                 "message": "Profile already enriched with Google data",
-                "google_calendar_id": profile.get("google_calendar_id")
             }), 200
 
         user_metadata = request.user.user_metadata or {}
@@ -483,7 +481,7 @@ def enrich_profile(user_id):
         profile_updates = {
             "avatar_url": user_metadata.get("avatar_url"),
             "google_auth_token": None,
-            "google_calendar_id": None,
+            "microsoft_auth_token": None,
             "timezone": "UTC"
         }
 

@@ -64,7 +64,6 @@ def get_connection_status(user_id):
     try:
         google_credentials = get_stored_credentials(user_id)
         microsoft_credentials = microsoft_calendar.get_stored_credentials(user_id)
-        calendar_id = users_service.get_google_calendar_id(user_id)
 
         google_connected = google_credentials is not None
         microsoft_connected = microsoft_credentials is not None
@@ -73,7 +72,6 @@ def get_connection_status(user_id):
             "connected": google_connected or microsoft_connected,
             "google_connected": google_connected,
             "microsoft_connected": microsoft_connected,
-            "google_calendar_id": calendar_id
         }), 200
 
     except Exception as e:
@@ -419,7 +417,7 @@ def get_user_busy_times(user_id, event):
                 busy_windows.append({
                     'start': datetime.fromisoformat(start['dateTime'].replace('Z', '+00:00')),
                     'end': datetime.fromisoformat(end['dateTime'].replace('Z', '+00:00')),
-                    'google_event_id': calendar_event.get('id'),
+                    'provider_event_id': calendar_event.get('id'),
                     'title': calendar_event.get('summary', ''),
                     'description': calendar_event.get('description', '')
                 })

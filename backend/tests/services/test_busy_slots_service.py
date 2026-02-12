@@ -37,8 +37,7 @@ def sample_busy_slot():
         user_id="user-123",
         start_time_utc=datetime(2025, 1, 1, 9, 0, 0),
         end_time_utc=datetime(2025, 1, 1, 10, 0, 0),
-        google_event_id="google-event-123",
-        event_title="Test Meeting"
+        provider_event_id="google-event-123",
     )
 
 
@@ -51,14 +50,14 @@ def sample_busy_slots_data():
             "user_id": "user-1",
             "start_time_utc": "2025-01-01T09:00:00Z",
             "end_time_utc": "2025-01-01T10:00:00Z",
-            "event_title": "Meeting 1"
+            "provider_event_id": "google-event-123"
         },
         {
             "id": "slot-2", 
             "user_id": "user-2",
             "start_time_utc": "2025-01-01T09:30:00Z",
             "end_time_utc": "2025-01-01T10:30:00Z",
-            "event_title": "Meeting 2"
+            "provider_event_id": "google-event-456"
         }
     ]
 
