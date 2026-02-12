@@ -73,13 +73,13 @@ const EventHeader = ({
         {status?.toUpperCase()}
       </Badge>
         {isCoordinator && (
-        <IconButton
-          icon={<FiEdit />}
-          variant="ghost"
-          size="sm"
-          onClick={onEdit}
-          aria-label="Edit Event"
-        />
+          <IconButton
+            icon={<FiEdit />}
+            variant="ghost"
+            size="sm"
+            onClick={onEdit}
+            aria-label="Edit Event"
+          />
       )}
     </Flex>
   );
