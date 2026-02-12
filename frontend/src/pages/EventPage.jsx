@@ -572,7 +572,6 @@ const EventPage = () => {
         googleCalendarLink={event.google_calendar_html_link}
         onBack={() => navigate("/dashboard")}
         onEdit={() => setIsEditModalOpen(true)}
-        onCopyLink={handleCopyLink}
       />
 
       <Container maxW="95%" h="calc(100% - 57px)" py={4}>

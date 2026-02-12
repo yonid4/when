@@ -22,7 +22,8 @@ import {
   NumberInputStepper,
   NumberIncrementStepper,
   NumberDecrementStepper,
-  Box
+  Box,
+  Switch
 } from "@chakra-ui/react";
 import { EditIcon } from "@chakra-ui/icons";
 import { eventsAPI } from "../../services/apiService";
@@ -46,7 +47,8 @@ const EditEventModal = ({ isOpen, onClose, event, onSuccess }) => {
     duration_minutes: 60,
     event_type: "",
     video_call_link: "",
-    location: ""
+    location: "",
+    guests_can_invite: false
   });
   const [isSaving, setIsSaving] = useState(false);
   const [userTimezone] = useState(getUserTimezone());
@@ -68,7 +70,8 @@ const EditEventModal = ({ isOpen, onClose, event, onSuccess }) => {
         duration_minutes: event.duration_minutes || 60,
         event_type: event.event_type || "",
         video_call_link: event.video_call_link || "",
-        location: event.location || ""
+        location: event.location || "",
+        guests_can_invite: event.guests_can_invite || false
       });
     }
   }, [event]);
@@ -143,6 +146,7 @@ const EditEventModal = ({ isOpen, onClose, event, onSuccess }) => {
         event_type: formData.event_type || null,
         video_call_link: formData.video_call_link || null,
         location: formData.location || null,
+        guests_can_invite: formData.guests_can_invite,
       };
 
       if (formData.earliest_datetime_utc && formData.latest_datetime_utc) {
@@ -224,6 +228,22 @@ const EditEventModal = ({ isOpen, onClose, event, onSuccess }) => {
                 onChange={(e) => handleChange("description", e.target.value)}
                 placeholder="Describe your event..."
                 rows={3}
+                isDisabled={isSaving}
+              />
+            </FormControl>
+
+            {/* Guest Invite Permission */}
+            <FormControl display="flex" alignItems="center" justifyContent="space-between">
+              <Box>
+                <FormLabel mb={0}>Allow guests to invite others</FormLabel>
+                <Text fontSize="xs" color="gray.500">
+                  When enabled, all participants can invite new people
+                </Text>
+              </Box>
+              <Switch
+                isChecked={formData.guests_can_invite}
+                onChange={(e) => handleChange("guests_can_invite", e.target.checked)}
+                colorScheme="blue"
                 isDisabled={isSaving}
               />
             </FormControl>

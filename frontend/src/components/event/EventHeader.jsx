@@ -72,35 +72,15 @@ const EventHeader = ({
       >
         {status?.toUpperCase()}
       </Badge>
-      <Menu>
-        <MenuButton
-          as={IconButton}
-          icon={<FiMoreVertical />}
+        {isCoordinator && (
+        <IconButton
+          icon={<FiEdit />}
           variant="ghost"
           size="sm"
-          aria-label="More options"
+          onClick={onEdit}
+          aria-label="Edit Event"
         />
-        <MenuList>
-          {isCoordinator && (
-            <MenuItem icon={<FiEdit />} onClick={onEdit}>
-              Edit Event
-            </MenuItem>
-          )}
-          <MenuItem icon={<FiCopy />} onClick={onCopyLink}>
-            Copy Link
-          </MenuItem>
-          {effectiveLink && (
-            <MenuItem
-              icon={<FiExternalLink />}
-              as="a"
-              href={effectiveLink}
-              target="_blank"
-            >
-              {calendarLabel}
-            </MenuItem>
-          )}
-        </MenuList>
-      </Menu>
+      )}
     </Flex>
   );
 };
