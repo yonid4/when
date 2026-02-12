@@ -7,16 +7,14 @@ export async function connectGoogleCalendar() {
 
 export async function checkCalendarConnection() {
   const response = await api.get("/api/users/me").catch(() => ({ data: null }));
-  return response.data?.google_calendar_id != null;
+  return response.data?.google_auth_token != null;
 }
 
 export async function getCalendarInfo() {
   const response = await api.get("/api/users/me");
-  const calendarId = response.data?.google_calendar_id;
   return {
-    google_calendar_id: calendarId,
     timezone: response.data?.timezone,
-    has_google_calendar: calendarId != null
+    has_google_calendar: response.data?.google_auth_token != null
   };
 }
 

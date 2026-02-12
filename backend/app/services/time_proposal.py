@@ -224,8 +224,14 @@ class TimeProposalService:
 
                 is_free = True
                 for busy_slot in all_busy_slots:
-                    busy_start = datetime.fromisoformat(busy_slot["start_time_utc"].replace("Z", "+00:00"))
-                    busy_end = datetime.fromisoformat(busy_slot["end_time_utc"].replace("Z", "+00:00"))
+                    if hasattr(busy_slot, "get_start_time_utc"):
+                        busy_start = busy_slot.get_start_time_utc()
+                        busy_end = busy_slot.get_end_time_utc()
+                    else:
+                        start_str = busy_slot.get("start_time_utc", "")
+                        end_str = busy_slot.get("end_time_utc", "")
+                        busy_start = datetime.fromisoformat(str(start_str).replace("Z", "+00:00"))
+                        busy_end = datetime.fromisoformat(str(end_str).replace("Z", "+00:00"))
 
                     if current_time < busy_end and slot_end > busy_start:
                         is_free = False
@@ -469,11 +475,18 @@ Return ONLY the JSON array, no other text or markdown formatting.
         conflicting_users = set()
 
         for busy_slot in all_busy_slots:
-            busy_start = datetime.fromisoformat(busy_slot["start_time_utc"].replace("Z", "+00:00"))
-            busy_end = datetime.fromisoformat(busy_slot["end_time_utc"].replace("Z", "+00:00"))
+            # all_busy_slots are dicts from DB; support both dict and model
+            if hasattr(busy_slot, "get_start_time_utc"):
+                busy_start = busy_slot.get_start_time_utc()
+                busy_end = busy_slot.get_end_time_utc()
+            else:
+                start_str = busy_slot.get("start_time_utc", "")
+                end_str = busy_slot.get("end_time_utc", "")
+                busy_start = datetime.fromisoformat(str(start_str).replace("Z", "+00:00"))
+                busy_end = datetime.fromisoformat(str(end_str).replace("Z", "+00:00"))
 
             if start_time < busy_end and end_time > busy_start:
-                conflicting_users.add(busy_slot["user_id"])
+                conflicting_users.add(busy_slot.get("user_id") or getattr(busy_slot, "user_id", None))
 
         return len(conflicting_users)
 

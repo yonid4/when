@@ -32,7 +32,7 @@ def create_user(user_id):
             full_name=data.get("full_name"),
             avatar_url=data.get("avatar_url"),
             google_auth_token=data.get("google_auth_token"),
-            google_calendar_id=data.get("google_calendar_id"),
+            microsoft_auth_token=data.get("microsoft_auth_token"),
             timezone=data.get("timezone", "UTC"),
         )
 

@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field, validator
 class BusySlot(BaseModel):
     """Represents a calendar event as a busy time slot in Supabase.
 
-    Note: ``google_event_id`` and ``google_calendar_id`` are used for both
+    Note: ``provider_event_id`` is used for both
     Google and Microsoft events due to the existing database schema.
     """
 
@@ -18,10 +18,8 @@ class BusySlot(BaseModel):
     user_id: str = Field(...)
     start_time_utc: datetime = Field(...)
     end_time_utc: datetime = Field(...)
-    google_event_id: Optional[str] = Field(default=None)
-    google_calendar_id: Optional[str] = Field(default=None)
-    event_title: Optional[str] = Field(default=None)
-    event_description: Optional[str] = Field(default=None)
+    provider_event_id: Optional[str] = Field(default=None)
+    calendar_source_id: Optional[str] = Field(default=None) # The calendar source ID from the calendar_sources table
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     last_synced_at: datetime = Field(default_factory=datetime.utcnow)
@@ -35,12 +33,6 @@ class BusySlot(BaseModel):
     def end_time_must_be_after_start_time(cls, v, values):
         if 'start_time_utc' in values and v <= values['start_time_utc']:
             raise ValueError('end_time_utc must be after start_time_utc')
-        return v
-
-    @validator('event_title')
-    def validate_event_title(cls, v):
-        if v is not None and len(v) > 500:
-            return v[:500]
         return v
 
     def __repr__(self) -> str:
@@ -60,21 +52,30 @@ class BusySlot(BaseModel):
             "user_id": self.user_id,
             "start_time_utc": self.start_time_utc.isoformat(),
             "end_time_utc": self.end_time_utc.isoformat(),
-            "google_event_id": self.google_event_id,
-            "google_calendar_id": self.google_calendar_id,
-            "event_title": self.event_title,
-            "event_description": self.event_description,
+            "provider_event_id": self.provider_event_id,
+            "calendar_source_id": self.calendar_source_id,
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat(),
             "last_synced_at": self.last_synced_at.isoformat(),
         }
+    
+    def get_start_time_utc(self) -> datetime:
+        """Return start_time_utc as datetime (handles both datetime and ISO string)."""
+        if isinstance(self.start_time_utc, datetime):
+            return self.start_time_utc
+        return datetime.fromisoformat(str(self.start_time_utc).replace("Z", "+00:00"))
+
+    def get_end_time_utc(self) -> datetime:
+        """Return end_time_utc as datetime (handles both datetime and ISO string)."""
+        if isinstance(self.end_time_utc, datetime):
+            return self.end_time_utc
+        return datetime.fromisoformat(str(self.end_time_utc).replace("Z", "+00:00"))
 
     @classmethod
     def from_google_event(
         cls,
         user_id: str,
         google_event: dict,
-        google_calendar_id: str = "primary",
     ) -> 'BusySlot':
         """Create a BusySlot from a Google Calendar event."""
         start = google_event.get('start', {})
@@ -90,10 +91,8 @@ class BusySlot(BaseModel):
             user_id=user_id,
             start_time_utc=start_dt,
             end_time_utc=end_dt,
-            google_event_id=google_event.get('id'),
-            google_calendar_id=google_calendar_id,
-            event_title=google_event.get('summary', 'Untitled Event'),
-            event_description=google_event.get('description'),
+            provider_event_id=google_event.get('id'),
+            calendar_source_id=google_event.get('calendar_source_id'),
         )
 
     @classmethod
@@ -101,7 +100,6 @@ class BusySlot(BaseModel):
         cls,
         user_id: str,
         event: dict,
-        calendar_id: str = "microsoft_primary",
     ) -> 'BusySlot':
         """Create a BusySlot from a Microsoft Graph calendar event."""
         start_str = event.get('start', {}).get('dateTime')
@@ -123,8 +121,6 @@ class BusySlot(BaseModel):
             user_id=user_id,
             start_time_utc=start_dt,
             end_time_utc=end_dt,
-            google_event_id=event.get('id'),
-            google_calendar_id=calendar_id,
-            event_title=event.get('subject', 'Untitled Event'),
-            event_description=event.get('bodyPreview'),
+            provider_event_id=event.get('id'),
+            calendar_source_id=event.get('calendar_source_id'),
         )

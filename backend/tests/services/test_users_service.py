@@ -70,13 +70,6 @@ def test_google_helpers(monkeypatch):
     mock_sb.table.return_value.update.return_value.eq.return_value.execute.return_value = (
         Mock()
     )
-    assert service.set_google_calendar_id("u", "cal") is True
-    get_cal = Mock()
-    get_cal.data = [{"google_calendar_id": "cal"}]
-    mock_sb.table.return_value.select.return_value.eq.return_value.execute.return_value = (
-        get_cal
-    )
-    assert service.get_google_calendar_id("u") == "cal"
 
 
 def test_timezone_list_ensure(monkeypatch):

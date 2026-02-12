@@ -246,7 +246,7 @@ class TestEventFinalizationFlow:
                                 # Assert - Result contains Google Calendar data
                                 assert result is not None
                                 assert result["success"] is True
-                                assert result["google_event_id"] == "gcal-event-123"
+                                assert result["provider_event_id"] == "gcal-event-123"
                                 assert "calendar.google.com" in result["html_link"]
                                 assert result["meet_link"] is not None
 
@@ -260,7 +260,7 @@ class TestEventFinalizationFlow:
                                 # Assert - Event updated in database
                                 event = mock_supabase_for_finalization.table("events").select("*").eq("id", event_id).execute().data[0]
                                 assert event["status"] == "finalized"
-                                assert event["google_calendar_event_id"] == "gcal-event-123"
+                                assert event["provider_event_id"] == "gcal-event-123"
                                 assert event["google_calendar_html_link"] is not None
                                 assert event["finalized_start_time_utc"] == start_time_utc
                                 assert event["finalized_end_time_utc"] == end_time_utc

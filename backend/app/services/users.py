@@ -104,32 +104,6 @@ class UsersService:
             print(f"Failed to get Google credentials for user {user_id}: {str(e)}")
             return None
 
-    def set_google_calendar_id(self, user_id: str, calendar_id: str) -> bool:
-        """Persist primary Google calendar id on the user's profile."""
-        try:
-            self.supabase.table("profiles").update(
-                {"google_calendar_id": calendar_id}
-            ).eq("id", user_id).execute()
-            return True
-        except Exception as e:
-            print(f"Failed to set Google calendar id for user {user_id}: {str(e)}")
-            return False
-
-    def get_google_calendar_id(self, user_id: str) -> Optional[str]:
-        """Fetch stored Google calendar id from profile."""
-        try:
-            result = (
-                self.supabase.table("profiles")
-                .select("google_calendar_id")
-                .eq("id", user_id)
-                .execute()
-            )
-
-            return result.data[0].get("google_calendar_id") if result.data else None
-        except Exception as e:
-            print(f"Error fetching Google calendar ID for user {user_id}: {str(e)}")
-            return None
-
     def set_timezone(self, user_id: str, timezone: str) -> bool:
         """Update user's timezone on profile."""
         try:

@@ -35,10 +35,7 @@ def sample_busy_slot():
         user_id="user-123",
         start_time_utc=datetime(2025, 10, 1, 10, 0),
         end_time_utc=datetime(2025, 10, 1, 12, 0),
-        google_event_id="google-event-123",
-        google_calendar_id="primary",
-        event_title="Test Meeting",
-        event_description="A test meeting"
+        provider_event_id="google-event-123",
     )
 
 
@@ -51,20 +48,14 @@ def sample_busy_slot_data():
             "user_id": "user-123",
             "start_time_utc": "2025-10-01T10:00:00",
             "end_time_utc": "2025-10-01T12:00:00",
-            "google_event_id": "google-event-123",
-            "google_calendar_id": "primary",
-            "event_title": "Test Meeting",
-            "event_description": "A test meeting"
+            "provider_event_id": "google-event-123",
         },
         {
             "id": "test-id-2",
             "user_id": "user-123",
             "start_time_utc": "2025-10-01T14:00:00",
             "end_time_utc": "2025-10-01T15:00:00",
-            "google_event_id": "google-event-456",
-            "google_calendar_id": "primary",
-            "event_title": "Another Meeting",
-            "event_description": "Another test meeting"
+            "provider_event_id": "google-event-456",
         }
     ]
 
@@ -95,7 +86,7 @@ class TestBusySlotService:
         assert len(result) == 2
         assert result[0]["user_id"] == "user-123"
         assert result[0]["start_time_utc"] == "2025-10-01T10:00:00"
-        assert result[1]["event_title"] == "Another Meeting"
+        assert result[1]["provider_event_id"] == "google-event-456"
         
         # Verify the query was built correctly
         mock_table.select.assert_called_once_with("*")

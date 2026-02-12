@@ -6,7 +6,6 @@ CREATE TABLE IF NOT EXISTS profiles (
     full_name VARCHAR(255),
     avatar_url TEXT,
     google_auth_token JSONB,
-    google_calendar_id VARCHAR(255),
     timezone VARCHAR(50),
     email_address VARCHAR(255) NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -17,7 +16,6 @@ CREATE TABLE IF NOT EXISTS profiles (
 );
 
 CREATE INDEX IF NOT EXISTS idx_profiles_email ON profiles(email_address);
-CREATE INDEX IF NOT EXISTS idx_profiles_google_calendar_id ON profiles(google_calendar_id);
 
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 
