@@ -1,6 +1,6 @@
 import os
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Literal
 
 from supabase import create_client
 
@@ -141,7 +141,7 @@ class EventsService:
             print(f"Failed to get user events: {str(e)}")
             return []
 
-    def add_participant(self, event_id: str, user_id: str, status: Optional[str] = None, rsvp_status: Optional[str] = None) -> Optional[dict]:
+    def add_participant(self, event_id: str, user_id: str, status: Optional[str] = None, rsvp_status: Optional[Literal['going', 'maybe', 'not_going']] = None) -> Optional[dict]:
         """Add a participant to an event."""
         try:
             if not event_id or not user_id:
