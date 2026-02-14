@@ -331,28 +331,32 @@ function CalendarSettings() {
               </Text>
             </Box>
             <HStack spacing={4}>
-              <Button
-                size="sm"
-                variant={primaryProvider === "google" ? "solid" : "outline"}
-                colorScheme={primaryProvider === "google" ? "blue" : "gray"}
-                leftIcon={<Icon as={FcGoogle} />}
-                onClick={() => handleSetPrimaryProvider("google")}
-                isDisabled={profileLoading}
-              >
-                Google Calendar
-              </Button>
-              <Button
-                size="sm"
-                variant={primaryProvider === "microsoft" ? "solid" : "outline"}
-                colorScheme={primaryProvider === "microsoft" ? "blue" : "gray"}
-                leftIcon={<Icon as={BsMicrosoft} color={primaryProvider === "microsoft" ? "white" : colors.microsoft} />}
-                bg={primaryProvider === "microsoft" ? colors.microsoft : undefined}
-                _hover={primaryProvider === "microsoft" ? { bg: colors.microsoftHover } : undefined}
-                onClick={() => handleSetPrimaryProvider("microsoft")}
-                isDisabled={profileLoading}
-              >
-                Microsoft Outlook
-              </Button>
+              {accounts.some(a => a.provider === 'google' && a.calendar_sources?.length > 0) && (
+                <Button
+                  size="sm"
+                  variant={primaryProvider === "google" ? "solid" : "outline"}
+                  colorScheme={primaryProvider === "google" ? "blue" : "gray"}
+                  leftIcon={<Icon as={FcGoogle} />}
+                  onClick={() => handleSetPrimaryProvider("google")}
+                  isDisabled={profileLoading}
+                >
+                  Google Calendar
+                </Button>
+              )}
+              {accounts.some(a => a.provider === 'microsoft' && a.calendar_sources?.length > 0) && (
+                <Button
+                  size="sm"
+                  variant={primaryProvider === "microsoft" ? "solid" : "outline"}
+                  colorScheme={primaryProvider === "microsoft" ? "blue" : "gray"}
+                  leftIcon={<Icon as={BsMicrosoft} color={primaryProvider === "microsoft" ? "white" : colors.microsoft} />}
+                  bg={primaryProvider === "microsoft" ? colors.microsoft : undefined}
+                  _hover={primaryProvider === "microsoft" ? { bg: colors.microsoftHover } : undefined}
+                  onClick={() => handleSetPrimaryProvider("microsoft")}
+                  isDisabled={profileLoading}
+                >
+                  Microsoft Outlook
+                </Button>
+              )}
             </HStack>
           </VStack>
         </Box>

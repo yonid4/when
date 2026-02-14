@@ -59,7 +59,7 @@ def get_auth_url(state: str | None = None) -> str:
     try:
         msal_app = create_flow()
         redirect_uri = current_app.config.get("MICROSOFT_REDIRECT_URI")
-        kwargs = {"scopes": SCOPES, "redirect_uri": redirect_uri}
+        kwargs = {"scopes": SCOPES, "redirect_uri": redirect_uri, "prompt": "select_account"}
         if state:
             kwargs["state"] = state
         return msal_app.get_authorization_request_url(**kwargs)
