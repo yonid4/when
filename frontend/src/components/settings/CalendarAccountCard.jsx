@@ -39,6 +39,10 @@ function CalendarAccountCard({
   const [settingWriteId, setSettingWriteId] = useState(null);
 
   const sources = account.calendar_sources || [];
+
+  if (sources.length === 0) {
+    return null;
+  }
   const enabledCount = sources.filter((s) => {
     const effective = pendingToggles[s.id] ?? s.is_enabled;
     return effective;
