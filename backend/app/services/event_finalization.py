@@ -235,7 +235,7 @@ class EventFinalizationService:
             footer_parts.append(event_url)
         footer_parts.append("Coordinated with When")
         parts.append(" · ".join(footer_parts))
-        return "\n\n".join(parts)
+        return "\n".join(parts)
 
     def _prepare_calendar_event(
         self,
