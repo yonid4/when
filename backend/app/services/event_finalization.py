@@ -220,6 +220,24 @@ class EventFinalizationService:
             print(f"Error getting participants: {str(e)}")
             return []
 
+    def _build_calendar_description(self, event: Dict[str, Any]) -> str:
+        """Build a rich description for the calendar event."""
+        from ..config import Config
+        parts = []
+        user_description = event.get("description")
+        if user_description:
+            parts.append(user_description)
+        event_uid = event.get("uid")
+        event_url = f"{Config.FRONTEND_URL.rstrip('/')}/events/{event_uid}" if event_uid else None
+        footer_parts = []
+        if event_url:
+            footer_parts.append(event_url)
+        footer_parts.append("Coordinated with When")
+        if parts:
+            parts.append("\n---")
+        parts.append(" · ".join(footer_parts))
+        return "\n".join(parts)
+
     def _prepare_calendar_event(
         self,
         event: Dict[str, Any],
@@ -229,11 +247,11 @@ class EventFinalizationService:
         coordinator_timezone: str,
         include_google_meet: bool,
         event_id: str
-    ) -> Dict[str, Any]:
+    ) -> Dict[str, Any]: 
         """Prepare Google Calendar event object."""
         calendar_event = {
             "summary": event["name"],
-            "description": event.get("description") or "Event made by When.",
+            "description": self._build_calendar_description(event),
             "start": {
                 "dateTime": start_time_utc,
                 "timeZone": coordinator_timezone
