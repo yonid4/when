@@ -41,6 +41,8 @@ class EventFinalizationService:
         participant_ids: List[str],
         include_google_meet: bool = False,
         include_online_meeting: bool = False,
+        primary_calendar_provider: str = "google",
+        sync_to_secondary: bool = False,
     ) -> Dict[str, Any]:
         """Finalize an event and create calendar event (Google or Microsoft)."""
         event = self._get_event(event_id)
@@ -53,10 +55,20 @@ class EventFinalizationService:
         if event.get("status") == "finalized":
             raise Exception("Event already finalized")
 
-        # Detect which calendar provider to use
-        provider, credentials, calendar_id = self._detect_coordinator_provider(coordinator_id)
-        if not provider or not credentials:
-            raise Exception("No calendar connected. Please connect your calendar first.")
+        # 1. Determine Primary Provider Credentials
+        # If user selected a provider, try that first. otherwise use detection logic.
+        primary_creds, primary_cal_id = self._get_provider_credentials(coordinator_id, primary_calendar_provider)
+        
+        if not primary_creds:
+             # Fallback to auto-detection if preferred failed
+             logging.warning(f"Primary provider {primary_calendar_provider} credentials not found. Falling back to auto-detection.")
+             detected_provider, detected_creds, detected_cal_id = self._detect_coordinator_provider(coordinator_id)
+             if detected_provider and detected_creds:
+                 primary_calendar_provider = detected_provider
+                 primary_creds = detected_creds
+                 primary_cal_id = detected_cal_id
+             else:
+                 raise Exception("No calendar connected. Please connect your calendar first.")
 
         # Merge legacy include_google_meet with new include_online_meeting
         wants_online_meeting = include_google_meet or include_online_meeting
@@ -73,7 +85,8 @@ class EventFinalizationService:
         if not attendee_emails:
             raise Exception("No participant emails found")
 
-        calendar_event = self._prepare_calendar_event(
+        # 2. Create Event on Primary Calendar (With Invites)
+        primary_event_data = self._prepare_calendar_event(
             event=event,
             start_time_utc=start_time_utc,
             end_time_utc=end_time_utc,
@@ -84,27 +97,69 @@ class EventFinalizationService:
         )
 
         try:
-            if provider == "microsoft":
+            if primary_calendar_provider == "microsoft":
                 created_event = microsoft_calendar.create_calendar_event_with_retry(
-                    credentials=credentials,
+                    credentials=primary_creds,
                     user_id=coordinator_id,
-                    calendar_id=calendar_id,
-                    event_data=calendar_event,
+                    calendar_id=primary_cal_id,
+                    event_data=primary_event_data,
                     include_online_meeting=wants_online_meeting,
                 )
             else:
                 created_event = self._create_google_calendar_event_with_retry(
-                    credentials=credentials,
+                    credentials=primary_creds,
                     coordinator_id=coordinator_id,
-                    event_data=calendar_event,
+                    event_data=primary_event_data,
                     include_meet=wants_online_meeting
                 )
         except Exception as e:
-            raise Exception(f"Failed to create calendar event: {str(e)}")
+            raise Exception(f"Failed to create calendar event on {primary_calendar_provider}: {str(e)}")
 
         calendar_event_id = created_event["id"]
         calendar_html_link = created_event.get("htmlLink", "")
         online_meeting_url = created_event.get("hangoutLink") or created_event.get("onlineMeetingUrl")
+        
+        # 3. Sync to Secondary Calendar (Blocking Only)
+        secondary_event_id = None
+        secondary_html_link = None
+        secondary_provider = None
+
+        if sync_to_secondary:
+            secondary_provider = "microsoft" if primary_calendar_provider == "google" else "google"
+            sec_creds, sec_cal_id = self._get_provider_credentials(coordinator_id, secondary_provider)
+            
+            if sec_creds:
+                try:
+                    # Create blocking event (no attendees, simplified title)
+                    blocking_event_data = self._prepare_blocking_event(
+                        event=event,
+                        start_time_utc=start_time_utc,
+                        end_time_utc=end_time_utc,
+                        coordinator_timezone=coordinator.get("timezone", "UTC")
+                    )
+                    
+                    if secondary_provider == "microsoft":
+                        sec_created = microsoft_calendar.create_calendar_event_with_retry(
+                            credentials=sec_creds,
+                            user_id=coordinator_id,
+                            calendar_id=sec_cal_id,
+                            event_data=blocking_event_data,
+                            include_online_meeting=False
+                        )
+                    else:
+                        sec_created = self._create_google_calendar_event_with_retry(
+                            credentials=sec_creds,
+                            coordinator_id=coordinator_id,
+                            event_data=blocking_event_data,
+                            include_meet=False
+                        )
+                    
+                    secondary_event_id = sec_created["id"]
+                    secondary_html_link = sec_created.get("htmlLink", "")
+                    logging.info(f"Successfully synced blocking event to {secondary_provider}")
+                except Exception as e:
+                    logging.warning(f"Failed to sync to secondary calendar {secondary_provider}: {e}")
+                    # Do not fail the request if secondary sync fails
 
         try:
             self._update_event_finalization(
@@ -113,7 +168,10 @@ class EventFinalizationService:
                 end_time_utc=end_time_utc,
                 calendar_event_id=calendar_event_id,
                 calendar_html_link=calendar_html_link,
-                calendar_provider=provider,
+                calendar_provider=primary_calendar_provider,
+                secondary_event_id=secondary_event_id,
+                secondary_html_link=secondary_html_link,
+                secondary_provider=secondary_provider
             )
         except Exception as e:
             logging.critical(f"Calendar event created but DB update failed: {e}")
@@ -132,13 +190,58 @@ class EventFinalizationService:
 
         return {
             "success": True,
-            "calendar_provider": provider,
+            "calendar_provider": primary_calendar_provider,
             "calendar_event_id": calendar_event_id,
             "html_link": calendar_html_link,
             "online_meeting_url": online_meeting_url,
             # Backward compat
-            "provider_event_id": calendar_event_id if provider == "google" else None,
-            "meet_link": created_event.get("hangoutLink") if provider == "google" else None,
+            "provider_event_id": calendar_event_id if primary_calendar_provider == "google" else None,
+            "meet_link": online_meeting_url if primary_calendar_provider == "google" else None,
+        }
+
+    def _get_provider_credentials(self, user_id: str, provider: str) -> tuple:
+        """Get credentials and calendar ID for a specific provider."""
+        try:
+            from ..services.calendar_accounts import CalendarAccountsService
+            cas = CalendarAccountsService()
+            
+            # Check user accounts
+            accounts = cas.get_user_accounts(user_id)
+            for account in accounts:
+                if account["provider"] == provider and account.get("credentials"):
+                    creds = get_credentials_from_dict(account["credentials"]) if provider == "google" else account["credentials"]
+                    # Determine calendar ID (default to primary)
+                    # We could check for a specific enabled source, but 'primary' is usually safe for creation
+                    return (creds, "primary")
+            
+            # Check legacy credentials if not found in accounts
+            if provider == "google":
+                creds = get_stored_credentials(user_id)
+                if creds: return (creds, "primary")
+            elif provider == "microsoft":
+                creds = microsoft_calendar.get_stored_credentials(user_id)
+                if creds: return (creds, "primary")
+                
+        except Exception as e:
+            logging.error(f"Error getting credentials for {provider}: {e}")
+            
+        return (None, None)
+
+    def _prepare_blocking_event(self, event, start_time_utc, end_time_utc, coordinator_timezone):
+        """Prepare a simplified event for blocking time on secondary calendar."""
+        return {
+            "summary": f"Busy: {event['name']}", # Or just "Busy" if we want privacy? Let's include name for now
+            "description": "Blocked via When. This event is synchronized from your primary calendar.",
+            "start": {
+                "dateTime": start_time_utc,
+                "timeZone": coordinator_timezone
+            },
+            "end": {
+                "dateTime": end_time_utc,
+                "timeZone": coordinator_timezone
+            },
+            "reminders": {"useDefault": False}, # No reminders for blocker?
+            "transparency": "opaque" # Ensure it blocks time
         }
     
     def _detect_coordinator_provider(self, coordinator_id: str) -> tuple:
@@ -335,6 +438,9 @@ class EventFinalizationService:
         calendar_event_id: str,
         calendar_html_link: str,
         calendar_provider: str = "google",
+        secondary_event_id: str = None,
+        secondary_html_link: str = None,
+        secondary_provider: str = None
     ) -> None:
         """Update event with finalization details."""
         update_data = {
@@ -351,6 +457,14 @@ class EventFinalizationService:
         elif calendar_provider == "microsoft":
             update_data["microsoft_calendar_event_id"] = calendar_event_id
             update_data["microsoft_calendar_html_link"] = calendar_html_link
+            
+        if secondary_event_id and secondary_provider:
+             if secondary_provider == "google":
+                 update_data["google_calendar_event_id"] = secondary_event_id
+                 update_data["google_calendar_html_link"] = secondary_html_link
+             elif secondary_provider == "microsoft":
+                 update_data["microsoft_calendar_event_id"] = secondary_event_id
+                 update_data["microsoft_calendar_html_link"] = secondary_html_link
 
         response = (
             self.service_role_client.table("events")

@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS profiles (
     full_name VARCHAR(255),
     avatar_url TEXT,
     google_auth_token JSONB,
+    primary_calendar_provider VARCHAR(50),
     timezone VARCHAR(50),
     email_address VARCHAR(255) NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW(),

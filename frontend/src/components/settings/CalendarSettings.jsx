@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Alert,
   AlertDescription,
@@ -23,6 +23,7 @@ import { BsMicrosoft } from "react-icons/bs";
 import { useCalendarAccounts } from "../../hooks/useCalendarAccounts.js";
 import { useCalendarConnection } from "../../hooks/useCalendarConnection.js";
 import { busySlotsAPI } from "../../services/apiService.js";
+import api from "../../services/api.js";
 import { colors } from "../../styles/designSystem.js";
 import CalendarAccountCard from "./CalendarAccountCard.jsx";
 
@@ -52,6 +53,54 @@ function CalendarSettings() {
   const [syncingAccountId, setSyncingAccountId] = useState(null);
   const [pendingToggles, setPendingToggles] = useState({});
   const [isSaving, setIsSaving] = useState(false);
+  const [primaryProvider, setPrimaryProvider] = useState("google");
+  const [profileLoading, setProfileLoading] = useState(true);
+
+  // Fetch user profile to get primary provider preference
+  useEffect(() => {
+    async function fetchProfile() {
+      try {
+        const { data: { user } } = await import("../services/supabaseClient.js").then(m => m.supabase.auth.getUser());
+        if (user) {
+          const res = await api.get(`/api/users/${user.id}`);
+          if (res.data?.primary_calendar_provider) {
+            setPrimaryProvider(res.data.primary_calendar_provider);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch profile settings", err);
+      } finally {
+        setProfileLoading(false);
+      }
+    }
+    fetchProfile();
+  }, []);
+
+  async function handleSetPrimaryProvider(provider) {
+    setPrimaryProvider(provider);
+    try {
+      const { data: { user } } = await import("../services/supabaseClient.js").then(m => m.supabase.auth.getUser());
+      if (user) {
+        await api.put(`/api/users/${user.id}`, { primary_calendar_provider: provider });
+        toast({
+          title: "Preference updated",
+          description: `Primary calendar set to ${provider === "google" ? "Google" : "Microsoft"}`,
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
+      }
+    } catch (err) {
+      toast({
+        title: "Update failed",
+        description: "Failed to save preference. Please try again.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+  }
+
 
   const hasPendingChanges = Object.keys(pendingToggles).length > 0;
 
@@ -236,6 +285,8 @@ function CalendarSettings() {
     );
   }
 
+
+
   return (
     <VStack spacing={6} align="stretch">
       <Box>
@@ -268,6 +319,44 @@ function CalendarSettings() {
           </HStack>
         </HStack>
       </Box>
+
+      {/* Primary Provider Selection */}
+      {hasConnectedAccounts && (
+        <Box p={4} bg={colors.surface} borderWidth="1px" borderColor={colors.border} borderRadius="lg">
+          <VStack align="start" spacing={3}>
+            <Box>
+              <Heading size="sm" color={colors.textPrimary}>Primary Calendar used for Inviting Guests</Heading>
+              <Text fontSize="sm" color={colors.textMuted}>
+                When you finalize an event, invites will be sent from this calendar.
+              </Text>
+            </Box>
+            <HStack spacing={4}>
+              <Button
+                size="sm"
+                variant={primaryProvider === "google" ? "solid" : "outline"}
+                colorScheme={primaryProvider === "google" ? "blue" : "gray"}
+                leftIcon={<Icon as={FcGoogle} />}
+                onClick={() => handleSetPrimaryProvider("google")}
+                isDisabled={profileLoading}
+              >
+                Google Calendar
+              </Button>
+              <Button
+                size="sm"
+                variant={primaryProvider === "microsoft" ? "solid" : "outline"}
+                colorScheme={primaryProvider === "microsoft" ? "blue" : "gray"}
+                leftIcon={<Icon as={BsMicrosoft} color={primaryProvider === "microsoft" ? "white" : colors.microsoft} />}
+                bg={primaryProvider === "microsoft" ? colors.microsoft : undefined}
+                _hover={primaryProvider === "microsoft" ? { bg: colors.microsoftHover } : undefined}
+                onClick={() => handleSetPrimaryProvider("microsoft")}
+                isDisabled={profileLoading}
+              >
+                Microsoft Outlook
+              </Button>
+            </HStack>
+          </VStack>
+        </Box>
+      )}
 
       {error && (
         <Alert status="error" borderRadius="md">

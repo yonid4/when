@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   AlertIcon,
   Avatar,
@@ -36,6 +36,32 @@ function FinalizationModal({
   );
   const [includeGoogleMeet, setIncludeGoogleMeet] = useState(true);
   const [error, setError] = useState(null);
+  const [primaryProvider, setPrimaryProvider] = useState("google");
+  const [syncToSecondary, setSyncToSecondary] = useState(false);
+  const [loadingProfile, setLoadingProfile] = useState(true);
+
+  // Fetch user profile to get default primary provider
+  useEffect(() => {
+    async function fetchProfile() {
+      try {
+        const { data: { user } } = await import("../../services/supabaseClient.js").then(m => m.supabase.auth.getUser());
+        if (user) {
+          const res = await import("../../services/api.js").then(m => m.default.get(`/api/users/${user.id}`));
+          if (res.data?.primary_calendar_provider) {
+            setPrimaryProvider(res.data.primary_calendar_provider);
+          }
+          // Default syncToSecondary to true if user has both accounts connected? 
+          // For now default to false or we could check accounts. 
+          // Let's default to true if we can detect it, but simple false is safer for MVP unless we check connected accounts.
+        }
+      } catch (err) {
+        console.error("Failed to fetch profile settings", err);
+      } finally {
+        setLoadingProfile(false);
+      }
+    }
+    fetchProfile();
+  }, []);
 
   if (!selectedSlot || !event) return null;
 
@@ -65,6 +91,8 @@ function FinalizationModal({
       end_time_utc: selectedSlot.end.toISOString(),
       participant_ids: selectedParticipants,
       include_google_meet: includeGoogleMeet,
+      primary_calendar_provider: primaryProvider,
+      sync_to_secondary: syncToSecondary
     });
   }
 
@@ -233,6 +261,49 @@ function FinalizationModal({
               </Text>
             </Box>
           </Box>
+
+          {/* Primary Sender Logic */}
+          {!loadingProfile && (
+            <Box mb={4} p={4} bg="gray.50" borderRadius="lg" borderLeft="4px" borderColor="purple.400">
+              <VStack align="start" spacing={3}>
+                <Box>
+                  <Text fontWeight="semibold">Primary Sender (Invites Guests)</Text>
+                  <Text fontSize="xs" color="gray.600">
+                    Which calendar should invite guests?
+                  </Text>
+                </Box>
+                <HStack spacing={4}>
+                  <Button
+                    size="xs"
+                    variant={primaryProvider === "google" ? "solid" : "outline"}
+                    colorScheme={primaryProvider === "google" ? "blue" : "gray"}
+                    onClick={() => setPrimaryProvider("google")}
+                  >
+                    Google
+                  </Button>
+                  <Button
+                    size="xs"
+                    variant={primaryProvider === "microsoft" ? "solid" : "outline"}
+                    colorScheme={primaryProvider === "microsoft" ? "blue" : "gray"}
+                    onClick={() => setPrimaryProvider("microsoft")}
+                  >
+                    Microsoft
+                  </Button>
+                </HStack>
+                <Checkbox
+                  isChecked={syncToSecondary}
+                  onChange={(e) => setSyncToSecondary(e.target.checked)}
+                  colorScheme="purple"
+                  size="sm"
+                >
+                  <Text fontSize="sm">Also block time on {primaryProvider === "google" ? "Microsoft" : "Google"}</Text>
+                  <Text fontSize="xs" color="gray.500" display="block">
+                    (No invites sent, just blocks your calendar)
+                  </Text>
+                </Checkbox>
+              </VStack>
+            </Box>
+          )}
 
           <Box mb={4} p={4} bg="blue.50" borderRadius="lg" borderLeft="4px" borderColor="blue.400">
             <Checkbox

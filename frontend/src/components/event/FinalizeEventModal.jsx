@@ -18,9 +18,15 @@ import {
   useToast,
   Badge,
   Checkbox,
-  useColorModeValue
+  useColorModeValue,
+  Icon,
+  Radio,
+  RadioGroup,
+  Stack
 } from "@chakra-ui/react";
 import { FiCheck, FiX, FiCalendar, FiVideo } from "react-icons/fi";
+import { FcGoogle } from "react-icons/fc";
+import { BsMicrosoft } from "react-icons/bs";
 
 /**
  * Modal for finalizing an event with a selected time
@@ -37,12 +43,38 @@ const FinalizeEventModal = ({
   const [eventName, setEventName] = useState("");
   const [selectedParticipants, setSelectedParticipants] = useState([]);
   const [includeOnlineMeeting, setIncludeOnlineMeeting] = useState(false);
+  const [primaryProvider, setPrimaryProvider] = useState("google");
+  const [syncToSecondary, setSyncToSecondary] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingProfile, setLoadingProfile] = useState(true);
+
   const toast = useToast();
 
   const borderColor = useColorModeValue("gray.200", "gray.700");
   const hoverBg = useColorModeValue("gray.50", "gray.700");
   const selectedBg = useColorModeValue("brand.50", "brand.900");
+
+  // Fetch user profile to get default primary provider
+  useEffect(() => {
+    async function fetchProfile() {
+      if (!isOpen) return;
+
+      try {
+        const { data: { user } } = await import("../../services/supabaseClient.js").then(m => m.supabase.auth.getUser());
+        if (user) {
+          const res = await import("../../services/api.js").then(m => m.default.get(`/api/users/${user.id}`));
+          if (res.data?.primary_calendar_provider) {
+            setPrimaryProvider(res.data.primary_calendar_provider);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch profile settings", err);
+      } finally {
+        setLoadingProfile(false);
+      }
+    }
+    fetchProfile();
+  }, [isOpen]);
 
   // Initialize state when modal opens
   useEffect(() => {
@@ -131,7 +163,9 @@ const FinalizeEventModal = ({
         end_time_utc: selectedTime.end_time,
         participant_ids: selectedParticipants,
         include_online_meeting: includeOnlineMeeting,
-        include_google_meet: includeOnlineMeeting
+        include_google_meet: includeOnlineMeeting,
+        primary_calendar_provider: primaryProvider,
+        sync_to_secondary: syncToSecondary
       });
 
       // Success is handled by parent component
@@ -261,6 +295,48 @@ const FinalizeEventModal = ({
 
             <Divider />
 
+            {/* Primary Sender Selection */}
+            {!loadingProfile && (
+              <Box p={3} bg="gray.50" borderRadius="md" borderWidth="1px" borderColor={borderColor}>
+                <VStack align="start" spacing={3}>
+                  <Box>
+                    <Text fontSize="sm" fontWeight="bold">Primary Calendar (Sends Invites)</Text>
+                    <Text fontSize="xs" color="gray.500">
+                      Choose which calendar service sends invitations to guests.
+                    </Text>
+                  </Box>
+
+                  <RadioGroup onChange={setPrimaryProvider} value={primaryProvider}>
+                    <Stack direction="row" spacing={4}>
+                      <Radio value="google" colorScheme="blue">
+                        <HStack spacing={1}>
+                          <Icon as={FcGoogle} />
+                          <Text fontSize="sm">Google</Text>
+                        </HStack>
+                      </Radio>
+                      <Radio value="microsoft" colorScheme="blue">
+                        <HStack spacing={1}>
+                          <Icon as={BsMicrosoft} color="#00a1f1" />
+                          <Text fontSize="sm">Microsoft</Text>
+                        </HStack>
+                      </Radio>
+                    </Stack>
+                  </RadioGroup>
+
+                  <Checkbox
+                    isChecked={syncToSecondary}
+                    onChange={(e) => setSyncToSecondary(e.target.checked)}
+                    colorScheme="purple"
+                    size="sm"
+                  >
+                    <Text fontSize="sm">Also block time on {primaryProvider === 'google' ? 'Microsoft' : 'Google'}</Text>
+                  </Checkbox>
+                </VStack>
+              </Box>
+            )}
+
+            <Divider />
+
             {/* Online Meeting Option */}
             <Box
               p={3}
@@ -278,7 +354,7 @@ const FinalizeEventModal = ({
                 <HStack spacing={2}>
                   <FiVideo />
                   <Text fontSize="sm" fontWeight="medium">
-                    {calendarProvider === "microsoft"
+                    {primaryProvider === "microsoft"
                       ? "Include Microsoft Teams link"
                       : "Include Google Meet link"}
                   </Text>
