@@ -15,6 +15,7 @@ import {
   ActionsPanel,
   ParticipantsList
 } from "../components/event";
+import { useCalendarConnection } from "../hooks/useCalendarConnection";
 import { extractCalendarTimeBound } from "../utils/dateUtils";
 import {
   transformBusySlotsForCalendar,
@@ -87,6 +88,7 @@ const EventPage = () => {
   const toast = useToast();
   const { user, loading: authLoading } = useAuth();
   const { execute, loading } = useApiCall();
+  const { isConnected, isChecking } = useCalendarConnection();
 
   // State
   const [event, setEvent] = useState(isDemo ? DEMO_EVENT : null);
@@ -463,8 +465,45 @@ const EventPage = () => {
     }
   };
 
+  const showCalendarRequiredToast = () => {
+    toast({
+      title: "No calendar connected",
+      description: "Connect a calendar in Settings to finalize events.",
+      status: "warning",
+      duration: 8000,
+      isClosable: true,
+      render: ({ onClose }) => (
+        <Box bg="orange.500" color="white" p={4} borderRadius="md" shadow="lg">
+          <Flex justify="space-between" align="start">
+            <Box>
+              <Text fontWeight="bold">No calendar connected</Text>
+              <Text fontSize="sm" mt={1}>Connect a calendar in Settings to finalize events.</Text>
+            </Box>
+            <Button size="sm" variant="ghost" color="white" onClick={onClose} ml={2} _hover={{ bg: "orange.600" }}>
+              ✕
+            </Button>
+          </Flex>
+          <Button
+            size="sm"
+            mt={3}
+            bg="white"
+            color="orange.600"
+            _hover={{ bg: "orange.50" }}
+            onClick={() => { onClose(); navigate("/settings"); }}
+          >
+            Go to Settings
+          </Button>
+        </Box>
+      ),
+    });
+  };
+
   const handleSelectTimeFromProposal = (proposedTime) => {
     if (!isCoordinator) return;
+    if (!isChecking && !isConnected) {
+      showCalendarRequiredToast();
+      return;
+    }
     setSelectedFinalizeTime({ start_time: proposedTime.start_time_utc || proposedTime.start_time, end_time: proposedTime.end_time_utc || proposedTime.end_time });
     setIsProposedTimesModalOpen(false);
     setIsFinalizeModalOpen(true);
@@ -472,6 +511,10 @@ const EventPage = () => {
 
   const handleSelectTimeFromCalendar = (slotInfo) => {
     if (!isCoordinator) return;
+    if (!isChecking && !isConnected) {
+      showCalendarRequiredToast();
+      return;
+    }
 
     const duration = (slotInfo.end - slotInfo.start) / (1000 * 60);
     if (duration < 30) {
