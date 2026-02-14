@@ -17,7 +17,7 @@ function updateSourceInAccounts(accounts, sourceId, updates) {
 
 export function useCalendarAccounts() {
   const [accounts, setAccounts] = useState([]);
-  const [writeCalendar, setWriteCalendar] = useState(null);
+  const [writeCalendars, setWriteCalendars] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -33,12 +33,12 @@ export function useCalendarAccounts() {
       ]);
 
       setAccounts(accountsRes.accounts || []);
-      setWriteCalendar(writeCalendarRes.write_calendar || null);
+      setWriteCalendars(writeCalendarRes.write_calendars || []);
     } catch (err) {
       console.error("Failed to fetch calendar accounts:", err);
       setError(getErrorMessage(err, "Failed to load calendar accounts"));
       setAccounts([]);
-      setWriteCalendar(null);
+      setWriteCalendars([]);
     } finally {
       setIsLoading(false);
     }
@@ -55,8 +55,9 @@ export function useCalendarAccounts() {
 
       setAccounts((prev) => prev.filter((a) => a.id !== accountId));
 
+      // Re-fetch write calendars as one might have been deleted
       const writeCalendarRes = await calendarAccountsAPI.getWriteCalendar();
-      setWriteCalendar(writeCalendarRes.write_calendar || null);
+      setWriteCalendars(writeCalendarRes.write_calendars || []);
 
       return true;
     } catch (err) {
@@ -86,18 +87,8 @@ export function useCalendarAccounts() {
       setError(null);
       await calendarAccountsAPI.updateSource(sourceId, { is_write_calendar: true });
 
-      setAccounts((prev) =>
-        prev.map((account) => ({
-          ...account,
-          calendar_sources: account.calendar_sources?.map((source) => ({
-            ...source,
-            is_write_calendar: source.id === sourceId,
-          })),
-        }))
-      );
-
-      const writeCalendarRes = await calendarAccountsAPI.getWriteCalendar();
-      setWriteCalendar(writeCalendarRes.write_calendar || null);
+      // Re-fetch everything to ensure correct state (backend handles provider-exclusive logic)
+      await fetchAccounts();
 
       return true;
     } catch (err) {
@@ -154,7 +145,7 @@ export function useCalendarAccounts() {
 
   return {
     accounts,
-    writeCalendar,
+    writeCalendars,
     isLoading,
     isSyncing,
     error,

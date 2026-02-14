@@ -205,16 +205,21 @@ class EventFinalizationService:
             from ..services.calendar_accounts import CalendarAccountsService
             cas = CalendarAccountsService()
             
-            # Check user accounts
+            # 1. Check for a specific WRITE calendar for this provider
+            write_cal = cas.get_write_calendar(user_id, provider=provider)
+            if write_cal and write_cal.get("account") and write_cal["account"].get("credentials"):
+                 account = write_cal["account"]
+                 creds = get_credentials_from_dict(account["credentials"]) if provider == "google" else account["credentials"]
+                 return (creds, write_cal.get("calendar_id"))
+
+            # 2. Fallback: Any connected account of this provider
             accounts = cas.get_user_accounts(user_id)
             for account in accounts:
                 if account["provider"] == provider and account.get("credentials"):
                     creds = get_credentials_from_dict(account["credentials"]) if provider == "google" else account["credentials"]
-                    # Determine calendar ID (default to primary)
-                    # We could check for a specific enabled source, but 'primary' is usually safe for creation
                     return (creds, "primary")
             
-            # Check legacy credentials if not found in accounts
+            # 3. Last fallback: Legacy credentials
             if provider == "google":
                 creds = get_stored_credentials(user_id)
                 if creds: return (creds, "primary")

@@ -163,12 +163,37 @@ class CalendarAccountsService:
             logging.error(f"Error getting enabled sources for user {user_id}: {e}")
             return []
 
-    def get_write_calendar(self, user_id: str) -> Optional[Dict[str, Any]]:
-        """Get the user's write calendar (where events are created)."""
+    def get_all_write_calendars(self, user_id: str) -> List[Dict[str, Any]]:
+        """Get all write calendars for a user."""
+        try:
+            accounts = self.get_user_accounts(user_id)
+            write_calendars = []
+
+            for account in accounts:
+                for source in account.get("calendar_sources", []):
+                    if source.get("is_write_calendar", False):
+                        source["account"] = {
+                            "id": account["id"],
+                            "provider": account["provider"],
+                            "provider_email": account["provider_email"],
+                            "credentials": account["credentials"],
+                        }
+                        write_calendars.append(source)
+
+            return write_calendars
+        except Exception as e:
+            logging.error(f"Error getting write calendars for user {user_id}: {e}")
+            return []
+
+    def get_write_calendar(self, user_id: str, provider: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        """Get the user's write calendar (where events are created), optionally filtered by provider."""
         try:
             accounts = self.get_user_accounts(user_id)
 
             for account in accounts:
+                if provider and account["provider"] != provider:
+                    continue
+                    
                 for source in account.get("calendar_sources", []):
                     if source.get("is_write_calendar", False):
                         source["account"] = {
@@ -207,18 +232,31 @@ class CalendarAccountsService:
             return None
 
     def set_write_calendar(self, user_id: str, source_id: str) -> bool:
-        """Set a calendar source as the write calendar (unsets others first)."""
+        """Set a calendar source as the write calendar for its provider (unsets others of same provider)."""
         try:
+            # 1. Find the source and its provider
+            source = self.get_source(source_id)
+            if not source or not source.get("calendar_accounts"):
+                logging.error(f"Source {source_id} not found or has no account")
+                return False
+            
+            provider = source["calendar_accounts"]["provider"]
+            
+            # 2. Unset other write calendars for THIS provider
             accounts = self.get_user_accounts(user_id)
             now = datetime.utcnow().isoformat()
 
             for account in accounts:
-                for source in account.get("calendar_sources", []):
-                    if source.get("is_write_calendar", False):
+                if account["provider"] != provider:
+                    continue
+                    
+                for s in account.get("calendar_sources", []):
+                    if s.get("is_write_calendar", False):
                         self.service_role_client.table("calendar_sources").update(
                             {"is_write_calendar": False, "updated_at": now}
-                        ).eq("id", source["id"]).execute()
+                        ).eq("id", s["id"]).execute()
 
+            # 3. Set the new write calendar
             self.service_role_client.table("calendar_sources").update(
                 {"is_write_calendar": True, "updated_at": now}
             ).eq("id", source_id).execute()

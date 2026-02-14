@@ -189,19 +189,18 @@ def update_source(user_id, source_id):
 @calendar_accounts_bp.route("/write-calendar", methods=["GET"])
 @require_auth
 def get_write_calendar(user_id):
-    """Get the user's write calendar (where events are created)."""
+    """Get the user's write calendars (one per provider)."""
     try:
         service = CalendarAccountsService()
-        write_calendar = service.get_write_calendar(user_id)
+        write_calendars = service.get_all_write_calendars(user_id)
 
-        if not write_calendar:
-            return jsonify({"write_calendar": None, "message": "No write calendar set"}), 200
+        # Remove credentials from response
+        for cal in write_calendars:
+            if "account" in cal and "credentials" in cal["account"]:
+                del cal["account"]["credentials"]
 
-        if "account" in write_calendar and "credentials" in write_calendar["account"]:
-            del write_calendar["account"]["credentials"]
-
-        return jsonify({"write_calendar": write_calendar}), 200
+        return jsonify({"write_calendars": write_calendars}), 200
 
     except Exception as e:
-        logging.error(f"Error getting write calendar for user {user_id}: {e}")
-        return jsonify({"error": "Failed to get write calendar", "message": str(e)}), 500
+        logging.error(f"Error getting write calendars for user {user_id}: {e}")
+        return jsonify({"error": "Failed to get write calendars", "message": str(e)}), 500
