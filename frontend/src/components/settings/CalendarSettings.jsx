@@ -317,8 +317,9 @@ function CalendarSettings() {
         </HStack>
       </Box>
 
-      {/* Primary Provider Selection */}
-      {hasConnectedAccounts && (
+      {/* Primary Provider Selection - only show when both providers are connected */}
+      {accounts.some(a => a.provider === 'google' && a.calendar_sources?.length > 0) &&
+       accounts.some(a => a.provider === 'microsoft' && a.calendar_sources?.length > 0) && (
         <Box p={4} bg={colors.surface} borderWidth="1px" borderColor={colors.border} borderRadius="lg">
           <VStack align="start" spacing={3}>
             <Box>

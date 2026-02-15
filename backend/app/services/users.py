@@ -55,12 +55,15 @@ class UsersService:
     def update_profile(self, user_id: str, updates: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Update a user's profile with provided fields."""
         try:
-            if not updates:
+            allowed_fields = {"full_name", "avatar_url", "primary_calendar_provider", "timezone"}
+            filtered_updates = {k: v for k, v in updates.items() if k in allowed_fields}
+
+            if not filtered_updates:
                 return self.get_profile(user_id)
 
             result = (
                 self.supabase.table("profiles")
-                .update(updates)
+                .update(filtered_updates)
                 .eq("id", user_id)
                 .execute()
             )
