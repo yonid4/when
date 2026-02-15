@@ -77,7 +77,7 @@ class TestGetBusySlots:
         mock_result = Mock()
         mock_result.data = [sample_busy_slot, {**sample_busy_slot, "id": "busy-456"}]
 
-        mock_supabase.table.return_value.select.return_value.gte.return_value.lte.return_value.order.return_value.execute.return_value = mock_result
+        mock_supabase.table.return_value.select.return_value.lte.return_value.gte.return_value.order.return_value.execute.return_value = mock_result
 
         # Act
         result = busy_slot_service.get_busy_slots(sample_date_range["start"], sample_date_range["end"])
@@ -92,7 +92,7 @@ class TestGetBusySlots:
         # Arrange
         mock_result = Mock()
         mock_result.data = []
-        mock_supabase.table.return_value.select.return_value.gte.return_value.lte.return_value.order.return_value.execute.return_value = mock_result
+        mock_supabase.table.return_value.select.return_value.lte.return_value.gte.return_value.order.return_value.execute.return_value = mock_result
 
         # Act
         result = busy_slot_service.get_busy_slots(sample_date_range["start"], sample_date_range["end"])
@@ -103,7 +103,7 @@ class TestGetBusySlots:
     def test_get_busy_slots_database_error(self, busy_slot_service, mock_supabase, sample_date_range):
         """Test get_busy_slots handles database errors gracefully."""
         # Arrange
-        mock_supabase.table.return_value.select.return_value.gte.return_value.lte.return_value.order.return_value.execute.side_effect = Exception("DB Error")
+        mock_supabase.table.return_value.select.return_value.lte.return_value.gte.return_value.order.return_value.execute.side_effect = Exception("DB Error")
 
         # Act
         result = busy_slot_service.get_busy_slots(sample_date_range["start"], sample_date_range["end"])
@@ -125,7 +125,7 @@ class TestGetUserBusySlots:
         user_id = "user-123"
         mock_result = Mock()
         mock_result.data = [sample_busy_slot]
-        mock_supabase.table.return_value.select.return_value.eq.return_value.gte.return_value.lte.return_value.order.return_value.execute.return_value = mock_result
+        mock_supabase.table.return_value.select.return_value.eq.return_value.lte.return_value.gte.return_value.order.return_value.execute.return_value = mock_result
 
         # Act
         result = busy_slot_service.get_user_busy_slots(user_id, sample_date_range["start"], sample_date_range["end"])
@@ -139,7 +139,7 @@ class TestGetUserBusySlots:
         # Arrange
         mock_result = Mock()
         mock_result.data = []
-        mock_supabase.table.return_value.select.return_value.eq.return_value.gte.return_value.lte.return_value.order.return_value.execute.return_value = mock_result
+        mock_supabase.table.return_value.select.return_value.eq.return_value.lte.return_value.gte.return_value.order.return_value.execute.return_value = mock_result
 
         # Act
         result = busy_slot_service.get_user_busy_slots("user-999", sample_date_range["start"], sample_date_range["end"])
@@ -411,7 +411,7 @@ class TestSyncUserGoogleCalendar:
         ]
 
         mock_service.events.return_value.list.return_value.execute.return_value = google_events
-        mock_supabase.table.return_value.select.return_value.eq.return_value.gte.return_value.lte.return_value.not_.is_.return_value.execute.return_value = db_slots
+        mock_supabase.table.return_value.select.return_value.eq.return_value.eq.return_value.gte.return_value.lte.return_value.not_.is_.return_value.execute.return_value = db_slots
 
         with patch("app.services.google_calendar.get_stored_credentials", return_value=mock_credentials):
             with patch("app.services.google_calendar.get_calendar_service", return_value=mock_service):
@@ -477,7 +477,7 @@ class TestGetMergedBusySlotsForEvent:
 
         # For busy slots query
         mock_table2 = Mock()
-        mock_table2.select.return_value.in_.return_value.gte.return_value.lte.return_value.order.return_value.execute.return_value = busy_slots_result
+        mock_table2.select.return_value.in_.return_value.lte.return_value.gte.return_value.order.return_value.execute.return_value = busy_slots_result
 
         def table_selector(table_name):
             if table_name == "event_participants":
@@ -601,7 +601,7 @@ class TestGetEventParticipantsBusySlots:
         mock_table.select.return_value.eq.return_value.execute.return_value = participants_result
 
         mock_table2 = Mock()
-        mock_table2.select.return_value.in_.return_value.gte.return_value.lte.return_value.order.return_value.execute.return_value = busy_slots_result
+        mock_table2.select.return_value.in_.return_value.lte.return_value.gte.return_value.order.return_value.execute.return_value = busy_slots_result
 
         def table_selector(table_name):
             if table_name == "event_participants":
