@@ -60,15 +60,15 @@ class EventFinalizationService:
         primary_creds, primary_cal_id = self._get_provider_credentials(coordinator_id, primary_calendar_provider)
         
         if not primary_creds:
-             # Fallback to auto-detection if preferred failed
-             logging.warning(f"Primary provider {primary_calendar_provider} credentials not found. Falling back to auto-detection.")
-             detected_provider, detected_creds, detected_cal_id = self._detect_coordinator_provider(coordinator_id)
-             if detected_provider and detected_creds:
-                 primary_calendar_provider = detected_provider
-                 primary_creds = detected_creds
-                 primary_cal_id = detected_cal_id
-             else:
-                 raise Exception("No calendar connected. Please connect your calendar first.")
+            # Fallback to auto-detection if preferred failed
+            logging.warning(f"Primary provider {primary_calendar_provider} credentials not found. Falling back to auto-detection.")
+            detected_provider, detected_creds, detected_cal_id = self._detect_coordinator_provider(coordinator_id)
+            if detected_provider and detected_creds:
+                primary_calendar_provider = detected_provider
+                primary_creds = detected_creds
+                primary_cal_id = detected_cal_id
+            else:
+                raise Exception("No calendar connected. Please connect your calendar first.")
 
         # Merge legacy include_google_meet with new include_online_meeting
         wants_online_meeting = include_google_meet or include_online_meeting
@@ -208,9 +208,9 @@ class EventFinalizationService:
             # 1. Check for a specific WRITE calendar for this provider
             write_cal = cas.get_write_calendar(user_id, provider=provider)
             if write_cal and write_cal.get("account") and write_cal["account"].get("credentials"):
-                 account = write_cal["account"]
-                 creds = get_credentials_from_dict(account["credentials"]) if provider == "google" else account["credentials"]
-                 return (creds, write_cal.get("calendar_id"))
+                account = write_cal["account"]
+                creds = get_credentials_from_dict(account["credentials"]) if provider == "google" else account["credentials"]
+                return (creds, write_cal.get("calendar_id"))
 
             # 2. Fallback: Any connected account of this provider
             accounts = cas.get_user_accounts(user_id)
@@ -235,7 +235,7 @@ class EventFinalizationService:
     def _prepare_blocking_event(self, event, start_time_utc, end_time_utc, coordinator_timezone):
         """Prepare a simplified event for blocking time on secondary calendar."""
         return {
-            "summary": f"Busy: {event['name']}", # Or just "Busy" if we want privacy? Let's include name for now
+            "summary": f"Busy: {event['name']}",
             "description": "Blocked via When. This event is synchronized from your primary calendar.",
             "start": {
                 "dateTime": start_time_utc,
@@ -245,8 +245,8 @@ class EventFinalizationService:
                 "dateTime": end_time_utc,
                 "timeZone": coordinator_timezone
             },
-            "reminders": {"useDefault": False}, # No reminders for blocker?
-            "transparency": "opaque" # Ensure it blocks time
+            "reminders": {"useDefault": False},
+            "transparency": "opaque",
         }
     
     def _detect_coordinator_provider(self, coordinator_id: str) -> tuple:
@@ -464,12 +464,12 @@ class EventFinalizationService:
             update_data["microsoft_calendar_html_link"] = calendar_html_link
             
         if secondary_event_id and secondary_provider:
-             if secondary_provider == "google":
-                 update_data["google_calendar_event_id"] = secondary_event_id
-                 update_data["google_calendar_html_link"] = secondary_html_link
-             elif secondary_provider == "microsoft":
-                 update_data["microsoft_calendar_event_id"] = secondary_event_id
-                 update_data["microsoft_calendar_html_link"] = secondary_html_link
+            if secondary_provider == "google":
+                update_data["google_calendar_event_id"] = secondary_event_id
+                update_data["google_calendar_html_link"] = secondary_html_link
+            elif secondary_provider == "microsoft":
+                update_data["microsoft_calendar_event_id"] = secondary_event_id
+                update_data["microsoft_calendar_html_link"] = secondary_html_link
 
         response = (
             self.service_role_client.table("events")

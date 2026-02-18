@@ -50,9 +50,6 @@ function FinalizationModal({
           if (res.data?.primary_calendar_provider) {
             setPrimaryProvider(res.data.primary_calendar_provider);
           }
-          // Default syncToSecondary to true if user has both accounts connected? 
-          // For now default to false or we could check accounts. 
-          // Let's default to true if we can detect it, but simple false is safer for MVP unless we check connected accounts.
         }
       } catch (err) {
         console.error("Failed to fetch profile settings", err);
@@ -375,7 +372,3 @@ function FinalizationModal({
 }
 
 export default FinalizationModal;
-
-
-
-

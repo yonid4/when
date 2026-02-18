@@ -284,6 +284,9 @@ function CalendarSettings() {
     );
   }
 
+  const hasGoogleWithSources = accounts.some(a => a.provider === 'google' && a.calendar_sources?.length > 0);
+  const hasMicrosoftWithSources = accounts.some(a => a.provider === 'microsoft' && a.calendar_sources?.length > 0);
+
   return (
     <VStack spacing={6} align="stretch">
       <Box>
@@ -318,8 +321,7 @@ function CalendarSettings() {
       </Box>
 
       {/* Primary Provider Selection - only show when both providers are connected */}
-      {accounts.some(a => a.provider === 'google' && a.calendar_sources?.length > 0) &&
-       accounts.some(a => a.provider === 'microsoft' && a.calendar_sources?.length > 0) && (
+      {hasGoogleWithSources && hasMicrosoftWithSources && (
         <Box p={4} bg={colors.surface} borderWidth="1px" borderColor={colors.border} borderRadius="lg">
           <VStack align="start" spacing={3}>
             <Box>
@@ -329,7 +331,7 @@ function CalendarSettings() {
               </Text>
             </Box>
             <HStack spacing={4}>
-              {accounts.some(a => a.provider === 'google' && a.calendar_sources?.length > 0) && (
+              {hasGoogleWithSources && (
                 <Button
                   size="sm"
                   variant={primaryProvider === "google" ? "solid" : "outline"}
@@ -341,7 +343,7 @@ function CalendarSettings() {
                   Google Calendar
                 </Button>
               )}
-              {accounts.some(a => a.provider === 'microsoft' && a.calendar_sources?.length > 0) && (
+              {hasMicrosoftWithSources && (
                 <Button
                   size="sm"
                   variant={primaryProvider === "microsoft" ? "solid" : "outline"}
