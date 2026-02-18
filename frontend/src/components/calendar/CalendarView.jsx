@@ -131,7 +131,7 @@ const GoogleStyleEvent = memo(function GoogleStyleEvent({ event }) {
           {startTime}
         </Text>
         <Text fontSize="11px" color={event.textColor || colors.calendarGoogleGray} whiteSpace="nowrap">
-          Available
+          {event.preferredCount} available
         </Text>
       </Box>
     );
@@ -144,7 +144,7 @@ const GoogleStyleEvent = memo(function GoogleStyleEvent({ event }) {
           {startTime}
         </Text>
         <Text fontSize="11px" color="white" opacity={0.9} whiteSpace="nowrap">
-          Busy
+          {event.busyCount} busy
         </Text>
       </Box>
     );
