@@ -127,9 +127,6 @@ const GoogleStyleEvent = memo(function GoogleStyleEvent({ event }) {
   if (event.type === "preferred-slot") {
     return (
       <Box px={2} py={1} h="100%" overflow="hidden">
-        <Text fontSize="11px" fontWeight="600" color={event.textColor || colors.calendarGridText} mb={0.5} whiteSpace="nowrap">
-          {startTime}
-        </Text>
         <Text fontSize="11px" color={event.textColor || colors.calendarGoogleGray} whiteSpace="nowrap">
           {event.density} available
         </Text>
@@ -140,9 +137,6 @@ const GoogleStyleEvent = memo(function GoogleStyleEvent({ event }) {
   if (event.type === "busy") {
     return (
       <Box px={2} py={1} h="100%" overflow="hidden">
-        <Text fontSize="11px" fontWeight="600" color="white" mb={0.5} whiteSpace="nowrap">
-          {startTime}
-        </Text>
         <Text fontSize="11px" color="white" opacity={0.9} whiteSpace="nowrap">
           {event.participantCount} busy
         </Text>
