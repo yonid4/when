@@ -15,11 +15,15 @@ import { useNavigate } from "react-router-dom";
 import {
   Box,
   Container,
+  Flex,
   Progress,
+  Spinner,
   useToast
 } from "@chakra-ui/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiEdit, FiCalendar, FiUsers, FiMapPin, FiCheck } from "react-icons/fi";
+import { useCalendarConnection } from "../hooks/useCalendarConnection";
+import CalendarConnectPrompt from "../components/calendar/CalendarConnectPrompt";
 
 const MotionBox = motion(Box);
 
@@ -27,6 +31,7 @@ const EventCreate = () => {
   const navigate = useNavigate();
   const toast = useToast();
   const { execute, loading } = useApiCall();
+  const { isConnected, isChecking, connectGoogleCalendar, connectMicrosoftCalendar } = useCalendarConnection();
 
   // Capture user timezone for UTC conversion
   const [userTimezone] = useState(() => Intl.DateTimeFormat().resolvedOptions().timeZone);
@@ -397,6 +402,27 @@ const EventCreate = () => {
       opacity: 0
     })
   };
+
+  if (isChecking) {
+    return (
+      <Flex minH="100vh" align="center" justify="center" bg={colors.bgPage}>
+        <Spinner size="xl" color="brand.500" />
+      </Flex>
+    );
+  }
+
+  if (!isConnected) {
+    return (
+      <CalendarConnectPrompt
+        isVisible={true}
+        context="create"
+        onConnect={connectGoogleCalendar}
+        onConnectMicrosoft={connectMicrosoftCalendar}
+        onSkip={() => navigate(-1)}
+        onClose={() => navigate(-1)}
+      />
+    );
+  }
 
   return (
     <Box minH="100vh" bg={colors.bgPage}>

@@ -60,7 +60,7 @@ function CalendarSettings() {
   useEffect(() => {
     async function fetchProfile() {
       try {
-        const { data: { user } } = await import("../services/supabaseClient.js").then(m => m.supabase.auth.getUser());
+        const { data: { user } } = await import("../../services/supabaseClient.js").then(m => m.supabase.auth.getUser());
         if (user) {
           const res = await api.get(`/api/users/${user.id}`);
           if (res.data?.primary_calendar_provider) {
@@ -79,7 +79,7 @@ function CalendarSettings() {
   async function handleSetPrimaryProvider(provider) {
     setPrimaryProvider(provider);
     try {
-      const { data: { user } } = await import("../services/supabaseClient.js").then(m => m.supabase.auth.getUser());
+      const { data: { user } } = await import("../../services/supabaseClient.js").then(m => m.supabase.auth.getUser());
       if (user) {
         await api.put(`/api/users/${user.id}`, { primary_calendar_provider: provider });
         toast({
