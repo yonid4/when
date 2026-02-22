@@ -54,7 +54,7 @@ A full-stack application for coordinating events and managing availability acros
 
 ```bash
 # Clone and set up backend
-git clone <your-repository-url>
+git clone https://github.com/yonid4/when.git
 cd when/backend
 python -m venv venv
 source venv/bin/activate
