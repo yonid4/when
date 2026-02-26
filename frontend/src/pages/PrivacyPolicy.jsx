@@ -392,6 +392,45 @@ const PrivacyPolicy = () => {
           , including the Limited Use requirements.
         </P>
 
+        <Heading
+          as="h3"
+          fontSize="lg"
+          fontWeight="600"
+          color={colors.textHeading}
+          mt={6}
+          mb={3}
+        >
+          4.4 Sharing and Disclosure of Google User Data
+        </Heading>
+        <P>
+          We do not share, transfer, or disclose your Google user data (including 
+          calendar events or availability) to any third parties, except in the 
+          following limited circumstances:
+        </P>
+        <BulletList
+          items={[
+            <>
+              <B>Service Provision:</B> We transfer data to our service providers 
+              (Supabase and Render) solely to host our database and application as 
+              described in Sections 4.1 and 4.2. These providers are contractually 
+              obligated to keep your data confidential and secure.
+            </>,
+            <>
+              <B>User-Directed Sharing:</B> We share event details (such as your 
+              busy/free status) with other participants of a specific "When" event 
+              only as explicitly directed by your use of the Service for coordination.
+            </>,
+            <>
+              <B>Legal Requirements:</B> We may disclose data if required to do so by 
+              law or in response to valid requests by public authorities.
+            </>,
+            <>
+              <B>No Sale of Data:</B> We strictly do not sell your Google user data 
+              to any third parties, including advertisers or data brokers.
+            </>
+          ]}
+        />
+
         {/* ── 5. Data Security ────────────────────────────────── */}
         <SectionHeading id="data-security">5. Data Security</SectionHeading>
         <P>
