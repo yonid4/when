@@ -444,9 +444,6 @@ const EventPage = () => {
         description: userSlots.length > 0 ? `Combined ${userSlots.length + 1} overlapping selections into one` : "Your preferred time has been saved",
         status: "success", duration: 2000, isClosable: true
       });
-
-      const updatedSlots = await execute(() => preferredSlotsAPI.getByEvent(event.id), { showSuccessToast: false });
-      setPreferredSlots(updatedSlots || []);
     } catch (error) {
       setPreferredSlots(previousSlots);
       console.error("Failed to add preferred slot:", error);
