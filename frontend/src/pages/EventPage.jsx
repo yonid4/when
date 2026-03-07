@@ -403,21 +403,37 @@ const EventPage = () => {
       return;
     }
 
+    const userSlots = preferredSlots.filter(slot => {
+      if (slot.user_id !== user?.id) return false;
+      const slotStart = new Date(slot.start_time_utc);
+      const slotEnd = new Date(slot.end_time_utc);
+      return !(slotEnd <= slotInfo.start || slotStart >= slotInfo.end);
+    });
+
+    let finalStartTime = slotInfo.start;
+    let finalEndTime = slotInfo.end;
+
+    if (userSlots.length > 0) {
+      const allTimes = [slotInfo.start, slotInfo.end, ...userSlots.flatMap(slot => [new Date(slot.start_time_utc), new Date(slot.end_time_utc)])];
+      finalStartTime = new Date(Math.min(...allTimes));
+      finalEndTime = new Date(Math.max(...allTimes));
+    }
+
+    // Optimistic update: show slot immediately before API round-trip
+    const optimisticSlot = {
+      id: `optimistic-${Date.now()}`,
+      user_id: user?.id,
+      start_time_utc: finalStartTime.toISOString(),
+      end_time_utc: finalEndTime.toISOString(),
+    };
+    const previousSlots = preferredSlots;
+    setPreferredSlots(slots => [
+      ...slots.filter(s => !userSlots.some(us => us.id === s.id)),
+      optimisticSlot,
+    ]);
+
     try {
-      const userSlots = preferredSlots.filter(slot => {
-        if (slot.user_id !== user?.id) return false;
-        const slotStart = new Date(slot.start_time_utc);
-        const slotEnd = new Date(slot.end_time_utc);
-        return !(slotEnd <= slotInfo.start || slotStart >= slotInfo.end);
-      });
-
-      let finalStartTime = slotInfo.start;
-      let finalEndTime = slotInfo.end;
-
       if (userSlots.length > 0) {
-        const allTimes = [slotInfo.start, slotInfo.end, ...userSlots.flatMap(slot => [new Date(slot.start_time_utc), new Date(slot.end_time_utc)])];
-        finalStartTime = new Date(Math.min(...allTimes));
-        finalEndTime = new Date(Math.max(...allTimes));
         await Promise.all(userSlots.map(slot => execute(() => preferredSlotsAPI.delete(event.id, slot.id), { showSuccessToast: false })));
       }
 
@@ -432,6 +448,7 @@ const EventPage = () => {
       const updatedSlots = await execute(() => preferredSlotsAPI.getByEvent(event.id), { showSuccessToast: false });
       setPreferredSlots(updatedSlots || []);
     } catch (error) {
+      setPreferredSlots(previousSlots);
       console.error("Failed to add preferred slot:", error);
       toast({ title: "Failed to add time slot", description: error.message || "Please try again", status: "error", duration: 3000, isClosable: true });
     }
